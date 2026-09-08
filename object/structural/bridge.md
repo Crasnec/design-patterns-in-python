@@ -471,12 +471,7 @@ class VectorRenderer(Renderer):
         radius: int,
     ) -> None:
 
-        print(
-            "[Vector] "
-            f"원의 경로를 생성합니다. "
-            f"center=({x}, {y}), "
-            f"radius={radius}"
-        )
+        print(f'[Vector] 원의 경로를 생성합니다. center=({x}, {y}), radius={radius}')
 
     def draw_rectangle(
         self,
@@ -486,12 +481,7 @@ class VectorRenderer(Renderer):
         height: int,
     ) -> None:
 
-        print(
-            "[Vector] "
-            f"사각형 경로를 생성합니다. "
-            f"position=({x}, {y}), "
-            f"size=({width}, {height})"
-        )
+        print(f'[Vector] 사각형 경로를 생성합니다. position=({x}, {y}), size=({width}, {height})')
 
 
 class RasterRenderer(Renderer):
@@ -503,12 +493,7 @@ class RasterRenderer(Renderer):
         radius: int,
     ) -> None:
 
-        print(
-            "[Raster] "
-            f"원의 픽셀을 계산합니다. "
-            f"center=({x}, {y}), "
-            f"radius={radius}"
-        )
+        print(f'[Raster] 원의 픽셀을 계산합니다. center=({x}, {y}), radius={radius}')
 
     def draw_rectangle(
         self,
@@ -518,12 +503,7 @@ class RasterRenderer(Renderer):
         height: int,
     ) -> None:
 
-        print(
-            "[Raster] "
-            f"사각형의 픽셀을 채웁니다. "
-            f"position=({x}, {y}), "
-            f"size=({width}, {height})"
-        )
+        print(f'[Raster] 사각형의 픽셀을 채웁니다. position=({x}, {y}), size=({width}, {height})')
 
 
 # -------------------------------------------------------------------
@@ -564,11 +544,7 @@ class Circle(Shape):
 
     def draw(self) -> None:
 
-        self._renderer.draw_circle(
-            x=self.x,
-            y=self.y,
-            radius=self.radius,
-        )
+        self._renderer.draw_circle(x=self.x, y=self.y, radius=self.radius)
 
 
 class Rectangle(Shape):
@@ -608,37 +584,24 @@ if __name__ == "__main__":
     raster = RasterRenderer()
 
     shapes: list[Shape] = [
-        Circle(
-            renderer=vector,
-            x=10,
-            y=20,
-            radius=5,
-        ),
-        Circle(
-            renderer=raster,
-            x=30,
-            y=40,
-            radius=10,
-        ),
-        Rectangle(
-            renderer=vector,
-            x=0,
-            y=0,
-            width=100,
-            height=50,
-        ),
-        Rectangle(
-            renderer=raster,
-            x=50,
-            y=50,
-            width=80,
-            height=40,
-        ),
+        Circle(renderer=vector, x=10, y=20, radius=5),
+        Circle(renderer=raster, x=30, y=40, radius=10),
+        Rectangle(renderer=vector, x=0, y=0, width=100, height=50),
+        Rectangle(renderer=raster, x=50, y=50, width=80, height=40),
     ]
 
     for shape in shapes:
         shape.draw()
 
+```
+
+**실행 결과:**
+
+```text
+[Vector] 원의 경로를 생성합니다. center=(10, 20), radius=5
+[Raster] 원의 픽셀을 계산합니다. center=(30, 40), radius=10
+[Vector] 사각형 경로를 생성합니다. position=(0, 0), size=(100, 50)
+[Raster] 사각형의 픽셀을 채웁니다. position=(50, 50), size=(80, 40)
 ```
 
 ---
@@ -648,6 +611,14 @@ if __name__ == "__main__":
 브리지 패턴을 현대 타입 시스템과 함수형 프로그래밍 관점에서 재해석하면, Bridge가 해결하려는 문제는 단순히 "상속 대신 객체를 하나 주입하는 것"보다 더 일반적인 형태로 볼 수 있습니다.
 
 핵심 질문은 "두 개의 독립적인 변화 차원(Dimensions of Variance)을 타입 구조에서 어떻게 분리하면서, 필요한 시점에 안전하게 조합할 것인가?"입니다.
+
+---
+
+### 부록을 읽는 순서와 전제
+
+> **표기 안내:** 아래의 `data`, `trait`, `exists`, `>>`는 개념 설명용 가상 문법이며 실제 Python 문법이 아닙니다. Python에서의 구현은 본문의 합성과 추상 클래스 예제를 기준으로 읽습니다.
+
+먼저 1~3절에서 “도형과 출력기를 따로 선택한다”는 기존 문제를 값과 타입으로 옮겨 봅니다. 4~6절은 도형 종류가 정해져 있고, 출력 전 명령을 검사하거나 재사용하려는 경우의 확장입니다. 실존 타입은 구체 구현의 이름을 숨기는 방법이고, IR은 출력할 작업을 데이터로 기록하는 방법입니다. 둘은 서로 다른 문제를 해결합니다.
 
 ---
 
@@ -677,7 +648,7 @@ record Drawing:
 
 ### 2. 구현 축을 제네릭 타입 매개변수로 표현하기
 
-Renderer를 런타임 인터페이스 객체로 참조하지 않고 타입 매개변수(Parametric Polymorphism)로 표현할 수 있습니다.
+Renderer의 구체 타입을 타입 매개변수로 표현하면 도형과 구현체의 조합을 타입 검사기에 전달할 수 있습니다. 이것만으로 런타임 객체나 간접 호출이 없어지는 것은 아닙니다.
 
 ```python
 trait Renderer[R]:
@@ -706,8 +677,9 @@ where Renderer[R]:
 
 ### 3. 정적 Bridge와 동적 Bridge 구분하기
 
-제네릭 기반 설계는 컴파일 타임에 구현체가 결정되는 **정적 Bridge**입니다.
-반면 실행 중 동적으로 백엔드를 교체해야 하는 경우, 구체 타입을 감추는 실존 타입(Existential Type) 또는 Dynamic Dispatch를 활용합니다.
+제네릭은 구현체의 타입을 매개변수로 표현하는 수단입니다. **구현 호출을 정적으로 결정하는지는 언어와 컴파일 방식에 달려 있습니다.** 예를 들어 Rust는 구체 타입별 코드를 생성하는 단형화(Monomorphization)를 사용하지만, Python의 제네릭 타입 힌트가 같은 최적화를 수행하는 것은 아닙니다.
+
+실행 중 선택한 서로 다른 Renderer를 공통 타입으로 보관하려면 런타임 다형성을 사용할 수 있습니다. 아래의 실존 타입(Existential Type)은 “구체 타입 이름은 숨기되 Renderer 계약을 충족한다는 사실은 보관한다”는 의미입니다. 구체 타입을 활용하는 최적화와 런타임 선택의 유연성 사이에는 비용 차이가 있을 수 있습니다.
 
 ```python
 type AnyRenderer =
@@ -820,7 +792,9 @@ def render_svg(
 
 ```
 
-Abstraction과 Implementation 사이에 명시적인 중간 표현(IR)을 둠으로써 완전히 직교(Orthogonal)하는Decoupled 아키텍처를 달성합니다.
+중간 표현을 두면 도형을 명령으로 바꾸는 단계와 명령을 출력하는 단계를 따로 검증할 수 있습니다. 예를 들어 `describe(circle)`이 원 명령을 만드는지 먼저 검사하고, 같은 명령을 SVG와 Raster 구현에 전달할 수 있습니다.
+
+다만 두 단계는 여전히 IR의 연산과 의미에 의존합니다. 새 명령을 추가하면 이를 처리하는 백엔드도 수정해야 하며, 명령 목록을 보관하는 메모리 비용도 생깁니다.
 
 ---
 
@@ -874,7 +848,7 @@ describe ───────┼─ render_png
 
 ```
 
-객체 간 참조 관계가 담당하던 역할을 pure function 간의 합성이 담당합니다.
+객체 간 참조 대신 변환 함수를 연결합니다. `describe`와 SVG 문자열 생성은 순수 함수로 작성할 수 있지만, 파일 저장이나 화면 출력까지 수행하는 Renderer는 부수효과를 가집니다. 함수로 표현했다는 이유만으로 계산이 순수해지지는 않습니다.
 
 ---
 
@@ -887,10 +861,10 @@ describe ───────┼─ render_png
 | **Implementation 표현** | Implementor 인터페이스 | Type Class / Algebra / Interpreter |
 | **두 축 연결 방식** | 객체 합성 (`has-a`) | 타입 매개변수 / 함수 합성 |
 | **조합 클래스 문제** | $N \times M$ 클래스 방지 | 타입의 곱($A \times B$)을 직접 합성 |
-| **정적 구현 선택** | 일반적으로 인터페이스 참조 | Generic / Parametric Polymorphism |
+| **정적 구현 선택** | 호출 방식은 언어 구현에 의존 | 단형화 등 정적 디스패치를 지원하는 구현에서 가능 |
 | **동적 구현 선택** | 런타임 다형성 (Dynamic Dispatch) | Existential Type / Dynamic Dispatch |
 | **닫힌 Abstraction** | 클래스 계층 | ADT + Pattern Matching |
-| **구현 능력 차이** | 거대한 Implementor 인터페이스 | Capability Type Class 분리 |
+| **구현 능력 차이** | 역할별 Implementor 인터페이스로 분리 가능 | Capability Type Class로 요구 기능 명시 |
 | **중간 표현** | 객체 메서드 직접 호출 | Command ADT / Intermediate Representation (IR) |
 | **구현 해석** | Concrete Implementor | Interpreter |
 | **부수효과 차이** | 구현 내부에 암묵적 존재 | Effect Polymorphism |
@@ -899,6 +873,4 @@ describe ───────┼─ render_png
 
 ### 결론
 
-고전적인 Bridge 패턴은 서로 독립적으로 변화해야 하는 추상화 계층과 구현 계층을 분리하여 상속 대신 **합성**으로 연결함으로써 $N \times M$의 클래스 폭증을 $N + M$ 구조로 전환하는 패턴입니다.
-
-현대적 관점에서 브리지 패턴의 본질을 추상화하면, "서로 독립적인 두 변화 차원을 하나의 상속 계층에 결합하지 않고 각각 별도의 타입·값·해석 계층으로 모델링한 뒤, 명시적인 경계를 통해 자유롭게 조합하는 기법"으로 확정하여 이해할 수 있습니다.
+브리지는 독립적으로 바뀌는 기능과 구현을 합성으로 연결합니다. 두 축이 실제로 독립적인지, 공통 계약이 각 구현의 능력을 표현하는지가 판단 기준입니다. 제네릭과 IR은 선택적인 표현이며, 런타임 선택·최적화·변경 비용을 고려해 필요한 수준만 도입합니다.

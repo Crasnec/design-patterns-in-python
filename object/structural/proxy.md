@@ -241,7 +241,6 @@ Proxy     : 접근 통제
 
 ```
 
-
 * **Proxy와 Adapter의 차이:** Adapter는 인터페이스를 다른 형태로 변환합니다. Proxy는 일반적으로 실제 객체와 동일하거나 호환되는 인터페이스를 유지합니다.
 * **Proxy와 Facade의 차이:** Proxy는 주로 하나의 Subject를 대신합니다. Facade는 여러 서브시스템을 더 단순한 상위 인터페이스 뒤에 묶습니다.
 
@@ -580,6 +579,10 @@ show_image(images[1])
 
 ---
 
+본문의 가상 프록시는 단일 스레드의 정상 실행을 전제로 합니다. 실제 로딩이 실패하면 `_real_image`는 할당되지 않아 다음 호출에서 다시 로딩을 시도합니다. 여러 스레드가 동시에 최초 접근할 수 있다면 조회와 생성에 동기화가 필요하며, 실패를 재시도할지 보관할지도 정책으로 정해야 합니다.
+
+---
+
 ## 부록 (Appendix): 현대적 타입 시스템과 함수형 관점의 재해석
 
 프록시 패턴을 현대 타입 시스템과 함수형 프로그래밍 관점에서 재해석하면, Proxy가 해결하는 문제는 단순히 "실제 객체 앞에 같은 인터페이스의 객체를 하나 더 둔다"는 구조보다 훨씬 일반적인 문제로 볼 수 있습니다.
@@ -596,6 +599,14 @@ Client ──> Proxy ──> Real Subject
 > **"어떤 값이나 자원에 대한 직접 접근을 허용하는 대신, 접근을 표현하는 간접적인 값이나 계산을 제공하고 그 경계에서 정책을 적용할 수는 없는가?"**
 
 이 부록에서는 이를 설명하기 위해 `Lazy[T]`, `Thunk`, `Capability Type`, `Opaque Handle`, `Effect System`, `Ownership/Borrowing`, `Linear Type`, `Future/Async Type`을 지원하는 가상의 Python 문법을 가정하여 설명합니다. *(아래 코드는 실제 Python 문법이 아닙니다.)*
+
+---
+
+### 부록을 읽는 순서와 전제
+
+본문의 지연 로딩과 직접 연결되는 내용은 1~2절입니다. Thunk는 나중에 호출할 계산이고, 이 부록의 Lazy는 최초 성공 결과를 보관하는 지연 계산을 뜻합니다. 권한이 문제라면 3~4절을, 원격 호출이라면 5~7절을 이어 읽습니다.
+
+소유권과 선형 타입이 나오는 10~11절은 자원을 누가 사용할 수 있고 언제 사용을 끝내는지 다룹니다. 이들은 모든 프록시를 대체하는 필수 기법이 아닙니다. 각 접근 정책을 별도로 검토해야 하며, 타입에 표현된 사실과 런타임에서 확인할 조건을 구분합니다.
 
 ---
 
@@ -719,14 +730,14 @@ def remove_user(id: UserId, using permission: DeleteUser) -> Unit:
 
 ```
 
-권한이 없는 코드는 `remove_user(id)`를 호출할 수 없으며 컴파일 에러가 발생합니다.
+이 가상 타입 시스템에서는 `DeleteUser` 인자를 공급하지 않은 호출을 정적 오류로 처리합니다.
 
 ```text
 Type Error: Missing capability: DeleteUser
 
 ```
 
-전통적인 Protection Proxy의 **"호출 허용 $\rightarrow$ 런타임 권한 검사 $\rightarrow$ 거부"** 흐름을 "Capability 없음 $\rightarrow$ 호출 자체가 불가능"으로 바꿀 수 있습니다.
+이 모델이 권한 경계가 되려면 Capability를 임의로 만들 수 없고, 실제 삭제 기능에 우회 접근할 수도 없어야 합니다. Capability의 발급 시점에는 사용자 권한을 확인해야 하며, 발급 이후 권한 취소나 만료를 지원한다면 호출 시점의 런타임 검사도 필요할 수 있습니다. 타입은 필요한 권한의 전달을 검사하지만, 변화하는 권한 정책 전체를 대신하지는 않습니다.
 
 ---
 
@@ -923,14 +934,14 @@ close(connection)
 
 ```
 
-닫은 이후 다시 `query(connection, ...)`를 시도하면 컴파일 에러가 발생합니다.
+여기서는 `query`가 Connection을 잠시 빌리고, `close`가 소유권을 소비하며, 복제 가능한 별칭이 없다고 가정합니다. 이 규칙을 강제하는 타입 시스템에서는 닫은 뒤 같은 Connection을 다시 사용하는 코드를 거부합니다.
 
 ```text
 Type Error: connection has already been consumed.
 
 ```
 
-Proxy 객체로 수명을 감시하는 대신 자원의 사용 가능성 자체를 타입 상태(Typestate)로 관리합니다.
+소유권 소비는 닫힌 자원의 재사용을 막고, Typestate는 상태별로 허용되는 연산을 표현합니다. 두 개념은 함께 사용할 수 있지만 같은 개념은 아닙니다. 예외나 취소 경로의 자원 정리, 외부 연결 종료의 성공 여부는 별도 실행 규칙이 필요합니다. Python에서는 컨텍스트 관리자와 런타임 상태 검사로 이러한 수명 규칙을 구현할 수 있습니다.
 
 ---
 
@@ -979,12 +990,9 @@ ActorRef ──(Message)──> Actor Mailbox ──> Actor State
 * `service.method()` 형태로 바로 사용
 * 클라이언트는 차이를 알지 못하지만 비용과 실패 모델이 숨겨짐
 
-
 * **Explicit Proxy:** `opaque type Proxy[T]`
 * `proxy.call(Service.method, args)` 형태로 사용
 * 간접 접근이라는 사실을 명확하게 드러냄 (Remote Proxy 등에서 선호)
-
-
 
 ---
 
@@ -1057,26 +1065,6 @@ Client ──> Indirect Reference ──> Access Policy ──> Resource
 
 ---
 
-## 결론
+### 결론
 
-고전적인 프록시 패턴은 실제 객체와 동일한 인터페이스를 가진 대리 객체가 클라이언트와 Real Subject 사이에 위치하여, 실제 객체에 대한 접근과 생성·권한·통신·캐싱·수명 등의 정책을 대신 관리하는 구조 패턴입니다.
-
-```text
-Client ──> Subject
-             ▲
-             │
-           Proxy ──> RealSubject
-
-```
-
-현대 타입 시스템과 함수형 패러다임에서는 이러한 접근 정책을 더 직접적인 언어 구조로 1:1 매핑하여 표현할 수 있습니다.
-
-* $\text{Virtual Proxy} \leftrightarrow \text{Lazy}[T] \text{ / Memoized Thunk}$
-* $\text{Protection Proxy} \leftrightarrow \text{Capability Type}$
-* $\text{Remote Proxy} \leftrightarrow \text{RemoteHandle}[T] \text{ / Remote Effect}$
-* $\text{Caching Proxy} \leftrightarrow \text{Memoization / Cache Handler}$
-* $\text{Smart Reference} \leftrightarrow \text{Borrowing / Ownership}$
-* $\text{수명 관리 Proxy} \leftrightarrow \text{Linear Type / Typestate}$
-* $\text{동시성 Proxy} \leftrightarrow \text{ActorRef}$
-
-현대적 관점에서 프록시 패턴의 본질을 추상화하면, "값이나 자원에 대한 직접 접근을 정책이 적용되는 간접 접근으로 치환하고, 그 접근 경계에서 생성 시점·권한·위치·비용·수명·동시성 등의 제약을 일관되게 통제하는 기법"으로 확장하여 이해할 수 있습니다.
+프록시는 실제 객체에 대한 접근 경계에서 지연 생성, 권한, 원격 호출 등의 정책을 적용합니다. 같은 메서드 모양을 유지해도 비용과 실패까지 같아지는 것은 아닙니다. 호출자가 알아야 할 지연·오류·수명 제약은 계약에 드러내고, 필요한 접근 정책만 분리해서 구현합니다.

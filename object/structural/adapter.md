@@ -513,10 +513,7 @@ class LegacyPaymentClient:
         currency_code: str,
     ) -> dict[str, Any]:
 
-        print(
-            "[Legacy SDK] "
-            f"{amount} {currency_code} 결제 요청"
-        )
+        print(f'[Legacy SDK] {amount} {currency_code} 결제 요청')
 
         return {
             "tx_id": "TX-10001",
@@ -542,16 +539,11 @@ class LegacyPaymentAdapter(PaymentGateway):
     ) -> PaymentResult:
 
         # Target 입력 → Adaptee 입력
-        response = self._client.request_payment(
-            amount=money.cents,
-            currency_code=money.currency,
-        )
+        response = self._client.request_payment(amount=money.cents, currency_code=money.currency)
 
         # Adaptee 출력 → Target 출력
         return PaymentResult(
-            transaction_id=str(
-                response["tx_id"]
-            ),
+            transaction_id=str(response['tx_id']),
             approved=(
                 response["result_code"]
                 == "00"
@@ -570,15 +562,9 @@ class ModernPaymentGateway(PaymentGateway):
         money: Money,
     ) -> PaymentResult:
 
-        print(
-            "[Modern Gateway] "
-            f"{money.cents} {money.currency} 결제 요청"
-        )
+        print(f'[Modern Gateway] {money.cents} {money.currency} 결제 요청')
 
-        return PaymentResult(
-            transaction_id="TX-20001",
-            approved=True,
-        )
+        return PaymentResult(transaction_id='TX-20001', approved=True)
 
 
 # -------------------------------------------------------------------
@@ -598,19 +584,12 @@ class CheckoutService:
         money: Money,
     ) -> None:
 
-        result = self._gateway.pay(
-            money
-        )
+        result = self._gateway.pay(money)
 
         if result.approved:
-            print(
-                "결제가 승인되었습니다. "
-                f"거래 ID: {result.transaction_id}"
-            )
+            print(f'결제가 승인되었습니다. 거래 ID: {result.transaction_id}')
         else:
-            print(
-                "결제가 거절되었습니다."
-            )
+            print('결제가 거절되었습니다.')
 
 
 # -------------------------------------------------------------------
@@ -619,37 +598,33 @@ class CheckoutService:
 
 if __name__ == "__main__":
 
-    money = Money(
-        cents=10000,
-        currency="USD",
-    )
+    money = Money(cents=10000, currency='USD')
 
     # 기존 레거시 시스템 사용
     legacy_client = LegacyPaymentClient()
 
-    legacy_adapter = LegacyPaymentAdapter(
-        legacy_client
-    )
+    legacy_adapter = LegacyPaymentAdapter(legacy_client)
 
-    legacy_checkout = CheckoutService(
-        legacy_adapter
-    )
+    legacy_checkout = CheckoutService(legacy_adapter)
 
-    legacy_checkout.checkout(
-        money
-    )
+    legacy_checkout.checkout(money)
 
     # 새로운 결제 시스템 사용
     modern_gateway = ModernPaymentGateway()
 
-    modern_checkout = CheckoutService(
-        modern_gateway
-    )
+    modern_checkout = CheckoutService(modern_gateway)
 
-    modern_checkout.checkout(
-        money
-    )
+    modern_checkout.checkout(money)
 
+```
+
+**실행 결과:**
+
+```text
+[Legacy SDK] 10000 USD 결제 요청
+결제가 승인되었습니다. 거래 ID: TX-10001
+[Modern Gateway] 10000 USD 결제 요청
+결제가 승인되었습니다. 거래 ID: TX-20001
 ```
 
 클라이언트인 `CheckoutService`는 두 구현의 차이를 알 필요가 없습니다.
@@ -733,6 +708,14 @@ Adaptee
 **"같은 의미를 다루지만 서로 다른 타입이나 호출 프로토콜로 표현된 두 시스템 사이의 변환을 어떻게 안전하게 정의할 것인가?"**
 
 이 부록에서는 이를 설명하기 위해 구조적 타이핑(Structural Typing), 타입클래스(Type Class), Newtype, 대수적 데이터 타입(ADT), 고차 함수, 효과 타입(Effect Type), 정제 타입(Refinement Type)을 지원하는 가상의 Python 문법을 가정하여 설명합니다. *(아래 코드는 실제 Python 문법이 아닙니다.)*
+
+### 부록을 읽는 순서와 전제
+
+본문의 어댑터가 수행한 일을 입력 변환, 기존 서비스 호출, 결과 변환의 세 단계로 나누어 읽으면 됩니다. 1~3절은 이 세 단계를 계약과 함수로 표현합니다. 5~8절은 단위 차이와 실패를 타입에 드러내며, 4절과 9절은 타입클래스·효과 시스템에 익숙해진 뒤 읽어도 됩니다.
+
+타입이 맞는다는 사실만으로 변환이 의미까지 보존하지는 않습니다. 예를 들어 센트와 원을 같은 정수로 전달할 수 있어도 환산 규칙은 별도로 검증해야 합니다. 이 부록의 고급 표현도 그 책임을 없애지는 않습니다.
+
+---
 
 ### 1. 단순한 명목적 타입 차이는 구조적 타이핑으로 제거하기
 
@@ -1431,19 +1414,4 @@ Internal Representation
 
 ### 결론
 
-고전적인 Adapter 패턴은 클라이언트가 요구하는 Target 인터페이스와 기존 객체의 Adaptee 인터페이스 사이에 변환 계층을 두어, 호환되지 않는 두 구성 요소를 함께 사용할 수 있도록 만드는 구조 패턴입니다.
-이를 통해 기존 구현이나 외부 라이브러리를 직접 수정하지 않고도 새로운 시스템에 통합할 수 있습니다.
-
-그러나 현대 타입 시스템과 함수형 패러다임에서는 Adapter를 반드시 Wrapper 객체로 구현할 필요는 없습니다.
-
-* **Target 인터페이스** $\leftrightarrow$ 요구되는 타입 또는 Protocol
-* **Object Adapter** $\leftrightarrow$ 변환 함수의 합성
-* **단순 인터페이스 차이** $\leftrightarrow$ Structural Typing
-* **서드파티 타입의 적응** $\leftrightarrow$ Type Class Instance
-* **값 표현의 차이** $\leftrightarrow$ Newtype Conversion
-* **요청/응답 변환** $\leftrightarrow$ `before → service → after` 함수 합성
-* **실패 가능한 변환** $\leftrightarrow$ `Result[T, E]`
-* **외부 오류 코드** $\leftrightarrow$ Domain Error ADT
-* **Sync/Async 차이** $\leftrightarrow$ Effect Adapter
-
-현대적 관점에서 어댑터 패턴의 본질을 추상화하면, "서로 다른 시스템이 사용하는 타입·데이터 표현·호출 규약·효과를 경계에서 명시적으로 변환하여 의미적으로 호환되게 만드는 기법"으로 확장하여 이해할 수 있습니다.
+어댑터는 기존 API와 클라이언트 계약 사이의 변환을 한 경계에 모읍니다. 객체로 감싸든 함수를 합성하든 입력 단위, 반환 의미, 실패 처리 규칙이 계약을 충족하는지 확인해야 합니다. 변환이 여러 호출 지점에 반복될 때 도입하고, 이름만 다른 단순한 경우에는 작은 변환 함수부터 검토합니다.

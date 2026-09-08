@@ -1,7 +1,3 @@
-제시해주신 문장의 다듬기 방식을 바탕으로, 문서 전체에 존재하는 비슷하게 어색하거나 단편적이었던 대조/연결 문장들(텍스트 블록 기반의 요약 방식 등)을 문맥에 맞게 자연스러운 구어체 기술 문서 스타일로 매끄럽게 다듬었습니다.
-
----
-
 # 프로토타입 패턴 (Prototype Pattern)
 
 ## 1. 패턴이 없을 때 발생하는 문제점 (The Problem)
@@ -86,7 +82,7 @@ print(goblin.name)
 
 ```
 
-Python의 대입 연산은 객체를 복제하는 것이 아니라 동일한 객체에 대한 참조를 하나 더 생성하므로, 두 변수가 동일한 객체를 가리키게 됩니다. ([Python documentation][1])
+Python의 대입 연산은 객체를 복제하는 것이 아니라 동일한 객체에 대한 참조를 하나 더 생성하므로, 두 변수가 동일한 객체를 가리키게 됩니다.
 
 새로운 객체를 직접 생성하면서 내부 데이터를 재사용하는 방식 역시 위험을 내포하고 있습니다.
 
@@ -220,7 +216,7 @@ monster = registry.create("goblin")
 
 Python 표준 라이브러리의 `copy` 모듈은 `copy.copy()`와 `copy.deepcopy()`를 통해 각각 얕은 복사와 깊은 복사를 지원합니다.
 
-사용자 정의 클래스는 `__copy__()`와 `__deepcopy__()` 메서드를 정의하여 자신의 복제 방법을 직접 제어할 수 있습니다. `deepcopy()`는 순환 객체 구조를 처리하고 동일 객체의 중복 복사를 방지하기 위해 `memo` 딕셔너리를 내부적으로 활용합니다. ([Python documentation][2])
+사용자 정의 클래스는 `__copy__()`와 `__deepcopy__()` 메서드를 정의하여 자신의 복제 방법을 직접 제어할 수 있습니다. `deepcopy()`는 순환 객체 구조를 처리하고 동일 객체의 중복 복사를 방지하기 위해 `memo` 딕셔너리를 내부적으로 활용합니다.
 
 ```python
 from copy import copy, deepcopy
@@ -246,7 +242,7 @@ class Monster:
 
 ### `copy.replace()`
 
-Python 3.13에 추가된 `copy` 모듈의 `copy.replace()`는 기존 객체를 기반으로 일부 필드만 변경된 새로운 객체를 생성하는 기능을 제공합니다. 이 함수는 named tuple, dataclass, 그리고 `__replace__()`를 구현한 사용자 정의 클래스 등을 지원합니다. ([Python documentation][2])
+Python 3.13에 추가된 `copy` 모듈의 `copy.replace()`는 기존 객체를 기반으로 일부 필드만 변경된 새로운 객체를 생성하는 기능을 제공합니다. 이 함수는 named tuple, dataclass, 그리고 `__replace__()`를 구현한 사용자 정의 클래스 등을 지원합니다.
 
 ```python
 from copy import replace
@@ -267,7 +263,7 @@ elite = replace(
 
 `dataclasses.replace()`는 기존 dataclass 인스턴스와 동일한 타입의 새로운 객체를 생성하면서 지정한 필드만 변경합니다.
 
-새 객체를 생성할 때 해당 dataclass의 `__init__()`을 다시 호출하며, `__post_init__()`이 구현되어 있다면 해당 메서드도 함께 실행됩니다. 따라서 메모리를 그대로 복제하는 전통적인 `clone()` 연산과는 차이가 있지만, **기존 객체를 새로운 객체의 템플릿으로 활용하는 방식**이라는 점에서 Prototype과 유사성을 가집니다. ([Python documentation][3])
+새 객체를 생성할 때 해당 dataclass의 `__init__()`을 다시 호출하며, `__post_init__()`이 구현되어 있다면 해당 메서드도 함께 실행됩니다. 따라서 메모리를 그대로 복제하는 전통적인 `clone()` 연산과는 차이가 있지만, **기존 객체를 새로운 객체의 템플릿으로 활용하는 방식**이라는 점에서 Prototype과 유사성을 가집니다.
 
 ```python
 from dataclasses import dataclass, replace
@@ -300,7 +296,7 @@ elite = replace(
 
 `attrs` 라이브러리의 `attrs.evolve()` 역시 기존 attrs 인스턴스를 기반으로 변경된 필드를 적용한 새로운 객체를 만들어냅니다.
 
-`evolve()`는 기존 값을 기반으로 새 인스턴스를 생성하고 변경값을 적용하며, 이 과정에서 `__init__()` 및 기존 validator들을 그대로 활용합니다. ([Attrs][4])
+`evolve()`는 기존 값을 기반으로 새 인스턴스를 생성하고 변경값을 적용하며, 이 과정에서 `__init__()` 및 기존 validator들을 그대로 활용합니다.
 
 ```python
 elite = attrs.evolve(

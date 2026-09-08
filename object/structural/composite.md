@@ -1,13 +1,3 @@
-전달해주신 원문의 내용, 코드, 구조, 부록 및 표를 하나도 빠뜨리지 않고 모두 유지하면서, 가독성과 명확성을 대폭 끌어올린 문체로 교정했습니다.
-
-### 문체 교정 방향
-
-1. **문장 간결화 및 서술어 정돈**: "~하는 것입니다", "~라 볼 수 있습니다"처럼 다소 장황하거나 모호한 표현을 매끄럽고 명확한 학술/기술 문서체("~합니다", "~이다")로 정돈했습니다.
-2. **기술 용어 및 가독성 개선**: 문맥상 어색했던 표현(예: "가상의 효과 시스템" $\rightarrow$ "효과 시스템", "자식 결과" $\rightarrow$ "하위 노드의 연산 결과")을 명확하게 가다듬고, 파이프라인이나 트리 흐름을 나타내는 시각 자료를 훨씬 직관적으로 다듬었습니다.
-3. **LaTeX 표준 준수**: 원문에 포함된 수학적/이론적 기호 및 수식을 표준 LaTeX($...$) 규칙에 맞게 깔끔하게 다듬었습니다.
-
----
-
 # 컴포지트 패턴 (Composite Pattern)
 
 ## 1. 패턴이 없을 때 발생하는 문제점 (The Problem)
@@ -580,11 +570,7 @@ class Soldier(Unit):
 
         prefix = " " * indent
 
-        print(
-            f"{prefix}"
-            f"- Soldier: {self.name} "
-            f"(전투력: {self.power})"
-        )
+        print(f'{prefix}- Soldier: {self.name} (전투력: {self.power})')
 
 
 # -------------------------------------------------------------------
@@ -616,10 +602,7 @@ class UnitGroup(Unit):
 
     def get_power(self) -> int:
 
-        return sum(
-            child.get_power()
-            for child in self._children
-        )
+        return sum((child.get_power() for child in self._children))
 
     def show(
         self,
@@ -628,16 +611,10 @@ class UnitGroup(Unit):
 
         prefix = " " * indent
 
-        print(
-            f"{prefix}"
-            f"+ {self.name} "
-            f"(총 전투력: {self.get_power()})"
-        )
+        print(f'{prefix}+ {self.name} (총 전투력: {self.get_power()})')
 
         for child in self._children:
-            child.show(
-                indent + 4
-            )
+            child.show(indent + 4)
 
 
 # -------------------------------------------------------------------
@@ -663,58 +640,34 @@ def print_unit_info(
 if __name__ == "__main__":
 
     # Leaf 생성
-    aragorn = Soldier(
-        name="아라곤",
-        power=100,
-    )
+    aragorn = Soldier(name='아라곤', power=100)
 
-    legolas = Soldier(
-        name="레골라스",
-        power=90,
-    )
+    legolas = Soldier(name='레골라스', power=90)
 
-    gimli = Soldier(
-        name="김리",
-        power=95,
-    )
+    gimli = Soldier(name='김리', power=95)
 
-    boromir = Soldier(
-        name="보로미르",
-        power=85,
-    )
+    boromir = Soldier(name='보로미르', power=85)
 
     # Composite 생성
-    fellowship = UnitGroup(
-        "반지원정대"
-    )
+    fellowship = UnitGroup('반지원정대')
 
     fellowship.add(aragorn)
     fellowship.add(legolas)
     fellowship.add(gimli)
 
     # 또 다른 Composite 생성
-    gondor = UnitGroup(
-        "곤도르 부대"
-    )
+    gondor = UnitGroup('곤도르 부대')
 
     gondor.add(boromir)
 
     # Composite 내부에 Composite 추가
-    allied_forces = UnitGroup(
-        "연합군"
-    )
+    allied_forces = UnitGroup('연합군')
 
-    allied_forces.add(
-        fellowship
-    )
+    allied_forces.add(fellowship)
 
-    allied_forces.add(
-        gondor
-    )
+    allied_forces.add(gondor)
 
-    print_unit_info(
-        allied_forces
-    )
+    print_unit_info(allied_forces)
 
 ```
 
@@ -793,6 +746,14 @@ $$\text{Component} = \text{Leaf} \;\vert\; \text{Composite}(\text{Component}, \t
 즉, 컴포지트 패턴의 객체 그래프는 재귀적 합 타입(Recursive Sum Type)을 객체지향 클래스 계층으로 표현한 형태입니다.
 
 > **Note**: 이하 부록에서는 이해를 돕기 위해 대수적 데이터 타입(ADT), 패턴 매칭, 고차 함수, 재귀 스킴(Recursion Scheme), 타입클래스, 영속적 자료구조, 효과 타입 등을 지원하는 **가상의 파이썬 확장 문법**으로 코드를 작성했습니다. (실제 실행 가능한 파이썬 코드가 아닙니다.)
+
+---
+
+### 부록을 읽는 순서와 전제
+
+전투력 계산에서 먼저 확인할 것은 두 가지입니다. 병사는 자신의 전투력을 반환하고, 부대는 자식 결과를 더합니다. 1~4절은 이 계산을 데이터 정의와 공통 순회 함수로 분리합니다. 그 뒤 5~7절에서 결과 결합과 불변 갱신을 다루고, 효과 결합과 `Fix[F]`가 나오는 10~11절은 선택적으로 읽어도 됩니다.
+
+ADT는 가능한 노드 종류를 나열한 타입이며, Fold는 자식의 계산 결과를 부모에서 결합하는 순회입니다. `Fix[F]`는 그 재귀 구조를 한 단계의 모양과 반복으로 분리하는 추가 추상화입니다. 같은 형태의 순회가 여러 번 반복될 때 도입 이점이 있으며, 작은 트리 하나에는 직접 재귀가 더 읽기 쉬울 수 있습니다.
 
 ---
 
@@ -997,7 +958,7 @@ def count_soldiers(
 
 ### 4. Composite의 재귀 연산을 Catamorphism으로 바라보기
 
-재귀적 ADT를 단일 결과값으로 축약(Collapse)하는 연산을 함수형 프로그래밍에서는 **Catamorphism**이라고 부릅니다.
+재귀적 ADT에서 각 하위 구조를 먼저 계산하고, 그 결과를 현재 노드의 결합 규칙에 전달하는 구조적 Fold를 **Catamorphism**이라고 부릅니다. 모든 재귀 함수를 뜻하는 것은 아니며, 결과 역시 숫자뿐 아니라 문자열이나 새로운 트리일 수 있습니다.
 
 ```text
 Recursive Tree ──> [Leaf 변환] ──> [Branch 결과 결합] ──> 최종 축약값
@@ -1031,8 +992,6 @@ Group
 2. 각 `Group` 단계에서 자식들의 값을 합산합니다.
 * 하위 Group: $80 + 70 = 150$
 * 최상위 Group: $100 + 90 + 150 = 340$
-
-
 
 객체지향 Composite 패턴의 재귀 메서드 호출(`child.get_power()`)은 이러한 Catamorphism의 구체적인 구현 형태 중 하나입니다.
 
@@ -1090,7 +1049,7 @@ where Monoid[T]:
 
 ```
 
-자식 노드를 재귀 탐색하고 결과를 합치는 패턴이 **Monoid**라는 대수적 구조로 완벽히 추상화됩니다.
+결과의 결합 연산이 결합 법칙을 만족하고 항등원이 있다면 **Monoid**로 일반화할 수 있습니다. 정수 합산에서는 덧셈과 0이 그 역할을 합니다. 뺄셈처럼 결합 순서에 따라 값이 바뀌거나 부모의 문맥이 필요한 계산은 이 모델에 그대로 들어맞지 않습니다.
 
 ---
 
@@ -1129,11 +1088,11 @@ def buff(
 
 ```
 
-이 변환 매핑 작업을 추상화한 개념이 바로 Functor (`map`)입니다.
+이 예제는 구조를 유지하는 값 변환을 보여줍니다. 이를 Functor로 일반화하려면 `Tree[A]`처럼 변환할 값의 타입을 매개변수로 두고, 항등 변환과 함수 합성에 관한 법칙을 만족하는 `map`을 정의해야 합니다. 고정된 `Unit` 타입의 `buff()` 하나가 곧 범용 Functor 구현인 것은 아닙니다.
 
 * **`map_tree(tree, transform)`**: 트리의 구조를 유지하며 Leaf 내부의 값만 변환 (**Functor**)
 * **`fold_tree(tree, combine)`**: 트리의 값들을 하나의 결과로 축약 (**Foldable**)
-* **`traverse(tree, action)`**: 각 노드에서 부수 효과(Side Effect)를 수행하며 구조를 유지/복원 (**Traversable**)
+* **`traverse(tree, action)`**: 각 값의 계산 결과가 가진 컨텍스트를 결합하여 `F[Tree[B]]`를 만드는 연산 (**Traversable**). 선택한 Applicative에 따라 실패 처리나 효과 결합 방식이 달라집니다.
 
 따라서 Composite 구조는 현대 함수형 추상화를 통해 **Functor**, **Foldable**, **Traversable** 인터페이스로 확장 및 정교화될 수 있습니다.
 
@@ -1203,14 +1162,14 @@ group_b.add(group_a)  # 순환 구조 형성!
 
 이 상태에서 `get_power()` 같은 재귀 연산을 실행하면 무한 루프에 빠져 스택 오버플로우가 발생합니다.
 
-반면, 불변 귀납적 ADT로 작성된 데이터 모델에서는 값 생성 시점에 이미 완결된 하위 노드만을 참조하므로, **구조적으로 순환 그래프 생성이 불가능**합니다.
+유한한 귀납적 ADT를 이미 완성된 하위 값만으로 생성하고, 가변 참조·재귀적 지연 바인딩·우회 생성 수단을 허용하지 않는 모델에서는 순환을 만들 수 없습니다. 여기서 보장은 불변성만이 아니라 **유한한 값의 생성 규칙**에서 나옵니다.
 
 ```text
 Unit₀ ──> Unit₁ ──> Unit₂
 
 ```
 
-가변 역참조(Back-reference)가 차단되어 있으므로, 고전 Composite에서 런타임 규약("트리에 순환을 만들지 말 것")으로 관리하던 위험 요소를 **타입 시스템 차원에서 근본적으로 제거**할 수 있습니다.
+이 제약을 지키는 모델은 순환 방지를 생성 규칙으로 옮깁니다. Python의 frozen dataclass나 불변 참조 하나만으로 객체 그래프 전체에 이 조건이 성립하지는 않습니다. 외부 데이터에서 트리를 복원할 때는 순환·깊이·노드 수의 검증이 여전히 필요할 수 있습니다.
 
 ---
 
@@ -1222,12 +1181,9 @@ Unit₀ ──> Unit₁ ──> Unit₂
 * 새로운 **노드 종류**를 추가하기 매우 쉽습니다. (`Vehicle` 클래스를 새로 정의하고 인터페이스만 구현하면 됨)
 * 새로운 **연산**을 추가하려면 모든 기존 클래스(`Soldier`, `UnitGroup` 등)를 수정해야 합니다.
 
-
 * **ADT + 패턴 매칭**:
 * 새로운 **연산**을 추가하기 매우 쉽습니다. (새로운 함수 하나만 작성하면 됨)
 * 새로운 **노드 종류**를 추가하려면 해당 ADT를 다루는 기존의 모든 `match` 분기 함수를 수정해야 합니다.
-
-
 
 | 접근 방식 | 새로운 노드 타입 추가 | 새로운 연산 함수 추가 |
 | --- | --- | --- |
@@ -1356,27 +1312,14 @@ $$\text{Tree}[A] = \text{Leaf}[A] \;\vert\; \text{Branch}(\text{List}[\text{Tree
 | **Leaf 요소 일괄 변환** | 각 클래스별 메서드 재정의 | `Functor` (`map`) 활용 |
 | **부수 효과 탐색** | 메서드 내부에서 직접 부수 효과 실행 | `Traversable`을 통한 효과 분리 |
 | **트리 상태 변경** | `add()` / `remove()`를 통한 가변 Mutation | `Persistent Tree Update` (불변 구조 공유) |
-| **순환 참조 위험** | 런타임 검증 필요 (무한 루프 위험 존재) | 귀납적 불변 타입 구조로 순환 발생을 근본적 차단 |
+| **순환 참조 위험** | 가변 연결을 검증해야 함 | 유한한 귀납적 값만 허용하는 생성 규칙에서 차단 |
 | **재귀 구조 추상화** | 도메인별 클래스 계층 직접 작성 | `Fix[F]` 고차 타입을 통한 일반화 |
 | **연산 추상화** | Component 내부에 메서드 추가 | `Algebra` + `Recursion Scheme` |
-| **주요 장점** | 부분과 전체의 균일하고 명확한 처리 | 재귀 구조와 연산 로직의 완벽한 독립성 |
+| **주요 장점** | 부분과 전체의 균일하고 명확한 처리 | 재귀 순회의 공통화와 노드별 계산의 분리 |
 | **주요 비용** | 공통 인터페이스 및 가변 상태 관리 오버헤드 | ADT, Fold, Recursion Scheme 등 개념적 학습 비용 |
 
 ---
 
-## 결론
+### 결론
 
-고전적인 **컴포지트 패턴**은 단일 객체인 `Leaf`와 집합 객체인 `Composite`가 동일한 `Component` 인터페이스를 구현하도록 함으로써, 클라이언트가 부분과 전체를 구분하지 않고 일관된 코드로 다룰 수 있게 해주는 대표적인 구조 패턴입니다.
-
-```text
-Component
-   ├─ Leaf
-   └─ Composite ──> Component*
-
-```
-
-현대적인 타입 시스템과 함수형 프로그래밍 시각에서 본 패턴의 구성 요소를 1:1로 대응해 보면 다음과 같습니다.
-
-$$\begin{aligned} \text{Component} &\;\longleftrightarrow\; \text{Recursive ADT} \\ \text{Leaf 클래스} &\;\longleftrightarrow\; \text{Leaf Constructor} \\ \text{Composite 클래스} &\;\longleftrightarrow\; \text{Recursive Branch Constructor} \\ \text{Composite 재귀 메서드} &\;\longleftrightarrow\; \text{Pattern Matching} \\ \text{자식 연산 결과 집계} &\;\longleftrightarrow\; \text{Monoid / Algebra} \\ \text{트리 구조 전체 순회} &\;\longleftrightarrow\; \text{Fold / Catamorphism} \\ \text{Leaf 요소 일괄 변환} &\;\longleftrightarrow\; \text{Functor} \\ \text{효과 기반의 트리 탐색} &\;\longleftrightarrow\; \text{Traversable} \\ \text{가변 자식 관리 (add/remove)} &\;\longleftrightarrow\; \text{Persistent Tree Update} \\ \text{재귀적 클래스 구조} &\;\longleftrightarrow\; \text{Fix}[F] \\ \text{재귀 탐색 알고리즘} &\;\longleftrightarrow\; \text{Recursion Scheme} \end{aligned}$$
-
-결국 컴포지트 패턴의 핵심은 "부분과 전체가 재귀적으로 구성되는 데이터 모델을 정립하고, 클라이언트가 트리의 깊이나 구체적인 노드 타입을 알지 못하더라도 일관된 방식으로 연산을 다룰 수 있게 만드는 것"으로 확장하여 정의할 수 있습니다.
+컴포지트는 단일 항목과 묶음을 같은 계약으로 처리합니다. 트리 순회가 반복되면 Fold로 공통화할 수 있고, 갱신 이력을 보존하려면 불변 구조를 검토할 수 있습니다. 순환과 깊이의 제약, 새로운 노드와 연산 중 어느 쪽이 자주 추가되는지를 기준으로 표현 방식을 선택합니다.

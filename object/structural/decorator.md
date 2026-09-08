@@ -1,7 +1,3 @@
-교정된 전체 내용을 다시 전달해 드립니다.
-
----
-
 # 데코레이터 패턴 (Decorator Pattern)
 
 ## 1. 패턴이 없을 때 발생하는 문제점 (The Problem)
@@ -687,11 +683,7 @@ def load_message(source: DataSource) -> str:
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-    source: DataSource = CompressionDecorator(
-        Base64Decorator(
-            FileDataSource("message.dat")
-        )
-    )
+    source: DataSource = CompressionDecorator(Base64Decorator(FileDataSource('message.dat')))
 
     save_message(source, "Decorator Pattern")
     message = load_message(source)
@@ -792,6 +784,14 @@ Handler
 즉, $\text{Handler} \rightarrow \text{Handler}$ 입니다.
 
 이 부록에서는 이를 설명하기 위해 고차 함수(Higher-Order Function), 매개변수적 다형성, 함수 합성, Endomorphism, 타입클래스, Phantom Type, Effect System, Algebraic Effect를 지원하는 가상의 Python 문법을 가정하여 설명합니다. (아래 코드는 실제 Python 문법이 아닙니다.)
+
+### 부록을 읽는 순서와 전제
+
+본문의 압축과 Base64는 적용 순서가 있는 변환입니다. 1~4절에서는 “입력과 출력 계약을 유지하며 감싼다”는 구조를 함수로 옮깁니다. 여기서 Endomorphism은 `T -> T` 형태의 변환을 뜻합니다. 7절의 Codec은 인코딩과 디코딩을 한 쌍으로 묶어 본문의 저장·복원 흐름을 설명합니다.
+
+Phantom Type과 Effect System은 각각 적용 기능의 기록과 실행 효과의 분리를 위한 선택적인 확장입니다. 기본 데코레이터를 구현하기 위한 필수 조건은 아니며, 잘못된 조합이나 반복되는 효과 관리가 실제 문제가 될 때 검토합니다.
+
+---
 
 ### 1. Decorator를 고차 함수로 표현하기
 
@@ -1071,7 +1071,9 @@ source = (
 
 컴파일러가 보는 타입은 `Source[Plain + Compressed + Encoded]`입니다.
 
-Decorator 구조에서 런타임 객체 그래프에만 존재하던 정보를 타입 상태로 끌어올린 것입니다.
+Phantom Type은 런타임 데이터에 직접 저장하지 않는 타입 표식입니다. 위 표식은 어떤 기능이 적용되었는지 기록하지만, `+`를 순서 없는 기능 집합으로 해석하면 압축과 인코딩의 순서를 구별하지 못합니다. 순서와 중복 적용까지 검사하려면 순서 있는 타입 목록이나 중첩 타입을 사용해야 합니다.
+
+또한 생성자를 제한하고 실제 변환이 성공한 경계에서만 표식을 바꿔야 합니다. 표식만 붙이고 데이터 변환을 생략하는 구현까지 타입 매개변수 자체가 검증하지는 않습니다.
 
 ### 7. 데이터 변환 Decorator를 Codec 합성으로 표현하기
 
@@ -1314,38 +1316,6 @@ Decorator A → Decorator B → Decorator C → Component
 
 ---
 
-## 결론
+### 결론
 
-고전적인 Decorator 패턴은 Component와 동일한 인터페이스를 구현하는 Decorator가 내부에 다른 Component를 보관하고 호출을 위임하면서 새로운 책임을 추가하여, 상속 계층을 증가시키지 않고 기능을 동적으로 조합하는 구조 패턴입니다.
-
-객체지향에서는 다음과 같은 재귀적인 Wrapper 구조로 표현됩니다.
-
-```text
-Component
-    ↑
-Decorator
-    │
-    └─ Component
-
-```
-
-여러 Decorator를 조합하면 아래와 같은 계층을 구성할 수 있습니다.
-
-```text
-Decorator A → Decorator B → Decorator C → Concrete Component
-
-```
-
-현대 타입 시스템과 함수형 패러다임에서는 이 개념을 더 일반적인 행동 변환의 합성으로 해석할 수 있습니다.
-
-* Component Wrapper $\leftrightarrow T \rightarrow T$
-* Concrete Decorator $\leftrightarrow$ Higher-Order Function
-* 동일 인터페이스 유지 $\leftrightarrow (A \rightarrow B) \rightarrow (A \rightarrow B)$
-* Decorator 중첩 $\leftrightarrow$ Function Composition
-* Decorator 조합 $\leftrightarrow$ Endomorphism Composition
-* 적용 기능 목록 $\leftrightarrow$ Phantom Type / Type State
-* 압축·인코딩 Decorator $\leftrightarrow$ Codec Composition
-* 로깅·Tracing Decorator $\leftrightarrow$ Effect Handler
-* 런타임 기능 추가 $\leftrightarrow$ Capability / Effect Composition
-
-현대적 관점에서 데코레이터 패턴의 본질을 추상화하면, "기존 값이나 계산의 외부 인터페이스를 보존하면서 독립적인 행동 변환을 단계적으로 추가하고, 그 변환들을 필요한 순서로 자유롭게 합성하는 기법"으로 확장하여 이해할 수 있습니다.
+데코레이터는 공통 계약을 유지하는 변환을 필요한 순서로 조합합니다. 본문의 저장 예제처럼 쓰기와 읽기가 반대 순서로 동작하는지 확인하고, 각 단계의 오류와 자원 관리 책임을 정해야 합니다. 객체 포장과 함수 합성 중 어느 쪽이 실제 상태와 계약을 더 명확히 드러내는지에 따라 선택합니다.

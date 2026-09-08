@@ -1,7 +1,3 @@
-제시해주신 플라이웨이트 패턴(Flyweight Pattern) 설명글을 이전과 동일한 구조, 가독성 높은 서식 및 표 스타일을 적용하여 정돈했습니다.
-
----
-
 # 플라이웨이트 패턴 (Flyweight Pattern)
 
 ## 1. 패턴이 없을 때 발생하는 문제점 (The Problem)
@@ -376,7 +372,7 @@ assert oak1 is oak2
 Flyweight Factory가 모든 객체를 강한 참조로 영구 보관하면 메모리 누수 문제가 발생할 수 있습니다.
 
 ```text
-한 번 생성된 Flyweight ──> Cache가 계속 참조 ──> 사용되지 않아도 메모리 유지 (누수)
+한 번 생성된 Flyweight ──> Cache가 계속 참조 ──> 사용되지 않아도 메모리 유지
 
 ```
 
@@ -496,11 +492,7 @@ class TreeTypeFactory:
         tree_type = self._types.get(key)
 
         if tree_type is None:
-            tree_type = TreeType(
-                name=name,
-                color=color,
-                texture=texture,
-            )
+            tree_type = TreeType(name=name, color=color, texture=texture)
             self._types[key] = tree_type
             print(f"[Factory] 새 TreeType 생성: {key}")
 
@@ -541,18 +533,8 @@ class Forest:
         color: str,
         texture: str,
     ) -> None:
-        tree_type = self._factory.get(
-            name=name,
-            color=color,
-            texture=texture,
-        )
-        self._trees.append(
-            Tree(
-                x=x,
-                y=y,
-                tree_type=tree_type,
-            )
-        )
+        tree_type = self._factory.get(name=name, color=color, texture=texture)
+        self._trees.append(Tree(x=x, y=y, tree_type=tree_type))
 
     def draw(self) -> None:
         for tree in self._trees:
@@ -586,6 +568,8 @@ if __name__ == "__main__":
 
 ```
 
+예제의 `texture`는 실제 이미지 데이터가 아닌 파일명 문자열입니다. 따라서 이 코드는 **나무 5개가 TreeType 2개를 공유하는 구조**를 보여주며, 대용량 텍스처의 메모리 절감량을 측정하지는 않습니다. 다음 비교 예제에서 중복 데이터의 크기를 별도로 확인합니다.
+
 ### 실행 결과
 
 ```text
@@ -618,7 +602,51 @@ Tree(x=80, y=120) ──┘
 ```
 
 > **`frozen=True` 사용 이유**:
-> Flyweight는 여러 Context가 동시에 공유하기 때문에 Intrinsic State를 임의로 수정할 수 있게 만들면 한 객체의 변경이 공유하는 모든 Tree에 예기치 않은 영향을 미칩니다. 따라서 공유되는 Intrinsic State는 불변(Immutable)으로 유지하는 것이 안전합니다.
+> 공유 상태가 바뀌면 이를 참조하는 모든 Tree에 영향을 줍니다. 예제는 문자열 필드와 `frozen=True`로 일반적인 필드 수정을 제한합니다. 다만 `frozen=True`가 리스트 등의 내부 데이터까지 불변으로 만들지는 않으므로, 필드를 추가할 때도 공유 데이터의 변경 가능성을 확인해야 합니다.
+
+---
+
+### 공유 전후의 데이터 크기 비교
+
+다음 독립 예제는 나무 100개가 두 종류의 텍스처를 사용하는 상황을 단순화합니다. 복제 방식은 매번 별도의 64 KiB 버퍼를 만들고, 공유 방식은 수종별로 만든 버퍼를 재사용합니다.
+
+```python
+TEXTURE_SIZE = 64 * 1024
+SPECIES = (0, 1) * 50
+
+
+def load_texture(species: int) -> bytes:
+    # 호출할 때마다 별도의 데이터 버퍼를 만듭니다.
+    return bytes([species + 1]) * TEXTURE_SIZE
+
+
+def payload_size(textures: list[bytes]) -> int:
+    # 같은 객체를 여러 번 참조하더라도 한 번만 셉니다.
+    unique = {id(texture): texture for texture in textures}
+    return sum(len(texture) for texture in unique.values())
+
+
+if __name__ == "__main__":
+    copied = [load_texture(species) for species in SPECIES]
+    pool = {species: load_texture(species) for species in set(SPECIES)}
+    shared = [pool[species] for species in SPECIES]
+
+    print("복제 데이터:", payload_size(copied), "bytes")
+    print("공유 데이터:", payload_size(shared), "bytes")
+    print("동일 수종 공유:", shared[0] is shared[2])
+    print("데이터 내용 일치:", copied == shared)
+```
+
+**실행 결과:**
+
+```text
+복제 데이터: 6553600 bytes
+공유 데이터: 131072 bytes
+동일 수종 공유: True
+데이터 내용 일치: True
+```
+
+이 조건에서는 텍스처 데이터의 총크기가 100개분에서 2개분으로 줄어듭니다. 이는 서로 다른 버퍼의 데이터 길이를 합한 값이며, 객체 헤더·참조·딕셔너리를 포함한 전체 메모리 사용량이나 실행 시간 측정값은 아닙니다. 실제 로더가 이미 텍스처를 공유한다면 이만큼의 추가 절감도 발생하지 않습니다.
 
 ---
 
@@ -628,13 +656,25 @@ Tree(x=80, y=120) ──┘
 
 > **주의**: 본 부록의 예제는 개념 설명을 위한 가상 패러다임 코드이며 실제 Python 코드가 아닙니다.
 
+### 부록을 읽는 순서와 전제
+
+본문에서 확인한 것은 같은 수종의 나무가 하나의 TreeType을 참조한다는 사실입니다. 1~3절은 공유해도 안전한 조건과 생성 진입점을, 9~10절은 공유 객체를 언제까지 보관할지를 다룹니다. Hash-Consing은 같은 하위 트리까지 공유하는 방법이며, 단순한 수종 공유에는 필요하지 않습니다.
+
+값의 동등성, 객체의 정체성, 메모리에서 살아 있는 기간을 구분해서 읽습니다. 같은 값을 다시 만들 수 있다는 것과 같은 객체가 계속 살아 있다는 것은 서로 다른 보장입니다.
+
+---
+
 ### 1. 불변 값에서는 공유가 관찰되지 않는다
 
-참조 투명성(Referential Transparency)을 만족하는 불변 값에서는 동일한 물리적 객체 두 개를 만드는 것과 하나의 공유 값으로 처리하는 것이 동일한 프로그램 동작을 보장합니다. Flyweight 공유가 불변 값과 최선의 합을 이루는 이유입니다.
+값의 내용만 관찰하고 객체 정체성, 약한 참조의 수명, 생성 부수효과를 관찰하지 않는 계산에서는 같은 불변 값을 복제하거나 공유해도 결과가 같습니다. 이것이 불변 값이 공유에 적합한 이유입니다.
+
+Python에서는 불변 객체도 `is`로 정체성을 비교할 수 있으므로, 불변이라는 조건만으로 공유 여부가 관찰되지 않는 것은 아닙니다.
 
 ### 2. Smart Constructor로 동일 값을 Canonicalize하기
 
-일반 생성자를 막고 스마트 생성자(Smart Constructor)만 공개하여 내부적으로 Intern Table을 활용하게 하면 `oak1 === oak2` 형태의 객체 동등성을 언어 레벨에서 보장할 수 있습니다.
+스마트 생성자는 생성과 검증을 한 진입점에 모은 함수입니다. 모든 생성이 같은 Intern Table을 거치고 키의 동등성 규칙이 일관되면, 같은 키에 대해 같은 객체를 반환하도록 구현할 수 있습니다.
+
+이 보장은 생성자가 관리하는 공유 범위에 한정됩니다. 여러 스레드가 접근한다면 조회와 생성을 하나의 동기화 구간으로 묶어야 합니다. 스마트 생성자라는 이름이나 타입 선언만으로 객체 정체성의 유일성이 보장되지는 않습니다.
 
 ### 3. Interning을 일반적인 타입 연산으로 표현하기
 
@@ -666,15 +706,17 @@ Context 객체조차 많다면 DOD(Data-Oriented Design) 관점에서 위치 배
 
 ### 8. 타입으로 Intrinsic State와 Extrinsic State를 구분하기
 
-타입 시스템이 `Shared[T]`가 오직 불변(Immutable) 타입일 때만 컴파일을 허용하도록 제약함으로써 "공유 상태는 수정할 수 없다"는 핵심 규칙을 컴파일 타임에 강제할 수 있습니다.
+이 가상 모델에서는 `Shared[T]`를 깊은 불변성이 확인된 타입에만 허용한다고 가정합니다. 내부 컬렉션이나 별칭을 통해 수정할 수 없다는 조건까지 만족해야 공유 상태의 변경을 정적으로 차단할 수 있습니다. Python의 `frozen=True`는 필드 재할당을 제한할 뿐, 내부의 가변 객체까지 불변으로 만들지는 않습니다.
 
 ### 9. Canonical Object Cache의 수명을 Region으로 제어하기
 
-Registry 수명을 앱 전체로 고정하면 메모리 누수가 발생하므로, `region LevelResources:`와 같이 특정 레벨/씬 단위로 플라이웨이트 객체의 공유 범위를 한정하고 수명이 끝나면 일괄 해제하도록 설계합니다.
+앱 전체에서 사용하는 수종을 제한된 수로 보관하는 Registry는 의도적인 장기 캐시일 수 있습니다. 반면 레벨마다 새로운 키가 생기고 다시 사용하지 않을 객체까지 강한 참조로 계속 보관하면 불필요한 메모리 보유가 누적됩니다.
+
+레벨 단위 자원이라면 `region LevelResources:`처럼 공유 범위를 제한할 수 있습니다. 이때 Region 밖으로 참조가 빠져나가지 않도록 검사하거나, 모든 사용자가 종료된 뒤 해제하는 규칙이 필요합니다. 범위를 좁히면 레벨 간 재사용은 줄어들고 재로딩 비용이 늘 수 있습니다.
 
 ### 10. Weak Interning으로 사용되지 않는 Flyweight 회수하기
 
-`WeakInternTable[Key, Value]` 구조를 통해 강력하게 참조하는 Context가 사라지면 가비지 컬렉터가 Flyweight 객체를 회수하도록 하여 메모리 절감과 누수 방지의 균형을 잡을 수 있습니다.
+`WeakInternTable[Key, Value]`는 다른 강한 참조가 사라진 공유 객체를 회수 가능하게 만듭니다. 회수 시점은 런타임에 달려 있으며, 다음 요청에서 같은 값의 새 객체를 생성할 수 있습니다. 따라서 살아 있는 객체 사이의 공유에는 적합하지만, 프로그램 전체 수명에 걸친 동일한 객체 정체성은 보장하지 않습니다.
 
 ### 11. Identity가 필요하지 않다면 Flyweight 자체가 구현 세부사항이 된다
 
@@ -707,16 +749,6 @@ Registry 수명을 앱 전체로 고정하면 메모리 누수가 발생하므�
 
 ---
 
-## 결론
+### 결론
 
-고전적인 플라이웨이트 패턴은 대량으로 존재하는 객체에서 반복되는 상태를 **Intrinsic State**로 분리하여 하나의 Flyweight 객체로 공유하고, 객체마다 달라지는 **Extrinsic State**만 별도로 유지함으로써 메모리 사용량을 줄이는 구조 패턴입니다.
-
-$$\text{Flyweight Factory} \leftrightarrow \text{Smart Constructor / Interning}$$
-
-$$\text{Intrinsic State} \leftrightarrow \text{Immutable Shared Value}$$
-
-$$\text{Extrinsic State} \leftrightarrow \text{Context Data}$$
-
-$$\text{Flyweight 공유} \leftrightarrow \text{Canonical Representation}$$
-
-현대적 관점에서 플라이웨이트 패턴의 본질을 추상화하면, "동일한 의미를 가진 반복 상태를 하나의 불변 canonical representation으로 정규화하고, 여러 논리적 객체가 이를 안전하게 공유하도록 하여 물리적인 데이터 중복을 제거하는 기법"으로 확장하여 이해할 수 있습니다.
+플라이웨이트는 반복되는 공통 상태와 개별 상태를 나누어 공유합니다. 도입 효과는 객체 수, 중복 데이터의 크기, 기존 로더의 공유 여부에 달려 있습니다. 공유 데이터의 변경 가능성, 키의 동등성, 동시 생성, 보관 수명을 함께 검토하고 실제 작업에서 메모리와 조회 비용을 확인합니다.

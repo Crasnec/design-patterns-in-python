@@ -77,7 +77,7 @@ class BadCheckoutService:
 
 ```
 
-이 경우 `CheckoutService`는 단순히 결제를 요청하는 것뿐 아니라 다음과 같은 레거시 시스템의 세부사항까지 알아야 합니다.
+이 경우 `CheckoutService`는 단순히 결제를 요청하는 것뿐 아니라 다음과 같은 레거시 시스템의 세부 사항까지 알아야 합니다.
 
 * `request_payment()`라는 메서드 이름
 * `amount`와 `currency_code`라는 매개변수 규칙
@@ -142,17 +142,11 @@ class RefundService:
 
 일반적인 구조는 다음과 같습니다.
 
-```text
-Client
-   │
-   ↓
-Target Interface
-   ↑
-   │ implements
-Adapter
-   │
-   ↓ delegates
-Adaptee
+```mermaid
+flowchart TD
+    client[Client] --> target[Target interface]
+    adapter[Adapter] -->|implements| target
+    adapter -->|delegates| adaptee[Adaptee]
 
 ```
 
@@ -298,21 +292,15 @@ PaymentResult
 ### Requests `HTTPAdapter`
 
 Requests의 `requests.adapters.HTTPAdapter`는 공식적으로 `urllib3`를 위한 내장 HTTP Adapter로 정의되어 있습니다.
-Requests의 `Session`은 Transport Adapter 인터페이스를 통해 요청을 보내며, `HTTPAdapter`가 이 인터페이스와 `urllib3` 기반 연결 관리 사이를 연결합니다. `HTTPAdapter`는 `BaseAdapter`를 구현하고 내부적으로 `urllib3`의 connection pool과 응답을 다룹니다. ([Requests](https://www.google.com/search?q=%5Bhttps%3A%2F%2Frequests.readthedocs.io%2F%5D%28https%3A%2F%2Frequests.readthedocs.io%2F%29))
+Requests의 `Session`은 Transport Adapter 인터페이스를 통해 요청을 보내며, `HTTPAdapter`가 이 인터페이스와 `urllib3` 기반 연결 관리 사이를 연결합니다. `HTTPAdapter`는 `BaseAdapter`를 구현하고 내부적으로 `urllib3`의 connection pool과 응답을 다룹니다.
 
 개념적으로 다음과 같이 볼 수 있습니다.
 
-```text
-Requests Session
-      │
-      ↓
-Transport Adapter Interface
-      │
-      ↓
-HTTPAdapter
-      │
-      ↓
-urllib3
+```mermaid
+flowchart TD
+    session[Requests Session] --> interface[Transport Adapter interface]
+    interface --> adapter[HTTPAdapter]
+    adapter --> urllib3[urllib3]
 
 ```
 
@@ -334,14 +322,14 @@ session.mount(
 
 ```
 
-즉 상위 `Session`은 HTTP 연결 구현의 세부사항을 직접 다루지 않고 Adapter 인터페이스를 통해 통신합니다. ([Requests](https://www.google.com/search?q=%5Bhttps%3A%2F%2Frequests.readthedocs.io%2F%5D%28https%3A%2F%2Frequests.readthedocs.io%2F%29))
+즉 상위 `Session`은 HTTP 연결 구현의 세부 사항을 직접 다루지 않고 Adapter 인터페이스를 통해 통신합니다.
 
 ---
 
 ### Python `logging.LoggerAdapter`
 
 Python 표준 라이브러리의 `LoggerAdapter`는 기존 `Logger` 객체를 감싸면서 문맥 정보를 추가하여 로깅할 수 있는 인터페이스를 제공합니다.
-`LoggerAdapter`는 `debug()`, `info()`, `warning()`, `error()` 등 `Logger`와 동일한 시그니처의 주요 메서드를 제공하고, 실제 로깅 작업은 내부 `Logger`에 위임합니다. 또한 `process()`를 통해 메시지와 키워드 인자를 변환하여 추가 문맥 정보를 삽입합니다. ([Python documentation](https://www.google.com/search?q=%5Bhttps%3A%2F%2Fdocs.python.org%2F3%2F%5D%28https%3A%2F%2Fdocs.python.org%2F3%2F%29))
+`LoggerAdapter`는 `debug()`, `info()`, `warning()`, `error()` 등 `Logger`와 같은 시그니처의 주요 메서드를 제공하고, 실제 로깅 작업은 내부 `Logger`에 위임합니다. 또한 `process()`로 메시지와 키워드 인자를 변환하여 추가 문맥 정보를 삽입합니다.
 
 ```python
 import logging
@@ -363,14 +351,11 @@ adapter.info(
 
 구조적으로 보면 다음과 같습니다.
 
-```text
-Client
-  ↓
-Logger-like Interface
-  ↓
-LoggerAdapter
-  ↓
-Logger
+```mermaid
+flowchart TD
+    client[Client] --> interface[Logger compatible interface]
+    interface --> adapter[LoggerAdapter]
+    adapter --> logger[Logger]
 
 ```
 
@@ -382,7 +367,7 @@ Logger
 ### Django / asgiref `sync_to_async()`
 
 Django의 비동기 지원에서 사용하는 `asgiref.sync.sync_to_async()`는 동기 함수를 감싸 비동기 함수처럼 호출할 수 있도록 변환합니다.
-Django 공식 문서에서는 `sync_to_async()`가 동기 함수를 받아 이를 감싸는 비동기 함수를 반환한다고 설명합니다. 또한 동기/비동기 경계를 넘을 때 threadlocals와 contextvars 값도 보존합니다. ([Django Project](https://www.google.com/search?q=%5Bhttps%3A%2F%2Fdocs.djangoproject.com%2F%5D%28https%3A%2F%2Fdocs.djangoproject.com%2F%29))
+Django 공식 문서에서는 `sync_to_async()`가 동기 함수를 받아 이를 감싸는 비동기 함수를 반환한다고 설명합니다. 동기·비동기 경계를 오갈 때 thread-local과 context variable 값도 보존합니다.
 
 ```python
 from asgiref.sync import sync_to_async
@@ -407,21 +392,15 @@ user = await async_load_user()
 
 구조적으로 보면 다음과 같습니다.
 
-```text
-Async Client
-     │
-     ↓
-async callable
-     │
-     ↓
-sync_to_async
-     │
-     ↓
-sync callable
+```mermaid
+flowchart TD
+    client[Async client] --> async_fn[Async callable]
+    async_fn --> adapter[sync_to_async]
+    adapter --> sync_fn[Sync callable]
 
 ```
 
-클래스 기반 GoF Adapter는 아니지만 서로 호환되지 않는 호출 프로토콜을 변환한다는 Adapter의 핵심 아이디어를 함수 수준에서 적용한 사례로 볼 수 있습니다. ([Django Project](https://www.google.com/search?q=%5Bhttps%3A%2F%2Fdocs.djangoproject.com%2F%5D%28https%3A%2F%2Fdocs.djangoproject.com%2F%29))
+클래스 기반 GoF Adapter는 아니지만 서로 호환되지 않는 호출 프로토콜을 변환한다는 Adapter의 핵심 아이디어를 함수 수준에 적용한 사례로 볼 수 있습니다.
 
 ---
 

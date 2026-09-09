@@ -113,16 +113,19 @@ $$N \times M$$
 
 먼저 두 변화 축을 분리합니다.
 
-```text
-Abstraction 계층
-    Shape
-      ├─ Circle
-      └─ Rectangle
+```mermaid
+flowchart LR
+    subgraph abstraction[Abstraction 계층]
+        shape[Shape] --> circle[Circle]
+        shape --> rectangle[Rectangle]
+    end
 
-Implementation 계층
-    Renderer
-      ├─ VectorRenderer
-      └─ RasterRenderer
+    subgraph implementation[Implementation 계층]
+        renderer[Renderer] --> vector[VectorRenderer]
+        renderer --> raster[RasterRenderer]
+    end
+
+    shape -. Bridge .-> renderer
 
 ```
 
@@ -431,168 +434,95 @@ classDiagram
 ```python
 from abc import ABC, abstractmethod
 
-
 # -------------------------------------------------------------------
 # 1. Implementor
 # -------------------------------------------------------------------
 
 class Renderer(ABC):
-
     @abstractmethod
-    def draw_circle(
-        self,
-        x: int,
-        y: int,
-        radius: int,
-    ) -> None:
+    def draw_circle(self, x: int, y: int, radius: int) -> None:
         pass
 
     @abstractmethod
-    def draw_rectangle(
-        self,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-    ) -> None:
+    def draw_rectangle(self, x: int, y: int, width: int, height: int) -> None:
         pass
-
 
 # -------------------------------------------------------------------
 # 2. Concrete Implementors
 # -------------------------------------------------------------------
 
 class VectorRenderer(Renderer):
-
-    def draw_circle(
-        self,
-        x: int,
-        y: int,
-        radius: int,
-    ) -> None:
-
+    def draw_circle(self, x: int, y: int, radius: int) -> None:
         print(f'[Vector] 원의 경로를 생성합니다. center=({x}, {y}), radius={radius}')
 
-    def draw_rectangle(
-        self,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-    ) -> None:
-
-        print(f'[Vector] 사각형 경로를 생성합니다. position=({x}, {y}), size=({width}, {height})')
-
+    def draw_rectangle(self, x: int, y: int, width: int, height: int) -> None:
+        print(
+            f'[Vector] 사각형 경로를 생성합니다. position=({x}, {y}), size=({width}, {height})'
+        )
 
 class RasterRenderer(Renderer):
-
-    def draw_circle(
-        self,
-        x: int,
-        y: int,
-        radius: int,
-    ) -> None:
-
+    def draw_circle(self, x: int, y: int, radius: int) -> None:
         print(f'[Raster] 원의 픽셀을 계산합니다. center=({x}, {y}), radius={radius}')
 
-    def draw_rectangle(
-        self,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-    ) -> None:
-
-        print(f'[Raster] 사각형의 픽셀을 채웁니다. position=({x}, {y}), size=({width}, {height})')
-
+    def draw_rectangle(self, x: int, y: int, width: int, height: int) -> None:
+        print(
+            f'[Raster] 사각형의 픽셀을 채웁니다. position=({x}, {y}), size=({width}, {height})'
+        )
 
 # -------------------------------------------------------------------
 # 3. Abstraction
 # -------------------------------------------------------------------
 
 class Shape(ABC):
-
-    def __init__(
-        self,
-        renderer: Renderer,
-    ):
+    def __init__(self, renderer: Renderer):
         self._renderer = renderer
 
     @abstractmethod
     def draw(self) -> None:
         pass
 
-
 # -------------------------------------------------------------------
 # 4. Refined Abstractions
 # -------------------------------------------------------------------
 
 class Circle(Shape):
-
-    def __init__(
-        self,
-        renderer: Renderer,
-        x: int,
-        y: int,
-        radius: int,
-    ):
+    def __init__(self, renderer: Renderer, x: int, y: int, radius: int):
         super().__init__(renderer)
-
         self.x = x
         self.y = y
         self.radius = radius
 
     def draw(self) -> None:
-
         self._renderer.draw_circle(x=self.x, y=self.y, radius=self.radius)
 
-
 class Rectangle(Shape):
-
-    def __init__(
-        self,
-        renderer: Renderer,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-    ):
+    def __init__(self, renderer: Renderer, x: int, y: int, width: int, height: int):
         super().__init__(renderer)
-
         self.x = x
         self.y = y
         self.width = width
         self.height = height
 
     def draw(self) -> None:
-
         self._renderer.draw_rectangle(
-            x=self.x,
-            y=self.y,
-            width=self.width,
-            height=self.height,
+            x=self.x, y=self.y, width=self.width, height=self.height
         )
-
 
 # -------------------------------------------------------------------
 # 5. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
     vector = VectorRenderer()
     raster = RasterRenderer()
-
     shapes: list[Shape] = [
         Circle(renderer=vector, x=10, y=20, radius=5),
         Circle(renderer=raster, x=30, y=40, radius=10),
         Rectangle(renderer=vector, x=0, y=0, width=100, height=50),
         Rectangle(renderer=raster, x=50, y=50, width=80, height=40),
     ]
-
     for shape in shapes:
         shape.draw()
-
 ```
 
 **실행 결과:**
@@ -627,7 +557,7 @@ if __name__ == "__main__":
 상속 방식은 조합을 명목상 타입으로 고정합니다 ($Circle \times Vector$).
 반면 Bridge는 두 축을 분리하여 선언하고 실행 시점에 곱(Product) 형태로 결합합니다.
 
-```python
+```text
 data Shape =
     Circle(CircleData)
   | Rectangle(RectangleData)
@@ -650,7 +580,7 @@ record Drawing:
 
 Renderer의 구체 타입을 타입 매개변수로 표현하면 도형과 구현체의 조합을 타입 검사기에 전달할 수 있습니다. 이것만으로 런타임 객체나 간접 호출이 없어지는 것은 아닙니다.
 
-```python
+```text
 trait Renderer[R]:
 
     def circle(
@@ -681,7 +611,7 @@ where Renderer[R]:
 
 실행 중 선택한 서로 다른 Renderer를 공통 타입으로 보관하려면 런타임 다형성을 사용할 수 있습니다. 아래의 실존 타입(Existential Type)은 “구체 타입 이름은 숨기되 Renderer 계약을 충족한다는 사실은 보관한다”는 의미입니다. 구체 타입을 활용하는 최적화와 런타임 선택의 유연성 사이에는 비용 차이가 있을 수 있습니다.
 
-```python
+```text
 type AnyRenderer =
     exists R.
         Renderer[R] => R
@@ -707,7 +637,7 @@ def select_renderer(
 
 도형의 종류가 미리 알려진 닫힌 집합(Closed set)이라면 상속 계층 대신 대수적 데이터 타입(ADT / Sum Type)을 사용할 수 있습니다.
 
-```python
+```text
 data Shape =
     Circle(x: Int, y: Int, radius: Int)
   | Rectangle(x: Int, y: Int, width: Int, height: Int)
@@ -740,7 +670,7 @@ where Renderer[R]:
 
 함수형 관점에서는 Renderer를 연산의 집합(Algebra)으로 정의하고, 도형은 이 연산을 소비하여 자신의 구조를 표현합니다.
 
-```python
+```text
 trait DrawingAlgebra[R]:
 
     def line(
@@ -773,7 +703,7 @@ Shape  ──(describe)──>  DrawCommand (IR)  ──(render)──>  [ SVG /
 
 ```
 
-```python
+```text
 data DrawCommand =
     Line(start: Point, end: Point)
   | Circle(center: Point, radius: Int)
@@ -802,7 +732,7 @@ def render_svg(
 
 모든 Renderer가 모든 기능을 지원하기 어려울 때는 거대한 단일 인터페이스 대신 기능 단위의 **Capability**로 분리합니다.
 
-```python
+```text
 trait BasicRenderer[R]:
 
     def line(...)
@@ -833,7 +763,7 @@ Abstraction은 요구하는 최소한의 Capability만 타입 제약으로 선�
 
 가장 단순한 형태의 Bridge는 두 변환 함수의 합성($\circ$) 문제로 축소됩니다.
 
-```python
+```text
 draw_svg =
     describe >> render_svg
 draw_png =

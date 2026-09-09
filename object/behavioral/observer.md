@@ -126,18 +126,11 @@ class AchievementTracker:
 
 ```python
 class Player:
-
     def __init__(
         self,
-        ...,
-        achievement_tracker:
-            AchievementTracker,
-    ):
-        ...
-
-        self.achievement_tracker = (
-            achievement_tracker
-        )
+        achievement_tracker: AchievementTracker,
+    ) -> None:
+        self.achievement_tracker = achievement_tracker
 
 ```
 
@@ -153,16 +146,15 @@ self.achievement_tracker.check(
 
 추가 기능이 계속 늘어나면 `Player`가 점점 더 많은 외부 객체를 알아야 합니다.
 
-```text
-Player
-  │
-  ├─ HealthBar
-  ├─ LowHealthWarning
-  ├─ BattleLogger
-  ├─ AchievementTracker
-  ├─ SoundEffectSystem
-  ├─ Analytics
-  └─ QuestTracker
+```mermaid
+flowchart LR
+    player[Player] --> health[HealthBar]
+    player --> warning[LowHealthWarning]
+    player --> logger[BattleLogger]
+    player --> achievement[AchievementTracker]
+    player --> sound[SoundEffectSystem]
+    player --> analytics[Analytics]
+    player --> quest[QuestTracker]
 
 ```
 
@@ -1491,7 +1483,7 @@ data NotificationResult[E] =
 
 ```
 
-실패 정책을 숨겨진 구현 세부사항이 아니라 타입과 API로 명시화할 수 있습니다.
+실패 정책을 숨겨진 구현 세부 사항이 아니라 타입과 API로 명시할 수 있습니다.
 
 ---
 
@@ -1624,13 +1616,15 @@ Observer는 본질적으로 **시간에 따라 변하는 값 사이의 의존 �
 
 고전적인 Observer 패턴은 **하나의 Subject가 자신의 상태 변화를 구독하고 있는 여러 Observer에게 자동으로 통지하면서, Subject와 Observer의 구체적인 구현 사이의 결합을 줄이는 행위 패턴**입니다.
 
-```text
-Subject State Change ───> notify() ───┬───> Observer A
-                                      ├───> Observer B
-                                      └───> Observer C
+```mermaid
+flowchart LR
+    change[Subject state change] --> notify[notify]
+    notify --> observer_a[Observer A]
+    notify --> observer_b[Observer B]
+    notify --> observer_c[Observer C]
 
 ```
 
 핵심은 Subject가 Observer의 구체적인 타입(UI, Logger, Analytics 등)을 몰라도 된다는 점입니다.
 
-현대 타입 시스템과 함수형 패러다임에서 옵저버 패턴의 본질을 추상화하면, "시간에 따라 발생하는 상태 변화나 사건을 하나의 명시적인 데이터 흐름으로 만들고, 그 변화에 관심 있는 여러 독립적인 계산이 발행자와 직접 결합되지 않은 채 구독·반응·변환할 수 있도록 만드는 기법"으로 확장하여 이해할 수 있습니다.
+옵저버의 핵심은 상태 변화나 사건을 여러 구독자에게 전달하되, 발행자가 구독자의 구체 구현을 알지 않도록 의존 방향을 제어하는 데 있습니다. 스트림이나 Signal은 같은 관계를 시간에 따른 데이터 흐름으로 표현합니다.

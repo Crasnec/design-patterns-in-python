@@ -168,7 +168,6 @@ class Armor(ABC):
     def defend(self) -> None:
         pass
 
-
 # -------------------------------------------------------------------
 # 2. 구체 제품 (Concrete Products)
 # -------------------------------------------------------------------
@@ -180,7 +179,6 @@ class ChainMail(Armor):
     def defend(self) -> None:
         print("[사슬 갑옷] 물리 데미지를 감소시킵니다.")
 
-
 class Wand(Weapon):
     def attack(self) -> None:
         print("[지팡이] 화염구 발사! (데미지: 80)")
@@ -188,7 +186,6 @@ class Wand(Weapon):
 class Robe(Armor):
     def defend(self) -> None:
         print("[마법 로브] 마법 보호막으로 흡수합니다.")
-
 
 # -------------------------------------------------------------------
 # 3. 추상 팩토리 (Abstract Factory)
@@ -201,7 +198,6 @@ class EquipmentFactory(ABC):
     @abstractmethod
     def create_armor(self) -> Armor:
         pass
-
 
 # -------------------------------------------------------------------
 # 4. 구체 팩토리 (Concrete Factories)
@@ -220,7 +216,6 @@ class MageEquipmentFactory(EquipmentFactory):
     def create_armor(self) -> Armor:
         return Robe()
 
-
 # -------------------------------------------------------------------
 # 5. 클라이언트
 # -------------------------------------------------------------------
@@ -236,7 +231,6 @@ class Hero:
         self.weapon.attack()
         self.armor.defend()
 
-
 # -------------------------------------------------------------------
 # 실행 (Usage)
 # -------------------------------------------------------------------
@@ -244,11 +238,9 @@ if __name__ == "__main__":
     warrior_factory = WarriorEquipmentFactory()
     hero_warrior = Hero(name="아라곤", factory=warrior_factory)
     hero_warrior.show_equipment()
-
     mage_factory = MageEquipmentFactory()
     hero_mage = Hero(name="간달프", factory=mage_factory)
     hero_mage.show_equipment()
-
 ```
 
 ---

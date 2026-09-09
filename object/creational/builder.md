@@ -282,7 +282,6 @@ classDiagram
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
-
 # -------------------------------------------------------------------
 # 1. 제품 (Product)
 # -------------------------------------------------------------------
@@ -302,155 +301,97 @@ class Hero:
         print(f"\n=== {self.name} ===")
         print(f"직업: {self.job}")
         print(f"레벨: {self.level}")
-        print(
-            f"힘: {self.strength}, "
-            f"지능: {self.intelligence}"
-        )
+        print(f"힘: {self.strength}, " f"지능: {self.intelligence}")
         print(f"무기: {self.weapon}")
         print(f"방어구: {self.armor}")
         print(f"스킬: {', '.join(self.skills)}")
-
 
 # -------------------------------------------------------------------
 # 2. 빌더 인터페이스 (Builder)
 # -------------------------------------------------------------------
 
 class CharacterBuilder(ABC):
-
     @abstractmethod
     def reset(self) -> "CharacterBuilder":
         pass
 
     @abstractmethod
-    def set_identity(
-        self,
-        name: str,
-        job: str,
-    ) -> "CharacterBuilder":
+    def set_identity(self, name: str, job: str) -> "CharacterBuilder":
         pass
 
     @abstractmethod
     def set_stats(
-        self,
-        level: int,
-        strength: int,
-        intelligence: int,
+        self, level: int, strength: int, intelligence: int
     ) -> "CharacterBuilder":
         pass
 
     @abstractmethod
-    def set_equipment(
-        self,
-        weapon: str,
-        armor: str,
-    ) -> "CharacterBuilder":
+    def set_equipment(self, weapon: str, armor: str) -> "CharacterBuilder":
         pass
 
     @abstractmethod
-    def add_skill(
-        self,
-        skill: str,
-    ) -> "CharacterBuilder":
+    def add_skill(self, skill: str) -> "CharacterBuilder":
         pass
 
     @abstractmethod
     def build(self) -> Hero:
         pass
-
 
 # -------------------------------------------------------------------
 # 3. 구체 빌더 (Concrete Builder)
 # -------------------------------------------------------------------
 
 class DefaultHeroBuilder(CharacterBuilder):
-
     def __init__(self):
         self.reset()
 
     def reset(self) -> "DefaultHeroBuilder":
         self._name: str | None = None
         self._job: str | None = None
-
         self._level = 1
         self._strength = 10
         self._intelligence = 10
-
         self._weapon: str | None = None
         self._armor: str | None = None
-
         self._skills: list[str] = []
-
         return self
 
-    def set_identity(
-        self,
-        name: str,
-        job: str,
-    ) -> "DefaultHeroBuilder":
-
+    def set_identity(self, name: str, job: str) -> "DefaultHeroBuilder":
         self._name = name
         self._job = job
-
         return self
 
     def set_stats(
-        self,
-        level: int,
-        strength: int,
-        intelligence: int,
+        self, level: int, strength: int, intelligence: int
     ) -> "DefaultHeroBuilder":
-
         self._level = level
         self._strength = strength
         self._intelligence = intelligence
-
         return self
 
-    def set_equipment(
-        self,
-        weapon: str,
-        armor: str,
-    ) -> "DefaultHeroBuilder":
-
+    def set_equipment(self, weapon: str, armor: str) -> "DefaultHeroBuilder":
         self._weapon = weapon
         self._armor = armor
-
         return self
 
-    def add_skill(
-        self,
-        skill: str,
-    ) -> "DefaultHeroBuilder":
-
+    def add_skill(self, skill: str) -> "DefaultHeroBuilder":
         self._skills.append(skill)
-
         return self
 
     def build(self) -> Hero:
-
         # 완성 시점에 필수 상태 검증
         if self._name is None:
             raise ValueError("이름이 설정되지 않았습니다.")
-
         if self._job is None:
             raise ValueError("직업이 설정되지 않았습니다.")
-
         if self._weapon is None:
             raise ValueError("무기가 설정되지 않았습니다.")
-
         if self._armor is None:
             raise ValueError("방어구가 설정되지 않았습니다.")
-
         if self._job == "warrior" and self._strength < 15:
-            raise ValueError(
-                "전사는 최소 힘 15가 필요합니다."
-            )
-
+            raise ValueError("전사는 최소 힘 15가 필요합니다.")
         if self._job == "mage" and self._intelligence < 15:
-            raise ValueError(
-                "마법사는 최소 지능 15가 필요합니다."
-            )
-
+            raise ValueError("마법사는 최소 지능 15가 필요합니다.")
         hero = Hero(
             name=self._name,
             job=self._job,
@@ -461,67 +402,36 @@ class DefaultHeroBuilder(CharacterBuilder):
             armor=self._armor,
             skills=list(self._skills),
         )
-
         # 다음 객체 생성 시 이전 상태가 누출되지 않도록 초기화
         self.reset()
-
         return hero
-
 
 # -------------------------------------------------------------------
 # 4. 디렉터 (Director)
 # -------------------------------------------------------------------
 
 class HeroDirector:
-
-    def construct_warrior(
-        self,
-        builder: CharacterBuilder,
-        name: str,
-    ) -> Hero:
-
+    def construct_warrior(self, builder: CharacterBuilder, name: str) -> Hero:
         return (
-            builder
-            .reset()
+            builder.reset()
             .set_identity(name, "warrior")
-            .set_stats(
-                level=20,
-                strength=25,
-                intelligence=8,
-            )
-            .set_equipment(
-                weapon="LongSword",
-                armor="PlateArmor",
-            )
+            .set_stats(level=20, strength=25, intelligence=8)
+            .set_equipment(weapon="LongSword", armor="PlateArmor")
             .add_skill("Slash")
             .add_skill("Guard")
             .build()
         )
 
-    def construct_mage(
-        self,
-        builder: CharacterBuilder,
-        name: str,
-    ) -> Hero:
-
+    def construct_mage(self, builder: CharacterBuilder, name: str) -> Hero:
         return (
-            builder
-            .reset()
+            builder.reset()
             .set_identity(name, "mage")
-            .set_stats(
-                level=20,
-                strength=7,
-                intelligence=28,
-            )
-            .set_equipment(
-                weapon="WizardStaff",
-                armor="MagicRobe",
-            )
+            .set_stats(level=20, strength=7, intelligence=28)
+            .set_equipment(weapon="WizardStaff", armor="MagicRobe")
             .add_skill("Fireball")
             .add_skill("ManaShield")
             .build()
         )
-
 
 # -------------------------------------------------------------------
 # 5. 실행 (Usage)
@@ -530,41 +440,21 @@ class HeroDirector:
 if __name__ == "__main__":
     builder = DefaultHeroBuilder()
     director = HeroDirector()
-
-    warrior = director.construct_warrior(
-        builder,
-        "아라곤",
-    )
-
-    mage = director.construct_mage(
-        builder,
-        "간달프",
-    )
-
+    warrior = director.construct_warrior(builder, "아라곤")
+    mage = director.construct_mage(builder, "간달프")
     warrior.show_info()
     mage.show_info()
-
     # Director 없이 클라이언트가 직접 조립하는 경우
     custom_hero = (
-        builder
-        .reset()
+        builder.reset()
         .set_identity("레골라스", "archer")
-        .set_stats(
-            level=18,
-            strength=17,
-            intelligence=12,
-        )
-        .set_equipment(
-            weapon="ElvenBow",
-            armor="LeatherArmor",
-        )
+        .set_stats(level=18, strength=17, intelligence=12)
+        .set_equipment(weapon="ElvenBow", armor="LeatherArmor")
         .add_skill("DoubleShot")
         .add_skill("EagleEye")
         .build()
     )
-
     custom_hero.show_info()
-
 ```
 
 ---
@@ -604,7 +494,7 @@ if self._name is None:
 
 하지만 강력한 타입 시스템에서는 "이름이 설정되었는가?"라는 상태 자체를 타입 매개변수로 명시할 수 있습니다.
 
-```python
+```text
 data Missing
 data Set[T]
 
@@ -638,7 +528,7 @@ def empty_hero() -> HeroDraft[Missing, Missing, Missing, Missing]:
 
 이름을 설정하는 함수는 단순히 내부 필드를 변경하는 것이 아니라 타입 상태 자체를 전환합니다.
 
-```python
+```text
 def set_name[J, S, E](
     draft: HeroDraft[Missing, J, S, E],
     name: NonEmptyStr,
@@ -678,7 +568,7 @@ def build(
 
 이 함수에는 모든 필드가 `Set` 상태인 값만 전달할 수 있습니다. 따라서 아래 코드는 타입 컴파일 에러를 발생시킵니다.
 
-```python
+```text
 draft = (
     empty_hero()
     |> set_name("아라곤")
@@ -710,7 +600,7 @@ found:    HeroDraft[Set[str], Set[Job], Missing, Missing]
 
 전통적인 Builder에서는 이 조합을 `build()` 내부 조건문으로 검사합니다. 반면 현대 타입 시스템에서는 직업과 장비 간의 관계 자체를 타입으로 바인딩할 수 있습니다.
 
-```python
+```text
 data Job = Warrior | Mage
 
 data EquipmentFor[J]:
@@ -727,7 +617,7 @@ record HeroDraft[J, NameState, StatState, EquipmentState]:
 
 장비 설정 함수는 선택된 직업 `J`에 부합하는 장비만 허용합니다.
 
-```python
+```text
 def equip[J, N, S](
     draft: HeroDraft[J, N, S, Missing],
     equipment: EquipmentFor[J],
@@ -762,7 +652,7 @@ found:    EquipmentFor[Mage]
 
 타입 상태만으로 표현하기 어려운 값 범위 조건(예: 레벨 1~100, 양수 스탯)은 정제 타입을 통해 정의할 수 있습니다.
 
-```python
+```text
 type Level = Int where 1 <= value <= 100
 type StatPoint = Int where value >= 0
 type NonEmptyStr = str where len(value) > 0
@@ -793,7 +683,7 @@ Type Error:
 
 함수형 언어에서는 Builder 객체가 내부 상태를 계속 변경(Mutation)할 필요가 없습니다. 각 생성 단계를 **불변 데이터를 다른 불변 데이터로 변환하는 순수 함수**로 구현하기 때문입니다.
 
-```python
+```text
 def add_skill[J, N, S, E](
     draft: HeroDraft[J, N, S, E],
     skill: Skill,
@@ -804,7 +694,7 @@ def add_skill[J, N, S, E](
 
 파이프 연산자(`|>`)와 조합하면 다음과 같이 작성할 수 있습니다.
 
-```python
+```text
 hero = (
     empty_hero()
     |> set_name("아라곤")
@@ -829,7 +719,7 @@ hero = (
 
 고전적 Builder의 Director는 자주 사용되는 생성 절차를 클래스로 캡슐화합니다. 함수형 패러다임에서는 이를 가변 상태 객체 없이 함수 합성(Function Composition)으로 깔끔하게 대체할 수 있습니다.
 
-```python
+```text
 def warrior_recipe(name: NonEmptyStr) -> Hero:
     return (
         empty_hero()
@@ -879,7 +769,7 @@ def build[J](draft: HeroDraft[Ready[J]]) -> Hero[J]: ...
 
 올바르지 않은 순서로 함수를 호출할 경우 런타임 오류가 아닌 타입 검사 오류로 차단됩니다.
 
-```python
+```text
 empty_hero() |> equip(WarriorEquipment(Sword(), ChainMail()))
 
 ```
@@ -902,7 +792,7 @@ but received:  HeroDraft[Empty]
 반면 타입 시스템 중심 설계의 핵심 목표는 다음과 같습니다.
 **"잘못된 상태를 검사하여 제거하는 것이 아니라, 잘못된 상태 자체가 표현 불가능하도록 타입을 정의한다."**
 
-```python
+```text
 data ReadyHero[J]:
     Ready(
         name: NonEmptyStr,

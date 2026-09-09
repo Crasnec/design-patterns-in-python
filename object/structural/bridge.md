@@ -79,14 +79,12 @@ class RasterRectangle(Shape):
 
 현재 필요한 클래스 조합은 다음과 같습니다.
 
-```text
-Circle
-  ├─ VectorCircle
-  └─ RasterCircle
-
-Rectangle
-  ├─ VectorRectangle
-  └─ RasterRectangle
+```mermaid
+flowchart TD
+    circle[Circle] --> vector_circle[VectorCircle]
+    circle --> raster_circle[RasterCircle]
+    rectangle[Rectangle] --> vector_rectangle[VectorRectangle]
+    rectangle --> raster_rectangle[RasterRectangle]
 
 ```
 
@@ -282,9 +280,9 @@ Rectangle ────────┘
 
 * **독립적인 확장:** Abstraction과 Implementation 계층을 서로 독립적으로 확장할 수 있습니다.
 * **클래스 수 감소:** 두 변화 축의 모든 조합을 별도의 클래스로 만들 필요가 없습니다 ($N \times M \rightarrow N + M$).
-* **상속보다 합성 활용:** 구현 세부사항을 상속 계층에 고정하지 않고 객체 참조를 통해 연결하므로 결합도가 낮아집니다.
+* **상속보다 합성 활용:** 구현 세부 사항을 상속 계층에 고정하지 않고 객체 참조를 통해 연결하므로 결합도가 낮아집니다.
 * **런타임 구현 교체 가능:** 필요하다면 동일한 Abstraction에 다른 Implementation 객체를 런타임에 동적으로 주입할 수 있습니다.
-* **구현 세부사항 은닉:** 클라이언트는 Renderer의 구체 구현을 직접 다루지 않고 상위 Abstraction을 통해 사용합니다.
+* **구현 세부 사항 은닉:** 클라이언트는 Renderer의 구체 구현을 직접 다루지 않고 상위 Abstraction을 통해 사용합니다.
 * **SRP(단일 책임 원칙) 향상:** `Circle`은 도형의 논리적 의미를, `VectorRenderer`는 Vector 렌더링 방식을 각각 독립적으로 담당합니다.
 
 ### 단점 (Cons)

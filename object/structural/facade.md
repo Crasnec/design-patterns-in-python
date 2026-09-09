@@ -196,18 +196,17 @@ GameFacade.start_game()
 
 내부에서는 여전히 여러 객체가 협력합니다.
 
-```text
-GameFacade.start_game()
-        │
-        ├─ ConfigLoader.load()
-        ├─ AssetManager.initialize()
-        ├─ AssetManager.load_common_assets()
-        ├─ Renderer.initialize()
-        ├─ Renderer.create_window()
-        ├─ AudioSystem.initialize()
-        ├─ AudioSystem.play_bgm()
-        ├─ GameEngine.initialize()
-        └─ GameEngine.start()
+```mermaid
+flowchart TD
+    start[GameFacade.start_game] --> config[ConfigLoader.load]
+    config --> asset_init[AssetManager.initialize]
+    asset_init --> asset_load[AssetManager.load_common_assets]
+    asset_load --> renderer_init[Renderer.initialize]
+    renderer_init --> window[Renderer.create_window]
+    window --> audio_init[AudioSystem.initialize]
+    audio_init --> bgm[AudioSystem.play_bgm]
+    bgm --> engine_init[GameEngine.initialize]
+    engine_init --> engine_start[GameEngine.start]
 
 ```
 
@@ -444,13 +443,11 @@ class GameConfig:
     resolution: str
     volume: int
 
-
 # 2. Subsystem - Config
 class ConfigLoader:
     def load(self, path: str) -> GameConfig:
         print(f"[Config] {path} 로딩")
         return GameConfig(resolution="1920x1080", volume=80)
-
 
 # 3. Subsystem - Asset
 class AssetManager:
@@ -463,7 +460,6 @@ class AssetManager:
     def release(self) -> None:
         print("[Asset] 해제")
 
-
 # 4. Subsystem - Audio
 class AudioSystem:
     def initialize(self, volume: int) -> None:
@@ -474,7 +470,6 @@ class AudioSystem:
 
     def shutdown(self) -> None:
         print("[Audio] 종료")
-
 
 # 5. Subsystem - Renderer
 class Renderer:
@@ -487,7 +482,6 @@ class Renderer:
     def shutdown(self) -> None:
         print("[Renderer] 종료")
 
-
 # 6. Subsystem - Game Engine
 class GameEngine:
     def initialize(self) -> None:
@@ -498,7 +492,6 @@ class GameEngine:
 
     def stop(self) -> None:
         print("[Engine] 게임 종료")
-
 
 # 7. Facade
 class GameFacade:
@@ -519,16 +512,12 @@ class GameFacade:
     def start_game(self, config_path: str) -> None:
         print("\n=== 게임 시작 준비 ===")
         config = self._config_loader.load(config_path)
-
         self._asset_manager.initialize()
         self._asset_manager.load_common_assets()
-
         self._renderer.initialize(config.resolution)
         self._renderer.create_window()
-
         self._audio_system.initialize(config.volume)
         self._audio_system.play_bgm()
-
         self._game_engine.initialize()
         self._game_engine.start()
         print("=== 게임 시작 완료 ===")
@@ -541,13 +530,11 @@ class GameFacade:
         self._asset_manager.release()
         print("=== 게임 종료 완료 ===")
 
-
 # 8. 클라이언트
 def run_game(facade: GameFacade) -> None:
     facade.start_game("game.json")
     # 게임 실행...
     facade.shutdown_game()
-
 
 # 9. 실행 (Usage)
 if __name__ == "__main__":
@@ -558,9 +545,7 @@ if __name__ == "__main__":
         renderer=Renderer(),
         game_engine=GameEngine(),
     )
-
     run_game(facade)
-
 ```
 
 본문 예제는 초기화와 종료의 정상 순서를 보여줍니다. 실제 게임에서는 중간 초기화 실패 시 이미 확보한 자원을 역순으로 정리해야 하며, 시작·종료의 중복 호출도 처리해야 합니다. `try/finally`나 컨텍스트 관리자로 정리를 보장하되, 아직 초기화되지 않은 자원을 해제하지 않도록 획득 상태를 함께 관리합니다.
@@ -642,7 +627,7 @@ Capability는 연산을 사용할 수 있는 권한을 전달하는 값이고, T
 
 전체 시스템이 가지고 있는 무수히 많은 기능(`config.reload`, `assets.invalidate_cache`, `renderer.change_backend` 등)을 일반 클라이언트에게 모두 개방할 필요는 없습니다.
 
-```python
+```text
 # 가상 코드: 좁은 인터페이스 정의
 protocol GameRuntime:
     def start(config_path: str) -> Unit
@@ -676,7 +661,7 @@ facade.rebuild_shaders()
 
 최소 권한 원칙(Principle of Least Authority)에 따라, 전체 애플리케이션 환경의 기능 중 필요한 역량(Capability)만 뽑아내어 제공합니다.
 
-```python
+```text
 capability GameRuntime:
     def start(config: ConfigPath) -> Unit
     def stop() -> Unit
@@ -692,7 +677,7 @@ def launcher(using runtime: GameRuntime) -> Unit:
 
 Facade가 반드시 클래스 형태의 객체일 필요는 없습니다. 객체지향의 `Facade Object + Method` 조합은 함수형 패러다임에서 **고수준 조합 함수(High-level Function)** 하나로 깔끔하게 대치될 수 있습니다.
 
-```python
+```text
 def start_game(path: ConfigPath, using subsystems...) -> RunningGame:
     # 내부 서브시스템 초기화 수행...
     return RunningGame(...)
@@ -710,7 +695,7 @@ game = start_game("game.json")
 
 불투명 타입의 내부 표현을 외부에서 열어볼 수 없도록 강제하는 언어에서는 모듈 경계로 구현을 숨길 수 있습니다. 아래는 그런 모듈 시스템을 가정한 예시이며, Python 모듈의 밑줄 이름 규약과는 보장 수준이 다릅니다.
 
-```python
+```text
 module Game:
     opaque Runtime
     def create() -> Runtime
@@ -724,7 +709,7 @@ module Game:
 
 런타임에 "이미 시작된 게임을 다시 시작하려 함" 등의 오류를 방지하기 위해 타입 상태(Typestate) 기법을 결합할 수 있습니다.
 
-```python
+```text
 # 가상 문법: consume은 이전 소유권을 넘기며, 해당 값의 재사용을 금지합니다.
 def start(consume facade: GameFacade[Created], config: ConfigPath) -> GameFacade[Running]: ...
 def stop(consume facade: GameFacade[Running]) -> GameFacade[Stopped]: ...

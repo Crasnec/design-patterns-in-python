@@ -153,19 +153,11 @@ def traverse(
 이터레이터 패턴은 "컬렉션의 내부 표현을 노출하지 않고 요소에 순차적으로 접근할 수 있는 별도의 Iterator 객체를 제공하는 방식"으로 이 문제를 해결합니다.
 일반적인 구조는 다음과 같습니다.
 
-```text
-Client
-   │
-   ↓
-Aggregate
-   │
-   └─ create_iterator()
-            │
-            ↓
-         Iterator
-            │
-            ↓
-       Collection Data
+```mermaid
+flowchart TD
+    client[Client] --> aggregate[Aggregate]
+    aggregate -->|create_iterator| iterator[Iterator]
+    iterator --> data[Collection data]
 
 ```
 
@@ -544,18 +536,12 @@ for user in (
 
 동작 메커니즘은 다음과 같습니다.
 
-```text
-Database Result
-      │
-      ↓
-QuerySet.iterator()
-      │
-      ↓
-row
-row
-row
-row
-...
+```mermaid
+flowchart TD
+    result[Database result] --> iterator[QuerySet.iterator]
+    iterator -->|next| row_1[row]
+    row_1 -->|next| row_2[row]
+    row_2 -. 반복 .-> more[...]
 
 ```
 
@@ -577,16 +563,10 @@ async for message in stream:
 
 동작 흐름:
 
-```text
-Async Stream
-     │
-     ↓
-__anext__()
-     │
-   await
-     │
-     ↓
-Next Value
+```mermaid
+flowchart TD
+    stream[Async stream] --> anext[__anext__]
+    anext -->|await| value[Next value]
 
 ```
 
@@ -677,7 +657,6 @@ Python 환경에서는 `has_next()` 구문보다 언어 표준 프로토콜인 `
 from dataclasses import dataclass
 from typing import Iterator
 
-
 # -------------------------------------------------------------------
 # 1. Element
 # -------------------------------------------------------------------
@@ -687,177 +666,76 @@ class Hero:
     name: str
     level: int
 
-
 # -------------------------------------------------------------------
 # 2. Aggregate
 # -------------------------------------------------------------------
 
 class Party:
+    def __init__(self):
+        self._members: list[Hero] = []
 
-    def __init__(
-        self,
-    ):
-        self._members: list[
-            Hero
-        ] = []
+    def add(self, hero: Hero) -> None:
+        self._members.append(hero)
 
-    def add(
-        self,
-        hero: Hero,
-    ) -> None:
+    def __iter__(self) -> Iterator[Hero]:
+        return PartyIterator(self._members)
 
-        self._members.append(
-            hero
-        )
-
-    def __iter__(
-        self,
-    ) -> Iterator[Hero]:
-
-        return PartyIterator(
-            self._members
-        )
-
-    def reverse(
-        self,
-    ) -> Iterator[Hero]:
-
-        return ReversePartyIterator(
-            self._members
-        )
-
+    def reverse(self) -> Iterator[Hero]:
+        return ReversePartyIterator(self._members)
 
 # -------------------------------------------------------------------
 # 3. Concrete Iterator - Forward
 # -------------------------------------------------------------------
 
-class PartyIterator(
-    Iterator[Hero]
-):
-
-    def __init__(
-        self,
-        members: list[Hero],
-    ):
+class PartyIterator(Iterator[Hero]):
+    def __init__(self, members: list[Hero]):
         self._members = members
         self._index = 0
 
-    def __iter__(
-        self,
-    ) -> "PartyIterator":
-
+    def __iter__(self) -> "PartyIterator":
         return self
 
-    def __next__(
-        self,
-    ) -> Hero:
-
-        if (
-            self._index
-            >= len(
-                self._members
-            )
-        ):
+    def __next__(self) -> Hero:
+        if self._index >= len(self._members):
             raise StopIteration
-
-        hero = self._members[
-            self._index
-        ]
-
+        hero = self._members[self._index]
         self._index += 1
-
         return hero
-
 
 # -------------------------------------------------------------------
 # 4. Concrete Iterator - Reverse
 # -------------------------------------------------------------------
 
-class ReversePartyIterator(
-    Iterator[Hero]
-):
-
-    def __init__(
-        self,
-        members: list[Hero],
-    ):
+class ReversePartyIterator(Iterator[Hero]):
+    def __init__(self, members: list[Hero]):
         self._members = members
+        self._index = len(members) - 1
 
-        self._index = (
-            len(members) - 1
-        )
-
-    def __iter__(
-        self,
-    ) -> "ReversePartyIterator":
-
+    def __iter__(self) -> "ReversePartyIterator":
         return self
 
-    def __next__(
-        self,
-    ) -> Hero:
-
+    def __next__(self) -> Hero:
         if self._index < 0:
             raise StopIteration
-
-        hero = self._members[
-            self._index
-        ]
-
+        hero = self._members[self._index]
         self._index -= 1
-
         return hero
-
 
 # -------------------------------------------------------------------
 # 5. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
     party = Party()
-
-    party.add(
-        Hero(
-            name="아라곤",
-            level=20,
-        )
-    )
-
-    party.add(
-        Hero(
-            name="레골라스",
-            level=18,
-        )
-    )
-
-    party.add(
-        Hero(
-            name="김리",
-            level=19,
-        )
-    )
-
-    print(
-        "=== 정방향 ==="
-    )
-
+    party.add(Hero(name="아라곤", level=20))
+    party.add(Hero(name="레골라스", level=18))
+    party.add(Hero(name="김리", level=19))
+    print("=== 정방향 ===")
     for hero in party:
-
-        print(
-            hero.name
-        )
-
-    print(
-        "\n=== 역방향 ==="
-    )
-
+        print(hero.name)
+    print("\n=== 역방향 ===")
     for hero in party.reverse():
-
-        print(
-            hero.name
-        )
-
+        print(hero.name)
 ```
 
 실행 결과:
@@ -1001,7 +879,7 @@ $$\text{State}_0 \xrightarrow{\text{next()}} \text{Value}_0 + \text{State}_1 \xr
 
 이를 순수 함수형 타입으로 표현해 보면 아래와 같은 구조가 됩니다.
 
-```python
+```text
 data Step[
     State,
     Value,
@@ -1018,7 +896,7 @@ data Step[
 
 이때 Iterator는 상태를 입력받아 다음 단계(Step)를 반환하는 함수로 정의됩니다.
 
-```python
+```text
 type Iterator[
     State,
     Value,
@@ -1033,7 +911,7 @@ type Iterator[
 
 예를 들어 리스트를 순회하는 Iterator의 상태는 현재 인덱스 위치가 됩니다.
 
-```python
+```text
 record ListState[
     T
 ]:
@@ -1044,7 +922,7 @@ record ListState[
 
 다음 단계 전이 함수는 아래와 같이 작성할 수 있습니다.
 
-```python
+```text
 def next[
     T
 ](
@@ -1089,7 +967,7 @@ Iterator[
 
 하지만 클라이언트는 Iterator 내부에서 인덱스를 사용하는지, 스택을 사용하는지 알 필요가 없습니다. 실존 타입(Existential Type)을 활용해 이러한 상태 타입을 숨길 수 있습니다.
 
-```python
+```text
 type Iterator[T] =
     exists State.
         (
@@ -1115,7 +993,7 @@ type Iterator[T] =
 
 Iterator를 별도 객체로 분리하지 않고 데이터 구조 자체를 지연 평가(Lazy) 방식으로 구성하는 접근도 가능합니다.
 
-```python
+```text
 data Stream[T] =
 
     End
@@ -1151,7 +1029,7 @@ head(stream)
 
 다음 값이 필요한 경우 계산을 강제 실행(force)합니다.
 
-```python
+```text
 tail =
     force(
         stream.tail
@@ -1166,7 +1044,7 @@ tail =
 Iterator의 대상이 반드시 크기가 정해진 컬렉션일 필요는 없습니다.
 Iterator는 컬렉션뿐 아니라 끝이 정해지지 않은 데이터 스트림도 표현할 수 있습니다. 예를 들어 `itertools.count()`는 균등한 간격의 값을 무한히 생성합니다.
 
-```python
+```text
 def naturals(
     n: Int,
 ) -> Stream[Int]:
@@ -1192,7 +1070,7 @@ def naturals(
 
 전체 데이터를 메모리에 올리는 것은 불가능하지만, 필요한 개수만큼만 가져와 소비할 수 있습니다.
 
-```python
+```text
 first_ten =
     naturals(0)
     |> take(10)
@@ -1219,7 +1097,7 @@ yield value
 
 따라서 Generator는 개념적으로 '생산된 값'과 '이후의 실행 연속성(Continuation)'을 함께 반환한다고 해석할 수 있습니다.
 
-```python
+```text
 data Yield[
     T,
     R,
@@ -1248,7 +1126,7 @@ while iterator.has_next():
 
 반면 함수형 방식에서는 컬렉션이 스스로 순회를 주도하며, 소비자는 각 요소를 어떻게 처리할지에 대한 결합 함수만 전달합니다.
 
-```python
+```text
 result =
     fold(
         collection,
@@ -1260,7 +1138,7 @@ result =
 
 합계를 구하는 예시:
 
-```python
+```text
 total =
     fold(
         numbers,
@@ -1298,7 +1176,7 @@ Consumer Function
 
 List, Tree, Option, Map 등 자료구조마다 순회 방식은 제각각입니다. 하지만 이들 모두를 '하나의 결과값으로 집계(fold)할 수 있다'는 공통 개념으로 묶을 수 있습니다.
 
-```python
+```text
 trait Foldable[
     F[_]
 ]:
@@ -1317,7 +1195,7 @@ trait Foldable[
 
 List 구현:
 
-```python
+```text
 impl Foldable[
     List
 ]:
@@ -1327,7 +1205,7 @@ impl Foldable[
 
 Tree 구현:
 
-```python
+```text
 impl Foldable[
     Tree
 ]:
@@ -1365,7 +1243,7 @@ Consumer
 
 Iterator 조합기 타입 예시:
 
-```python
+```text
 def map[
     A,
     B,
@@ -1387,7 +1265,7 @@ def filter[
 
 사용 예시:
 
-```python
+```text
 result =
     naturals()
     |> filter(
@@ -1422,7 +1300,7 @@ TakeIterator
 개념적으로는 훌륭하지만, 성능이 중요한 시스템에서는 이러한 단계를 거칠 때 생기는 간접 호출 비용이 부담될 수 있습니다.
 컴파일러의 Stream Fusion 기술은 다음과 같은 파이프라인 코드를:
 
-```python
+```text
 source
     |> filter(p)
     |> map(f)
@@ -1476,7 +1354,7 @@ Iterator 패턴(Pull)과 Observer 패턴(Push)이 서로 대칭적인 관계를 
 
 가장 단순한 형태의 Pull Iterator는 다음과 같이 매개변수가 없고 Option 타입을 반환하는 함수로 나타낼 수 있습니다.
 
-```python
+```text
 type Pull[
     T
 ] =
@@ -1503,7 +1381,7 @@ match next_value():
 
 Push 기반 순회 방식은 Consumer 타입을 활용해 표현할 수 있습니다.
 
-```python
+```text
 type Consumer[
     T
 ] =
@@ -1513,7 +1391,7 @@ type Consumer[
 
 Producer 타입:
 
-```python
+```text
 type Producer[
     T
 ] =
@@ -1524,7 +1402,7 @@ type Producer[
 
 즉 "Consumer 함수를 전달받아 모든 요소를 Push해 주는 함수"입니다.
 
-```python
+```text
 def produce_numbers(
     consumer:
         Int -> Unit,
@@ -1593,7 +1471,7 @@ Async[
 
 가상 타입 정의:
 
-```python
+```text
 type AsyncIterator[
     T
 ] =
@@ -1620,7 +1498,7 @@ message
 
 파일이나 네트워크 조회의 경우 정상적인 순회 종료 외에 오류가 발생할 가능성이 존재합니다.
 
-```python
+```text
 type Iterator[
     T,
     E,
@@ -1663,7 +1541,7 @@ consumer_b(iterator)
 
 선형 타입(Linear Type)을 도입하면 이러한 오용을 컴파일 타임에 방지할 수 있습니다.
 
-```python
+```text
 linear type Iterator[T]
 
 ```
@@ -1703,7 +1581,7 @@ Iterator has already been consumed.
 
 `Iterable[T]`는 필요할 때마다 새로운 Iterator를 반복해서 만들어낼 수 있는 객체입니다.
 
-```python
+```text
 iterator1 =
     iterable.iterator()
 
@@ -1714,7 +1592,7 @@ iterator2 =
 
 반면 `Iterator[T]`는 특정 탐색 시점의 위치 상태를 나타내는 단일 객체입니다.
 
-```python
+```text
 type Iterable[T] =
     () -> Iterator[T]
 
@@ -1735,7 +1613,7 @@ ID 리스트: $\text{List}[\text{UserId}]$
 
 이러한 패턴을 일반화한 개념이 Traversable입니다.
 
-```python
+```text
 trait Traversable[
     F[_]
 ]:
@@ -1766,7 +1644,7 @@ DB 다루기 등에서 흔히 만나는 Cursor는 Iterator와 유사해 보이�
 
 따라서 탐색 완료 시 자원을 반납하는 수명주기 관리가 수반되어야 합니다.
 
-```python
+```text
 resource Cursor[
     T
 ]:
@@ -1869,7 +1747,7 @@ Source
 
 ---
 
-## 결론
+### 결론
 
 고전적인 이터레이터 패턴은 컬렉션의 내부 표현을 외부에 노출하지 않으면서 요소들에 순차적으로 접근할 수 있도록 별도의 Iterator를 제공함으로써, 데이터 저장 방식과 탐색 알고리즘을 분리하는 행위 패턴입니다.
 객체지향 관점에서는 다음과 같은 구조를 지닙니다.

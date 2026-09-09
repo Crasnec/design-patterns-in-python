@@ -176,12 +176,11 @@ flowchart LR
 
 일반적인 구조는 다음과 같습니다.
 
-```text
-             ┌─ Observer A
-             │
-Subject ─────┼─ Observer B
-             │
-             └─ Observer C
+```mermaid
+flowchart LR
+    subject[Subject] --> observer_a[Observer A]
+    subject --> observer_b[Observer B]
+    subject --> observer_c[Observer C]
 
 ```
 
@@ -350,25 +349,21 @@ player.detach(
 
 새로운 Observer를 추가해도 `Player.take_damage()`는 변경되지 않습니다.
 
-```text
-Before:
+```mermaid
+flowchart LR
+    subgraph before[Before]
+        player_before[Player] --> health_before[HealthBar]
+        player_before --> logger_before[Logger]
+        player_before --> warning_before[Warning]
+    end
 
-Player
-  ├─ HealthBar
-  ├─ Logger
-  └─ Warning
-
-
-After:
-
-Player
-  │
-  └─ Observer Interface
-         │
-         ├─ HealthBar
-         ├─ Logger
-         ├─ Warning
-         └─ AchievementTracker
+    subgraph after[After]
+        player_after[Player] --> observer[Observer interface]
+        observer --> health_after[HealthBar]
+        observer --> logger_after[Logger]
+        observer --> warning_after[Warning]
+        observer --> achievement[AchievementTracker]
+    end
 
 ```
 
@@ -454,15 +449,16 @@ observer.update(
 
 Observer는 Subject 자체를 알 필요가 없습니다.
 
-```text
-Pull:
+```mermaid
+flowchart LR
+    subgraph pull[Pull model]
+        pull_subject[Subject] -->|self 전달| pull_observer[Observer]
+        pull_observer -->|상태 조회| pull_subject
+    end
 
-Subject ───── (self) ─────> Observer ───── (상태 조회) ─────> Subject
-
-
-Push:
-
-Subject ───── (Event Data) ─────> Observer
+    subgraph push[Push model]
+        push_subject[Subject] -->|Event data 전달| push_observer[Observer]
+    end
 
 ```
 
@@ -804,7 +800,6 @@ Concrete Observers
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-
 # -------------------------------------------------------------------
 # 1. Event
 # -------------------------------------------------------------------
@@ -815,235 +810,100 @@ class HealthChanged:
     new_hp: int
     max_hp: int
 
-
 # -------------------------------------------------------------------
 # 2. Observer Interface
 # -------------------------------------------------------------------
 
 class PlayerObserver(ABC):
-
     @abstractmethod
-    def update(
-        self,
-        event: HealthChanged,
-    ) -> None:
+    def update(self, event: HealthChanged) -> None:
         pass
-
 
 # -------------------------------------------------------------------
 # 3. Subject
 # -------------------------------------------------------------------
 
 class Player:
-
-    def __init__(
-        self,
-        name: str,
-        max_hp: int,
-    ):
+    def __init__(self, name: str, max_hp: int):
         self.name = name
         self.max_hp = max_hp
         self.hp = max_hp
+        self._observers: list[PlayerObserver] = []
 
-        self._observers: list[
-            PlayerObserver
-        ] = []
-
-    def attach(
-        self,
-        observer: PlayerObserver,
-    ) -> None:
-
+    def attach(self, observer: PlayerObserver) -> None:
         if observer not in self._observers:
+            self._observers.append(observer)
 
-            self._observers.append(
-                observer
-            )
-
-    def detach(
-        self,
-        observer: PlayerObserver,
-    ) -> None:
-
+    def detach(self, observer: PlayerObserver) -> None:
         if observer in self._observers:
+            self._observers.remove(observer)
 
-            self._observers.remove(
-                observer
-            )
-
-    def _notify(
-        self,
-        event: HealthChanged,
-    ) -> None:
-
+    def _notify(self, event: HealthChanged) -> None:
         # 알림 도중 attach/detach가 발생해도
         # 현재 순회를 안정적으로 유지하기 위해 복사본 사용
-        for observer in tuple(
-            self._observers
-        ):
-            observer.update(
-                event
-            )
+        for observer in tuple(self._observers):
+            observer.update(event)
 
-    def take_damage(
-        self,
-        amount: int,
-    ) -> None:
-
+    def take_damage(self, amount: int) -> None:
         old_hp = self.hp
-
-        self.hp = max(
-            0,
-            self.hp - amount,
-        )
-
-        event = HealthChanged(
-            old_hp=old_hp,
-            new_hp=self.hp,
-            max_hp=self.max_hp,
-        )
-
-        self._notify(
-            event
-        )
-
+        self.hp = max(0, self.hp - amount)
+        event = HealthChanged(old_hp=old_hp, new_hp=self.hp, max_hp=self.max_hp)
+        self._notify(event)
 
 # -------------------------------------------------------------------
 # 4. Concrete Observer - Health Bar
 # -------------------------------------------------------------------
 
-class HealthBar(
-    PlayerObserver
-):
-
-    def update(
-        self,
-        event: HealthChanged,
-    ) -> None:
-
-        print(
-            "[HealthBar] "
-            f"{event.new_hp}/{event.max_hp}"
-        )
-
+class HealthBar(PlayerObserver):
+    def update(self, event: HealthChanged) -> None:
+        print("[HealthBar] " f"{event.new_hp}/{event.max_hp}")
 
 # -------------------------------------------------------------------
 # 5. Concrete Observer - Warning
 # -------------------------------------------------------------------
 
-class LowHealthWarning(
-    PlayerObserver
-):
-
-    def update(
-        self,
-        event: HealthChanged,
-    ) -> None:
-
-        ratio = (
-            event.new_hp
-            / event.max_hp
-        )
-
+class LowHealthWarning(PlayerObserver):
+    def update(self, event: HealthChanged) -> None:
+        ratio = event.new_hp / event.max_hp
         if ratio <= 0.2:
-
-            print(
-                "[Warning] "
-                "체력이 위험합니다!"
-            )
-
+            print("[Warning] " "체력이 위험합니다!")
 
 # -------------------------------------------------------------------
 # 6. Concrete Observer - Logger
 # -------------------------------------------------------------------
 
-class BattleLogger(
-    PlayerObserver
-):
-
-    def update(
-        self,
-        event: HealthChanged,
-    ) -> None:
-
-        print(
-            "[BattleLogger] "
-            f"HP: {event.old_hp} "
-            f"-> {event.new_hp}"
-        )
-
+class BattleLogger(PlayerObserver):
+    def update(self, event: HealthChanged) -> None:
+        print("[BattleLogger] " f"HP: {event.old_hp} " f"-> {event.new_hp}")
 
 # -------------------------------------------------------------------
 # 7. Concrete Observer - Achievement
 # -------------------------------------------------------------------
 
-class AchievementTracker(
-    PlayerObserver
-):
-
-    def update(
-        self,
-        event: HealthChanged,
-    ) -> None:
-
+class AchievementTracker(PlayerObserver):
+    def update(self, event: HealthChanged) -> None:
         if event.new_hp == 1:
-
-            print(
-                "[Achievement] "
-                "기적의 생존!"
-            )
-
+            print("[Achievement] " "기적의 생존!")
 
 # -------------------------------------------------------------------
 # 8. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
-    player = Player(
-        name="아라곤",
-        max_hp=100,
-    )
-
+    player = Player(name="아라곤", max_hp=100)
     health_bar = HealthBar()
     warning = LowHealthWarning()
     logger = BattleLogger()
-    achievement = (
-        AchievementTracker()
-    )
-
-    player.attach(
-        health_bar
-    )
-
-    player.attach(
-        warning
-    )
-
-    player.attach(
-        logger
-    )
-
-    player.attach(
-        achievement
-    )
-
-    player.take_damage(
-        30
-    )
-
+    achievement = AchievementTracker()
+    player.attach(health_bar)
+    player.attach(warning)
+    player.attach(logger)
+    player.attach(achievement)
+    player.take_damage(30)
     print()
-
-    player.take_damage(
-        50
-    )
-
+    player.take_damage(50)
     print()
-
-    player.take_damage(
-        19
-    )
-
+    player.take_damage(19)
 ```
 
 마지막 공격 이후 HP가 1이 되면 다음 Observer들이 각각 독립적으로 반응합니다.
@@ -1171,7 +1031,7 @@ class Observer:
 
 하지만 상태를 별도로 가질 필요가 없는 Observer라면 단순한 함수로 표현할 수 있습니다.
 
-```python
+```text
 type Observer[E] = E -> Unit
 
 ```
@@ -1198,7 +1058,7 @@ def log_health(
 
 Subject는 함수 목록을 관리합니다.
 
-```python
+```text
 observers: Vector[HealthChanged -> Unit]
 
 ```
@@ -1220,7 +1080,7 @@ for observer in observers:
 일반적인 Observer에서는 `subject.attach(observer)` 후 나중에 `subject.detach(observer)` 해야 합니다.
 구독 결과를 명시적인 값으로 반환할 수 있습니다.
 
-```python
+```text
 opaque linear type Subscription
 
 def subscribe[E](
@@ -1264,7 +1124,7 @@ subscription.cancel()  # Type Error: Subscription has already been consumed.
 
 Event Bus에서 `publish("player.health.changed", payload)`와 같은 문자열 기반 Event를 사용하면 오타와 Payload 불일치 문제가 생깁니다. 대수적 데이터 타입(ADT)을 정의하여 이를 보완할 수 있습니다.
 
-```python
+```text
 data GameEvent =
     HealthChanged(player: PlayerId, old_hp: Int, new_hp: Int)
   | LevelUp(player: PlayerId, new_level: Int)
@@ -1326,14 +1186,14 @@ Observer 패턴의 중요한 확장은 Event를 받기만 하는 것이 아니�
 
 데미지만 필터링:
 
-```python
+```text
 damage_events = player.health_changes |> filter(lambda e: e.new_hp < e.old_hp)
 
 ```
 
 위험 체력 상태만 필터링:
 
-```python
+```text
 critical_health = player.health_changes |> filter(lambda e: e.new_hp <= 20)
 
 ```
@@ -1366,7 +1226,7 @@ status = combine_latest(hp, mana)
 
 이를 UI 상태로 변환합니다.
 
-```python
+```text
 hud = status |> map(
     lambda state: HUDState(
         hp=state.hp,
@@ -1400,7 +1260,7 @@ Observer 패턴에서 흔히 섞이는 **현재 상태**와 **상태 변경 사�
 
 Signal 기반에서는 파생 상태를 선언적으로 나타냅니다.
 
-```python
+```text
 health_ratio = player.hp |> map(lambda hp: hp / player.max_hp)
 is_critical = health_ratio |> map(lambda ratio: ratio <= 0.2)
 
@@ -1463,7 +1323,7 @@ Subject.notify() ───> Observer A 실행 ───> Observer B 실행 (5초
 
 ### 12. 비동기 Observer를 `Async` 타입으로 표현하기
 
-```python
+```text
 type AsyncObserver[E] = E -> Async[Unit]
 
 ```
@@ -1476,7 +1336,7 @@ type AsyncObserver[E] = E -> Async[Unit]
 
 Observer 하나가 실패했을 때의 처리 정책(Fail Fast, Continue, Retry 등)을 타입으로 모델링합니다.
 
-```python
+```text
 data NotificationResult[E] =
     AllSucceeded
   | PartialFailure(errors: Vector[E])
@@ -1534,7 +1394,7 @@ Publisher와 Subscriber 사이의 직접적인 관계를 완전히 차단합니�
 
 ### 19. Typed Event Bus로 Event와 Handler의 타입 관계를 보존하기
 
-```python
+```text
 data Topic[Event] =
     HealthTopic -> Topic[HealthChanged]
   | LevelTopic -> Topic[LevelChanged]
@@ -1547,7 +1407,7 @@ data Topic[Event] =
 
 ### 20. Observer를 Effect Handler 관계로 표현하기
 
-```python
+```text
 effect PlayerEvents:
     def HealthChanged(event: HealthChanged) -> Unit
 

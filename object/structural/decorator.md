@@ -241,14 +241,10 @@ source = CompressionDecorator(
 
 구조는 다음과 같습니다.
 
-```text
-CompressionDecorator
-        │
-        ↓
-Base64Decorator
-        │
-        ↓
-FileDataSource
+```mermaid
+flowchart TD
+    compression[CompressionDecorator] --> base64[Base64Decorator]
+    base64 --> file[FileDataSource]
 
 ```
 
@@ -965,7 +961,7 @@ Decorator 합성에서 중요한 특징은 대부분의 Decorator가 교환법�
 
 즉, $A \circ B \neq B \circ A$ 일 수 있습니다.
 
-Decorator의 적용 순서는 단순 구현 세부사항이 아니라 프로그램의 의미 일부가 됩니다.
+Decorator의 적용 순서는 단순 구현 세부 사항이 아니라 프로그램의 의미 일부가 됩니다.
 
 ### 5. Decorator Pipeline을 값으로 표현하기
 

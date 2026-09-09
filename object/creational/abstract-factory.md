@@ -1,5 +1,7 @@
 # 추상 팩토리 패턴 (Abstract Factory Pattern)
 
+![서로 어울리는 가구 세트를 생산하는 두 공장](../../assets/images/patterns/abstract-factory.png)
+
 ## 1. 패턴이 없을 때 발생하는 문제점 (The Problem)
 
 추상 팩토리 패턴을 사용하지 않고 캐릭터의 직업에 따라 무기와 방어구를 직접 생성할 때 발생하는 대표적인 문제입니다. 대개 아래와 같이 조건문(`if-else`)으로 객체를 직접 조립하게 됩니다.

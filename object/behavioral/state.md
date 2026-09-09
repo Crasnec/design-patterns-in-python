@@ -17,10 +17,10 @@ stateDiagram-v2
 
 주문은 상황에 따라 취소될 수도 있습니다.
 
-```text
-Pending ── cancel ──> Cancelled
-
-Paid ───── cancel ──> Cancelled
+```mermaid
+stateDiagram-v2
+    Pending --> Cancelled: cancel
+    Paid --> Cancelled: cancel
 
 ```
 
@@ -854,291 +854,138 @@ Order
 from __future__ import annotations
 from abc import ABC, abstractmethod
 
-
 # -------------------------------------------------------------------
 # 1. State Interface
 # -------------------------------------------------------------------
 
 class OrderState(ABC):
-
     @abstractmethod
     def name(self) -> str:
         pass
 
     @abstractmethod
-    def pay(
-        self,
-        order: Order,
-    ) -> None:
+    def pay(self, order: Order) -> None:
         pass
 
     @abstractmethod
-    def ship(
-        self,
-        order: Order,
-    ) -> None:
+    def ship(self, order: Order) -> None:
         pass
 
     @abstractmethod
-    def cancel(
-        self,
-        order: Order,
-    ) -> None:
+    def cancel(self, order: Order) -> None:
         pass
-
 
 # -------------------------------------------------------------------
 # 2. Context
 # -------------------------------------------------------------------
 
 class Order:
-
     def __init__(self):
-        self._state: OrderState = (
-            PendingState()
-        )
+        self._state: OrderState = PendingState()
 
     @property
     def state_name(self) -> str:
         return self._state.name()
 
-    def transition_to(
-        self,
-        state: OrderState,
-    ) -> None:
-
-        print(
-            f"[Transition] "
-            f"{self._state.name()} "
-            f"-> {state.name()}"
-        )
-
+    def transition_to(self, state: OrderState) -> None:
+        print(f"[Transition] " f"{self._state.name()} " f"-> {state.name()}")
         self._state = state
 
     def pay(self) -> None:
-
-        self._state.pay(
-            self
-        )
+        self._state.pay(self)
 
     def ship(self) -> None:
-
-        self._state.ship(
-            self
-        )
+        self._state.ship(self)
 
     def cancel(self) -> None:
-
-        self._state.cancel(
-            self
-        )
-
+        self._state.cancel(self)
 
 # -------------------------------------------------------------------
 # 3. Concrete State - Pending
 # -------------------------------------------------------------------
 
-class PendingState(
-    OrderState
-):
-
+class PendingState(OrderState):
     def name(self) -> str:
         return "Pending"
 
-    def pay(
-        self,
-        order: Order,
-    ) -> None:
+    def pay(self, order: Order) -> None:
+        print("[Pending] 결제를 완료합니다.")
+        order.transition_to(PaidState())
 
-        print(
-            "[Pending] 결제를 완료합니다."
-        )
+    def ship(self, order: Order) -> None:
+        raise RuntimeError("결제되지 않은 주문은 " "배송할 수 없습니다.")
 
-        order.transition_to(
-            PaidState()
-        )
-
-    def ship(
-        self,
-        order: Order,
-    ) -> None:
-
-        raise RuntimeError(
-            "결제되지 않은 주문은 "
-            "배송할 수 없습니다."
-        )
-
-    def cancel(
-        self,
-        order: Order,
-    ) -> None:
-
-        print(
-            "[Pending] 주문을 취소합니다."
-        )
-
-        order.transition_to(
-            CancelledState()
-        )
-
+    def cancel(self, order: Order) -> None:
+        print("[Pending] 주문을 취소합니다.")
+        order.transition_to(CancelledState())
 
 # -------------------------------------------------------------------
 # 4. Concrete State - Paid
 # -------------------------------------------------------------------
 
-class PaidState(
-    OrderState
-):
-
+class PaidState(OrderState):
     def name(self) -> str:
         return "Paid"
 
-    def pay(
-        self,
-        order: Order,
-    ) -> None:
+    def pay(self, order: Order) -> None:
+        raise RuntimeError("이미 결제된 주문입니다.")
 
-        raise RuntimeError(
-            "이미 결제된 주문입니다."
-        )
+    def ship(self, order: Order) -> None:
+        print("[Paid] 주문을 배송합니다.")
+        order.transition_to(ShippedState())
 
-    def ship(
-        self,
-        order: Order,
-    ) -> None:
-
-        print(
-            "[Paid] 주문을 배송합니다."
-        )
-
-        order.transition_to(
-            ShippedState()
-        )
-
-    def cancel(
-        self,
-        order: Order,
-    ) -> None:
-
-        print(
-            "[Paid] 결제를 취소하고 "
-            "주문을 취소합니다."
-        )
-
-        order.transition_to(
-            CancelledState()
-        )
-
+    def cancel(self, order: Order) -> None:
+        print("[Paid] 결제를 취소하고 " "주문을 취소합니다.")
+        order.transition_to(CancelledState())
 
 # -------------------------------------------------------------------
 # 5. Concrete State - Shipped
 # -------------------------------------------------------------------
 
-class ShippedState(
-    OrderState
-):
-
+class ShippedState(OrderState):
     def name(self) -> str:
         return "Shipped"
 
-    def pay(
-        self,
-        order: Order,
-    ) -> None:
+    def pay(self, order: Order) -> None:
+        raise RuntimeError("배송된 주문은 " "결제할 수 없습니다.")
 
-        raise RuntimeError(
-            "배송된 주문은 "
-            "결제할 수 없습니다."
-        )
+    def ship(self, order: Order) -> None:
+        raise RuntimeError("이미 배송된 주문입니다.")
 
-    def ship(
-        self,
-        order: Order,
-    ) -> None:
-
-        raise RuntimeError(
-            "이미 배송된 주문입니다."
-        )
-
-    def cancel(
-        self,
-        order: Order,
-    ) -> None:
-
-        raise RuntimeError(
-            "배송된 주문은 "
-            "취소할 수 없습니다."
-        )
-
+    def cancel(self, order: Order) -> None:
+        raise RuntimeError("배송된 주문은 " "취소할 수 없습니다.")
 
 # -------------------------------------------------------------------
 # 6. Concrete State - Cancelled
 # -------------------------------------------------------------------
 
-class CancelledState(
-    OrderState
-):
-
+class CancelledState(OrderState):
     def name(self) -> str:
         return "Cancelled"
 
-    def pay(
-        self,
-        order: Order,
-    ) -> None:
+    def pay(self, order: Order) -> None:
+        raise RuntimeError("취소된 주문은 " "결제할 수 없습니다.")
 
-        raise RuntimeError(
-            "취소된 주문은 "
-            "결제할 수 없습니다."
-        )
+    def ship(self, order: Order) -> None:
+        raise RuntimeError("취소된 주문은 " "배송할 수 없습니다.")
 
-    def ship(
-        self,
-        order: Order,
-    ) -> None:
-
-        raise RuntimeError(
-            "취소된 주문은 "
-            "배송할 수 없습니다."
-        )
-
-    def cancel(
-        self,
-        order: Order,
-    ) -> None:
-
-        raise RuntimeError(
-            "이미 취소된 주문입니다."
-        )
-
+    def cancel(self, order: Order) -> None:
+        raise RuntimeError("이미 취소된 주문입니다.")
 
 # -------------------------------------------------------------------
 # 7. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
     order = Order()
-
-    print(
-        order.state_name
-    )
+    print(order.state_name)
     # Pending
-
     order.pay()
-
-    print(
-        order.state_name
-    )
+    print(order.state_name)
     # Paid
-
     order.ship()
-
-    print(
-        order.state_name
-    )
+    print(order.state_name)
     # Shipped
-
 ```
 
 실행 흐름은 다음과 같습니다.
@@ -1209,14 +1056,10 @@ order.transition_to(
 
 이 방식의 장점은 특정 상태의 행동과 전이 규칙이 같은 클래스에 모인다는 것입니다.
 
-```text
-PendingState:
-
-    pay
-        → Paid
-
-    cancel
-        → Cancelled
+```mermaid
+stateDiagram-v2
+    Pending --> Paid: pay
+    Pending --> Cancelled: cancel
 
 ```
 
@@ -1224,12 +1067,11 @@ PendingState:
 
 예를 들어:
 
-```text
-State
-    → Transition Result
-
-Context / State Machine
-    → 실제 상태 변경
+```mermaid
+flowchart LR
+    state[State] --> result[Transition result]
+    result --> machine[Context / State Machine]
+    machine --> change[실제 상태 변경]
 
 ```
 
@@ -1307,7 +1149,7 @@ CancelledState
 
 함수형 언어에서는 하나의 합 타입으로 표현할 수 있습니다.
 
-```python
+```text
 data OrderState =
     Pending
   | Paid(
@@ -1350,7 +1192,7 @@ Cancelled:
 
 전통적인 하나의 Order 클래스가 다음 필드를 가진다고 가정합니다.
 
-```python
+```text
 record Order:
 
     state: OrderState
@@ -1380,7 +1222,7 @@ cancel_reason = Some(...)
 
 ADT에서는 상태별 데이터를 해당 Constructor 안에 넣습니다.
 
-```python
+```text
 data Order =
     PendingOrder(
         items: Vector[Item],
@@ -1509,7 +1351,7 @@ ShippedState:
 
 그래서 의미 없는 메서드에서는 예외를 발생시킵니다.
 
-```python
+```text
 class ShippedState:
 
     def pay(...):
@@ -1566,14 +1408,14 @@ found:
 
 객체가 현재 어느 상태인지 타입 자체에 포함시키는 방식을 Typestate라고 볼 수 있습니다.
 
-```python
+```text
 data Pending
 data Paid
 data Shipped
 
 ```
 
-```python
+```text
 record Order[
     State
 ]:
@@ -1583,7 +1425,7 @@ record Order[
 
 초기 생성:
 
-```python
+```text
 def create_order(...) -> Order[Pending]:
     ...
 
@@ -1675,7 +1517,7 @@ Order[Shipped]
 
 상태와 Event를 별도로 정의할 수 있습니다.
 
-```python
+```text
 data OrderState =
     Pending
   | Paid
@@ -1684,7 +1526,7 @@ data OrderState =
 
 ```
 
-```python
+```text
 data OrderEvent =
     PaymentReceived
   | ShipmentStarted
@@ -1813,7 +1655,7 @@ Next State
 
 상태가 하나 추가된다고 가정합니다.
 
-```python
+```text
 data OrderState =
     Pending
   | Paid
@@ -1855,7 +1697,7 @@ State
 
 반면 ADT는 상태 집합이 닫혀 있습니다.
 
-```python
+```text
 data State =
     A
   | B
@@ -1893,7 +1735,7 @@ State + Input ───> Output + Next State
 
 타입:
 
-```python
+```text
 type Mealy[
     State,
     Input,
@@ -1989,7 +1831,7 @@ State ───> View
 
 고전적인 State 객체 안에서:
 
-```python
+```text
 def pay(...):
 
     payment_gateway.charge(...)
@@ -2006,7 +1848,7 @@ def pay(...):
 
 다음처럼 분리할 수 있습니다.
 
-```python
+```text
 data OrderEffect =
     ChargePayment(...)
   | SendReceipt(...)
@@ -2052,7 +1894,7 @@ Pending ── PayClicked ──> ???
 
 중간 상태를 명시합니다.
 
-```python
+```text
 data OrderState =
     Pending
   | PaymentProcessing(
@@ -2218,7 +2060,7 @@ Event Sourcing: 어떤 사건 때문에 상태가 변했는가?
 
 각 상태에서 가능한 능력을 Capability로 표현할 수도 있습니다.
 
-```python
+```text
 capability Payable[T]:
 
     def pay(
@@ -2229,7 +2071,7 @@ capability Payable[T]:
 
 `PendingOrder`만 구현합니다.
 
-```python
+```text
 impl Payable[PendingOrder]:
     ...
 
@@ -2237,7 +2079,7 @@ impl Payable[PendingOrder]:
 
 `Shippable`:
 
-```python
+```text
 capability Shippable[T]:
 
     def ship(
@@ -2248,7 +2090,7 @@ capability Shippable[T]:
 
 `PaidOrder`만 구현합니다.
 
-```python
+```text
 impl Shippable[PaidOrder]:
     ...
 
@@ -2256,7 +2098,7 @@ impl Shippable[PaidOrder]:
 
 함수는 필요한 상태 능력만 요구합니다.
 
-```python
+```text
 def process_shipping[T](
     order: T,
 ) -> ShippedOrder
@@ -2278,7 +2120,7 @@ where Shippable[T]:
 
 Typestate를 선형 타입과 결합한다고 가정합니다.
 
-```python
+```text
 linear Order[State]
 
 ```

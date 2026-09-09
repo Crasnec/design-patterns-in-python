@@ -98,17 +98,14 @@ for hero in party.members.values():
 만약 파티를 트리 구조로 관리하게 된다면 문제는 더 커집니다.
 조직 구조가 다음과 같이 구성되어 있다고 가정해 봅니다.
 
-```text
-Commander
-   │
-   ├─ Knight
-   │
-   │   ├─ Soldier
-   │   └─ Soldier
-   │
-   └─ Mage
-       ├─ Apprentice
-       └─ Apprentice
+```mermaid
+flowchart TD
+    commander[Commander] --> knight[Knight]
+    commander --> mage[Mage]
+    knight --> soldier_a[Soldier]
+    knight --> soldier_b[Soldier]
+    mage --> apprentice_a[Apprentice]
+    mage --> apprentice_b[Apprentice]
 
 ```
 
@@ -447,7 +444,7 @@ Composite Tree
 ## 4. 파이썬 오픈소스에서 볼 수 있는 이터레이터와 유사한 설계
 
 Python에서 Iterator는 디자인 패턴을 넘어 언어 자체의 핵심 Protocol로 내장되어 있습니다.
-공식 문서에 따르면 컨테이너 객체는 `__iter__()`를 통해 Iterator를 반환하며, Iterator는 `__iter__()`와 `__next__()` 메서드를 구현해야 합니다. `__next__()`는 다음 값을 반환하며 더 이상 요소가 없으면 `StopIteration` 예외를 발생시킵니다. 트리의 BFS/DFS 순회처럼 하나의 컨테이너가 다양한 탐색 방식을 지원해야 하는 경우 서로 다른 Iterator 객체를 반환하도록 설계하는 것이 권장됩니다. (Python documentation)
+공식 문서에 따르면 컨테이너 객체는 `__iter__()`로 Iterator를 반환하며, Iterator는 `__iter__()`와 `__next__()`를 구현해야 합니다. `__next__()`는 다음 값을 반환하고 더 이상 요소가 없으면 `StopIteration`을 발생시킵니다. 트리의 BFS와 DFS처럼 한 컨테이너가 여러 탐색 방식을 지원한다면 각 방식에 맞는 Iterator를 별도 메서드로 제공할 수 있습니다.
 
 ### Python Iterator Protocol
 
@@ -484,8 +481,8 @@ while True:
 
 ```
 
-Python 튜토리얼에서도 `for` 문이 컨테이너의 `iter()`를 호출한 뒤, 반환된 Iterator의 `__next__()`를 순차적으로 호출하다가 `StopIteration`이 발생하면 반복을 종료한다고 설명합니다. (Python documentation)
-이 매커니즘은 GoF Iterator 패턴의 역할과 직접 대응합니다.
+Python 튜토리얼에서도 `for` 문이 컨테이너에 `iter()`를 호출한 뒤, 반환된 Iterator의 `__next__()`를 순차적으로 호출하다가 `StopIteration`이 발생하면 반복을 종료한다고 설명합니다.
+이 메커니즘은 GoF Iterator 패턴의 역할과 직접 대응합니다.
 
 * **Aggregate** $\leftrightarrow$ Iterable
 * **create_iterator()** $\leftrightarrow$ `__iter__()`
@@ -495,7 +492,7 @@ Python 튜토리얼에서도 `for` 문이 컨테이너의 `iter()`를 호출한 
 ### Python Generator
 
 Python의 Generator는 Iterator Protocol을 훨씬 간결하게 구현할 수 있도록 돕는 언어 차원의 기능입니다.
-`__iter__()` 메서드를 generator 형태로 구현하면 Python이 내부적으로 Iterator 객체와 `__iter__()`, `__next__()` 프로토콜을 자동으로 처리해 줍니다. (Python documentation)
+`__iter__()`를 generator로 구현하면 Python이 Iterator 객체와 `__iter__()`, `__next__()` 프로토콜을 자동으로 구성합니다.
 
 ```python
 def countdown(
@@ -528,7 +525,7 @@ Generator 내부의 현재 실행 위치, 지역 변수, 재개 위치 정보가
 
 ### Django QuerySet.iterator()
 
-Django의 `QuerySet.iterator()`는 QuerySet 평가 결과를 순차적으로 반환하는 Iterator를 생성합니다. 일반적인 QuerySet은 모든 조회 결과를 메모리에 캐싱하지만, `iterator()`를 사용하면 캐시 없이 데이터를 한 번에 하나씩 읽어옵니다. 따라서 대용량 데이터를 다룰 때 메모리 사용량을 크게 줄일 수 있습니다. (Django Project)
+Django의 `QuerySet.iterator()`는 평가 결과를 순차적으로 반환합니다. 일반적인 QuerySet과 달리 QuerySet 수준의 결과 캐시를 만들지 않으므로, 한 번만 소비할 대량 조회에서는 메모리 사용을 줄일 수 있습니다. 데이터베이스 드라이버의 버퍼링과 가져오기 단위는 백엔드와 `chunk_size` 설정에 따라 달라집니다.
 
 ```python
 for user in (
@@ -545,7 +542,7 @@ for user in (
 
 ```
 
-동작 매커니즘은 다음과 같습니다.
+동작 메커니즘은 다음과 같습니다.
 
 ```text
 Database Result
@@ -562,12 +559,12 @@ row
 
 ```
 
-전체 데이터를 한 번에 메모리에 올리지 않고 필요한 시점에 순차 소비하는 Lazy Iterator의 대표적인 예시입니다. (Django Project)
+QuerySet 수준의 전체 결과 캐시를 생략하고 필요한 결과를 순차 소비한다는 점에서 Lazy Iterator의 실용적인 사례입니다.
 
 ### 비동기 Iterator
 
 Python은 동기식 Iterator 외에 비동기 Iterator Protocol도 제공합니다.
-비동기 iterable은 `__aiter__()`를, 비동기 Iterator는 `__anext__()` 메서드를 제공하며 `__anext__()`는 awaitable 객체를 반환합니다. 순회가 끝나면 `StopAsyncIteration` 예외가 발생하며 `async for` 문이 이 프로토콜을 활용합니다. (Python documentation)
+비동기 iterable은 `__aiter__()`를, 비동기 Iterator는 `__anext__()`를 제공하며 `__anext__()`는 awaitable 객체를 반환합니다. 순회가 끝나면 `StopAsyncIteration`이 발생하고 `async for` 문이 이 프로토콜을 사용합니다.
 
 ```python
 async for message in stream:
@@ -1167,7 +1164,7 @@ tail =
 ### 4. 무한 Stream 표현
 
 Iterator의 대상이 반드시 크기가 정해진 컬렉션일 필요는 없습니다.
-Python 공식 문서에서도 언급하듯 Iterator는 무한한 데이터 스트림을 생성할 수 있습니다. (Python documentation)
+Iterator는 컬렉션뿐 아니라 끝이 정해지지 않은 데이터 스트림도 표현할 수 있습니다. 예를 들어 `itertools.count()`는 균등한 간격의 값을 무한히 생성합니다.
 
 ```python
 def naturals(
@@ -1724,7 +1721,7 @@ type Iterable[T] =
 ```
 
 즉, Iterable은 Iterator를 생성해 내는 팩토리(Factory)로 이해할 수 있습니다.
-Python의 `__iter__()`가 이 역할을 담당합니다. 공식 문서에서도 컨테이너의 `__iter__()`는 매번 새로운 Iterator 객체를 반환해야 하며, Iterator 자체의 `__iter__()`는 자기 자신을 반환하도록 설계해야 한다고 명시하고 있습니다. (Python documentation)
+Python의 `__iter__()`가 이 역할을 담당합니다. 여러 번 순회할 수 있는 컨테이너는 보통 호출할 때마다 새 Iterator를 반환하고, 일회성 Iterator의 `__iter__()`는 자기 자신을 반환합니다. 두 역할을 구분하면 반복 가능 여부가 선명해집니다.
 
 ### 18. Traversable: 구조를 유지하는 효과적 순회
 
@@ -1877,31 +1874,26 @@ Source
 고전적인 이터레이터 패턴은 컬렉션의 내부 표현을 외부에 노출하지 않으면서 요소들에 순차적으로 접근할 수 있도록 별도의 Iterator를 제공함으로써, 데이터 저장 방식과 탐색 알고리즘을 분리하는 행위 패턴입니다.
 객체지향 관점에서는 다음과 같은 구조를 지닙니다.
 
-```text
-Aggregate
-    │
-    └─ create_iterator()
-            ↓
-         Iterator
-            │
-            ├─ 현재 위치 관리
-            └─ next()
+```mermaid
+flowchart TD
+    aggregate[Aggregate] -->|create_iterator| iterator[Iterator]
+    iterator --> position[현재 위치 관리]
+    iterator --> next[next]
 
 ```
 
 하나의 컬렉션은 목적에 따라 여러 탐색 방식을 자유롭게 제공할 수 있습니다.
 
-```text
-Collection
-    │
-    ├─ Forward Iterator
-    ├─ Reverse Iterator
-    ├─ DFS Iterator
-    └─ BFS Iterator
+```mermaid
+flowchart TD
+    collection[Collection] --> forward[Forward Iterator]
+    collection --> reverse[Reverse Iterator]
+    collection --> dfs[DFS Iterator]
+    collection --> bfs[BFS Iterator]
 
 ```
 
-Python에서는 이러한 아이디어가 `__iter__()` / `__next__()` Iterator Protocol과 Generator 형태로 언어 자체에 내장되어 있습니다. (Python documentation)
+Python에서는 이러한 아이디어가 `__iter__()`와 `__next__()` 프로토콜, Generator 형태로 언어에 내장되어 있습니다.
 나아가 현대 타입 시스템과 함수형 패러다임에서는 이 개념을 더 일반화된 점진적 계산과 스트림 처리 개념으로 확장하여 적용합니다.
 
 * $\text{Iterator 내부 상태} \leftrightarrow \text{명시적 State Machine}$
@@ -1919,4 +1911,4 @@ Python에서는 이러한 아이디어가 `__iter__()` / `__next__()` Iterator P
 * $\text{일회성 Iterator} \leftrightarrow \text{Linear Type}$
 * $\text{Iterable} \leftrightarrow \text{Iterator Factory}$
 
-결국 이터레이터 패턴의 본질은 "데이터의 전체 구조나 생성 과정을 외부로부터 감춘 채, 필요한 시점에 유연하게 값들을 하나씩 제공받으며 그 탐색 상태와 제어 흐름을 독립된 추상화로 분리해 내는 기법"으로 정리할 수 있습니다.
+이터레이터의 핵심은 데이터의 내부 구조나 생성 과정을 감추고, 요소를 하나씩 꺼내는 규약과 탐색 상태를 독립된 추상화로 분리하는 데 있습니다.

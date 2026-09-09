@@ -235,17 +235,14 @@ flowchart LR
 
 기본적인 구조 흐름은 다음과 같습니다.
 
-```text
-             Visitor
-               │
-      ┌────────┼────────┐
-      ↓        ↓        ↓
- visit_A()  visit_B()  visit_C()
-      ↑        ↑        ↑
-      │        │        │
- Element A  Element B  Element C
-      │        │        │
-      └──── accept() ───┘
+```mermaid
+flowchart TD
+    visitor[Visitor] --> visit_a[visit_A]
+    visitor --> visit_b[visit_B]
+    visitor --> visit_c[visit_C]
+    element_a[Element A] -->|accept| visit_a
+    element_b[Element B] -->|accept| visit_b
+    element_c[Element C] -->|accept| visit_c
 
 ```
 
@@ -620,12 +617,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import json
 
-
 # -------------------------------------------------------------------
 # 1. Visitor Interface
 # -------------------------------------------------------------------
 class WorldVisitor(ABC):
-
     @abstractmethod
     def visit_city(self, city: City) -> None:
         pass
@@ -638,16 +633,13 @@ class WorldVisitor(ABC):
     def visit_mine(self, mine: Mine) -> None:
         pass
 
-
 # -------------------------------------------------------------------
 # 2. Element Interface
 # -------------------------------------------------------------------
 class WorldElement(ABC):
-
     @abstractmethod
     def accept(self, visitor: WorldVisitor) -> None:
         pass
-
 
 # -------------------------------------------------------------------
 # 3. Concrete Elements
@@ -660,7 +652,6 @@ class City(WorldElement):
     def accept(self, visitor: WorldVisitor) -> None:
         visitor.visit_city(self)
 
-
 @dataclass(frozen=True)
 class Forest(WorldElement):
     name: str
@@ -668,7 +659,6 @@ class Forest(WorldElement):
 
     def accept(self, visitor: WorldVisitor) -> None:
         visitor.visit_forest(self)
-
 
 @dataclass(frozen=True)
 class Mine(WorldElement):
@@ -679,43 +669,35 @@ class Mine(WorldElement):
     def accept(self, visitor: WorldVisitor) -> None:
         visitor.visit_mine(self)
 
-
 # -------------------------------------------------------------------
 # 4. Concrete Visitors
 # -------------------------------------------------------------------
 class JsonExportVisitor(WorldVisitor):
-
     def __init__(self):
         self._items: list[dict[str, object]] = []
 
     def visit_city(self, city: City) -> None:
-        self._items.append({
-            "type": "city",
-            "name": city.name,
-            "population": city.population,
-        })
+        self._items.append(
+            {"type": "city", "name": city.name, "population": city.population}
+        )
 
     def visit_forest(self, forest: Forest) -> None:
-        self._items.append({
-            "type": "forest",
-            "name": forest.name,
-            "area": forest.area,
-        })
+        self._items.append({"type": "forest", "name": forest.name, "area": forest.area})
 
     def visit_mine(self, mine: Mine) -> None:
-        self._items.append({
-            "type": "mine",
-            "name": mine.name,
-            "mineral": mine.mineral,
-            "production": mine.production,
-        })
+        self._items.append(
+            {
+                "type": "mine",
+                "name": mine.name,
+                "mineral": mine.mineral,
+                "production": mine.production,
+            }
+        )
 
     def result(self) -> str:
         return json.dumps(self._items, ensure_ascii=False, indent=2)
 
-
 class StatisticsVisitor(WorldVisitor):
-
     def __init__(self):
         self.city_count = 0
         self.total_population = 0
@@ -743,12 +725,10 @@ class StatisticsVisitor(WorldVisitor):
             f"광산={self.mine_count}개(총 생산량: {self.total_production})"
         )
 
-
 # -------------------------------------------------------------------
 # 5. Object Structure
 # -------------------------------------------------------------------
 class World:
-
     def __init__(self, elements: list[WorldElement]):
         self._elements = elements
 
@@ -756,28 +736,26 @@ class World:
         for element in self._elements:
             element.accept(visitor)
 
-
 # -------------------------------------------------------------------
 # 6. Usage Example
 # -------------------------------------------------------------------
 if __name__ == "__main__":
-    world = World([
-        City(name="왕도", population=100_000),
-        Forest(name="고대의 숲", area=450.5),
-        Mine(name="북부 광산", mineral="철", production=2_000),
-        City(name="항구 도시", population=40_000),
-    ])
-
+    world = World(
+        [
+            City(name="왕도", population=100_000),
+            Forest(name="고대의 숲", area=450.5),
+            Mine(name="북부 광산", mineral="철", production=2_000),
+            City(name="항구 도시", population=40_000),
+        ]
+    )
     print("=== JSON Export ===")
     json_visitor = JsonExportVisitor()
     world.accept(json_visitor)
     print(json_visitor.result())
-
     print("\n=== Statistics ===")
     stats_visitor = StatisticsVisitor()
     world.accept(stats_visitor)
     print(stats_visitor.summary())
-
 ```
 
 ---
@@ -823,14 +801,14 @@ def export_json(element: WorldElement) -> JsonValue:
 
 ### 3. Exhaustiveness Checking (완전성 검사)
 
-새로운 Variant(예: `River`)가 추가되었을 때, 정적 타입 검사기(Type Checker)나 컴파일러는 패턴 매칭의 누락을 감지하여 오류 메시지를 출력합니다.
+닫힌 ADT와 완전성 검사를 지원하는 언어에서는 새로운 Variant(예: `River`)가 추가됐을 때 타입 검사기나 컴파일러가 누락된 패턴을 찾을 수 있습니다. Python의 `match` 문만으로 이 검사가 자동으로 보장되는 것은 아니며, 사용하는 타입 검사기의 기능과 모델링 방식에 따라 별도의 `assert_never()` 같은 장치가 필요합니다.
 
 ```text
 Non-exhaustive pattern match: Missing case 'River'
 
 ```
 
-이로써 방문자 패턴이 제공하던 정적 타입 안전성을 함수형 스타일에서도 동일하게 확보할 수 있습니다.
+이 조건을 만족하면 Visitor 인터페이스를 일괄 수정해 얻던 연산의 타입별 커버리지 검사를 패턴 매칭에서도 유지할 수 있습니다.
 
 ---
 
@@ -862,4 +840,4 @@ Non-exhaustive pattern match: Missing case 'River'
 
 ### 결론
 
-방문자 패턴의 본질은 "안정적인 데이터 구조에 계속 추가되는 연산을 외부로 분리하여, 객체 구조를 수정하지 않고도 타입 안전하게 기능을 확장하는 패턴"입니다.
+방문자 패턴의 핵심은 안정적인 데이터 구조에 계속 추가되는 연산을 외부로 분리하여, Element 클래스를 수정하지 않고 기능을 확장하는 데 있습니다. 타입 안전성과 누락 검출 수준은 언어의 Visitor 인터페이스 검사와 패턴 매칭 완전성 검사 기능에 따라 달라집니다.

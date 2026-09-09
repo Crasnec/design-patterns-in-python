@@ -356,17 +356,14 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Self
 
-
 # -------------------------------------------------------------------
 # 1. Prototype 인터페이스
 # -------------------------------------------------------------------
 
 class Prototype(ABC):
-
     @abstractmethod
     def clone(self) -> Self:
         pass
-
 
 # -------------------------------------------------------------------
 # 2. 구체 Prototype
@@ -396,83 +393,48 @@ class Monster(Prototype):
         print(f"저항: {self.resistances}")
         print(f"드롭 테이블: {self.loot_table}")
 
-
 # -------------------------------------------------------------------
 # 3. Prototype Registry
 # -------------------------------------------------------------------
 
 class PrototypeRegistry:
-
     def __init__(self):
         self._prototypes: dict[str, Monster] = {}
 
-    def register(
-        self,
-        name: str,
-        prototype: Monster,
-    ) -> None:
-
+    def register(self, name: str, prototype: Monster) -> None:
         self._prototypes[name] = prototype
 
-    def create(
-        self,
-        name: str,
-    ) -> Monster:
-
+    def create(self, name: str) -> Monster:
         prototype = self._prototypes.get(name)
-
         if prototype is None:
-            raise KeyError(
-                f"등록되지 않은 Prototype입니다: {name}"
-            )
-
+            raise KeyError(f"등록되지 않은 Prototype입니다: {name}")
         return prototype.clone()
-
 
 # -------------------------------------------------------------------
 # 4. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
     registry = PrototypeRegistry()
-
     goblin_prototype = Monster(
         name="고블린",
         hp=100,
         attack=20,
         defense=10,
-        skills=[
-            "Slash",
-            "Dodge",
-        ],
-        resistances={
-            "fire": 0,
-            "ice": 10,
-        },
-        loot_table={
-            "gold": 0.8,
-            "dagger": 0.1,
-        },
+        skills=["Slash", "Dodge"],
+        resistances={"fire": 0, "ice": 10},
+        loot_table={"gold": 0.8, "dagger": 0.1},
     )
-
-    registry.register(
-        "goblin",
-        goblin_prototype,
-    )
-
+    registry.register("goblin", goblin_prototype)
     goblin1 = registry.create("goblin")
     goblin2 = registry.create("goblin")
-
     # 복제된 객체의 일부만 변경합니다.
     goblin2.name = "엘리트 고블린"
     goblin2.hp = 200
     goblin2.attack = 40
     goblin2.skills.append("PowerSlash")
-
     goblin1.show_info()
     goblin2.show_info()
-
 ```
 
 실행 결과를 통해 두 객체의 내부 컬렉션이 서로 독립적으로 동작함을 확인할 수 있습니다.
@@ -531,7 +493,7 @@ monster2 = monster1
 
 그러나 해당 객체가 완전히 불변이라고 가정해 보겠습니다.
 
-```python
+```text
 immutable record Monster:
     name: str
     hp: Int
@@ -581,7 +543,7 @@ clone()
 
 반면 불변 레코드를 지원하는 언어에서는 **기존 값을 기반으로 새로운 값을 직접 정의하여 생성**할 수 있습니다.
 
-```python
+```text
 elite_goblin = goblin with {
     name = "엘리트 고블린",
     hp = 200,
@@ -634,7 +596,7 @@ skills = Vector[
 
 엘리트 고블린 객체에 새로운 스킬을 추가합니다.
 
-```python
+```text
 elite = goblin with {
     skills =
         goblin.skills.append(PowerSlash)
@@ -671,21 +633,21 @@ elite.skills
 
 객체 내부에 여러 단계의 중첩 구조가 존재하는 경우를 살펴보겠습니다.
 
-```python
+```text
 immutable record Character:
     profile: Profile
     equipment: Equipment
 
 ```
 
-```python
+```text
 immutable record Equipment:
     weapon: Weapon
     armor: Armor
 
 ```
 
-```python
+```text
 immutable record Weapon:
     name: str
     damage: Int
@@ -694,7 +656,7 @@ immutable record Weapon:
 
 이 상황에서 무기의 공격력만 수정하고자 할 때, 일반적인 불변 데이터 방식으로는 다음과 같이 전체 경로를 재작성해야 합니다.
 
-```python
+```text
 hero with {
     equipment = hero.equipment with {
         weapon = hero.equipment.weapon with {
@@ -707,7 +669,7 @@ hero with {
 
 그러나 Lens를 지원하는 언어 환경에서는 특정 데이터 접근 경로를 일종의 독립된 값으로 다룰 수 있습니다.
 
-```python
+```text
 damage_lens =
     lens Character.equipment.weapon.damage
 
@@ -751,7 +713,7 @@ class Prototype:
 
 현대적인 타입 시스템에서는 복제 가능성(Capability)이라는 개념 자체를 별도의 타입 제약으로 선언할 수 있습니다.
 
-```python
+```text
 trait Clone[T]:
 
     def clone(
@@ -762,7 +724,7 @@ trait Clone[T]:
 
 일반적인 데이터 객체는 `Clone` 타입클래스를 구현하여 복제 동작을 정의합니다.
 
-```python
+```text
 impl Clone[Monster]:
 
     def clone(
@@ -777,7 +739,7 @@ impl Clone[Monster]:
 
 고차 함수 작성 시 복제 가능한 타입만을 받도록 제약을 걸 수 있습니다.
 
-```python
+```text
 def duplicate[T](
     value: T,
 ) -> T
@@ -797,7 +759,7 @@ Prototype 패턴을 적용할 때 가장 주의해야 할 부분 중 하나는 *
 
 다음과 같은 객체를 예로 들어보겠습니다.
 
-```python
+```text
 record DatabaseConnection:
     socket: Socket
     transaction: Transaction
@@ -810,7 +772,7 @@ Socket을 그대로 공유해야 하는지, 새로운 Socket을 연결해야 하
 
 강력한 타입 시스템에서는 이러한 시스템 자원을 선형 타입(Linear Type)으로 정의하여 안전하게 다룹니다.
 
-```python
+```text
 linear resource DatabaseConnection:
     socket: Socket
 
@@ -818,7 +780,7 @@ linear resource DatabaseConnection:
 
 선형 타입으로 지정된 값은 일반 데이터처럼 임의로 복제할 수 없습니다.
 
-```python
+```text
 connection1 =
     open_database()
 
@@ -837,7 +799,7 @@ and does not implement Clone.
 
 ```
 
-결과적으로 "이 객체를 안전하게 복제할 수 있는가?"라는 핵심적인 설계 규칙을 개발자의 수동 검증에 의존하지 않고, **타입 시스템 차원에서 엄격하게 보장**할 수 있게 됩니다.
+복제 가능한 필드와 복제할 수 없는 자원을 타입에 빠짐없이 반영했다면, "이 객체를 복제할 수 있는가?"라는 규칙의 일부를 수동 검토 대신 타입 검사 단계에서 확인할 수 있습니다.
 
 ---
 
@@ -847,7 +809,7 @@ Prototype 패턴을 도메인 모델에 적용할 때 단순 데이터 복사 �
 
 고유 식별자(ID)를 갖는 캐릭터 객체를 예로 들어보겠습니다.
 
-```python
+```text
 record Character:
     id: CharacterId
     name: str
@@ -861,12 +823,12 @@ record Character:
 
 따라서 단순 메모리 복사인 `clone()`과 도메인 관점의 객체 생성인 `duplicate()`를 명확히 구분하여 다루는 것이 좋습니다.
 
-```python
+```text
 opaque type CharacterId
 
 ```
 
-```python
+```text
 def duplicate(
     source: Character,
 ) -> Character:
@@ -902,7 +864,7 @@ Prototype 패턴을 구현할 때 이러한 개념적 차이를 명확하게 정
 
 Monster 객체가 다음과 같이 두 종류의 데이터를 관리한다고 가정해 보겠습니다.
 
-```python
+```text
 record Monster:
     stats: Owned[Stats]
     metadata: Shared[MonsterMetadata]
@@ -941,7 +903,7 @@ def clone(
 
 가변 객체지향 패러다임에서는 이를 `Clone + Mutation`의 과정으로 표현하고, 불변 함수형 패러다임에서는 `Persistent Value + Record Update`로 나타냅니다.
 
-```python
+```text
 elite =
     goblin with {
         hp = 200,

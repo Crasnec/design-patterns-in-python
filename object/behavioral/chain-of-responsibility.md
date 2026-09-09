@@ -131,23 +131,13 @@ return "[Human Operator] 상담원에게 요청을 전달합니다."
 
 일반적인 구조는 다음과 같습니다.
 
-```text
-Client
-   │
-   ↓
-Handler A
-   │
-   ├─ 처리 가능 → Response
-   │
-   └─ 처리 불가
-          ↓
-       Handler B
-          │
-          ├─ 처리 가능 → Response
-          │
-          └─ 처리 불가
-                 ↓
-              Handler C
+```mermaid
+flowchart TD
+    client[Client] --> handler_a{Handler A}
+    handler_a -->|처리 가능| response_a[Response]
+    handler_a -->|처리 불가| handler_b{Handler B}
+    handler_b -->|처리 가능| response_b[Response]
+    handler_b -->|처리 불가| handler_c[Handler C]
 
 ```
 
@@ -437,27 +427,22 @@ classDiagram
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-
 @dataclass(frozen=True)
 class SupportTicket:
     category: str
     message: str
     priority: int = 0
 
-
 class SupportHandler(ABC):
     @abstractmethod
     def handle(self, ticket: SupportTicket) -> str | None:
         pass
 
-
 class BaseSupportHandler(SupportHandler):
     def __init__(self) -> None:
         self._next: SupportHandler | None = None
 
-    def set_next(
-        self, handler: "BaseSupportHandler"
-    ) -> "BaseSupportHandler":
+    def set_next(self, handler: "BaseSupportHandler") -> "BaseSupportHandler":
         self._next = handler
         return handler
 
@@ -466,13 +451,11 @@ class BaseSupportHandler(SupportHandler):
             return None
         return self._next.handle(ticket)
 
-
 class EmergencySupportHandler(BaseSupportHandler):
     def handle(self, ticket: SupportTicket) -> str | None:
         if ticket.priority >= 100:
             return "[Emergency] 긴급 지원팀으로 요청을 전달합니다."
         return super().handle(ticket)
-
 
 class FAQSupportHandler(BaseSupportHandler):
     def handle(self, ticket: SupportTicket) -> str | None:
@@ -480,13 +463,11 @@ class FAQSupportHandler(BaseSupportHandler):
             return "[FAQ] 일반 문의를 자동 응답합니다."
         return super().handle(ticket)
 
-
 class BillingSupportHandler(BaseSupportHandler):
     def handle(self, ticket: SupportTicket) -> str | None:
         if ticket.category == "billing":
             return "[Billing] 결제 담당자가 요청을 처리합니다."
         return super().handle(ticket)
-
 
 class TechnicalSupportHandler(BaseSupportHandler):
     def handle(self, ticket: SupportTicket) -> str | None:
@@ -494,11 +475,9 @@ class TechnicalSupportHandler(BaseSupportHandler):
             return "[Technical] 기술 지원팀이 요청을 처리합니다."
         return super().handle(ticket)
 
-
 class HumanSupportHandler(BaseSupportHandler):
     def handle(self, ticket: SupportTicket) -> str | None:
         return "[Human Operator] 상담원에게 요청을 전달합니다."
-
 
 def create_support_chain() -> SupportHandler:
     emergency = EmergencySupportHandler()
@@ -506,11 +485,9 @@ def create_support_chain() -> SupportHandler:
     billing = BillingSupportHandler()
     technical = TechnicalSupportHandler()
     fallback = HumanSupportHandler()
-
     # 순서 자체가 정책입니다. 긴급 요청을 먼저 확인합니다.
     emergency.set_next(faq).set_next(billing).set_next(technical).set_next(fallback)
     return emergency
-
 
 def process_ticket(handler: SupportHandler, ticket: SupportTicket) -> None:
     result = handler.handle(ticket)
@@ -518,7 +495,6 @@ def process_ticket(handler: SupportHandler, ticket: SupportTicket) -> None:
         print("처리할 수 없는 요청입니다.")
     else:
         print(result)
-
 
 if __name__ == "__main__":
     chain = create_support_chain()
@@ -532,7 +508,6 @@ if __name__ == "__main__":
     ]
     for ticket in tickets:
         process_ticket(chain, ticket)
-
 ```
 
 **실행 결과:**
@@ -605,7 +580,7 @@ process_ticket(chain, SupportTicket("security", "긴급 계정 침해", 100))
 
 본문의 `BillingSupportHandler`는 결제 문의를 처리하고, 나머지는 다음 객체에 넘깁니다. 이 두 책임 중 **처리 여부의 판단**만 함수로 옮겨 봅니다.
 
-```python
+```text
 type Handler[Req, Res] = Req -> Option[Res]
 
 
@@ -680,7 +655,7 @@ human_handler → 전문 담당자들 → 뒤쪽 후보에 도달하지 않음
 
 세 가지 결과를 구분하면 이런 의미 손실을 줄일 수 있습니다.
 
-```python
+```text
 data Decision[Res, Err] =
     Pass
   | Handled(response: Res)
@@ -737,7 +712,7 @@ def or_else[Req, Res](
 
 `or_else(emergency_handler, billing_handler)`도 같은 `Handler` 타입이므로 다른 후보와 다시 결합할 수 있습니다. 이 왼쪽 우선 선택을 가상의 `<|>` 연산자로 쓰면 다음과 같습니다.
 
-```python
+```text
 combined = emergency_handler <|> faq_handler <|> billing_handler
 ```
 
@@ -766,7 +741,7 @@ combined = emergency_handler <|> faq_handler <|> billing_handler
 
 지원 요청의 Handler는 답변을 만들면 종료합니다. 웹 Middleware는 다음 처리를 호출한 뒤 돌아온 응답에도 작업을 추가할 수 있습니다.
 
-```python
+```text
 type Endpoint = Request -> Response
 type Middleware = Endpoint -> Endpoint
 

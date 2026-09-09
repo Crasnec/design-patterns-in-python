@@ -1,5 +1,7 @@
 # 책임 연쇄 패턴 (Chain of Responsibility Pattern)
 
+![고리가 차례로 연결된 하나의 사슬](../../assets/images/patterns/chain-of-responsibility.png)
+
 ## 1. 패턴이 없을 때 발생하는 문제점 (The Problem)
 
 책임 연쇄 패턴을 사용하지 않고 요청을 처리할 객체를 클라이언트가 직접 결정하면, 요청 종류가 늘어날수록 조건문이 커지고 클라이언트가 모든 처리 객체의 존재와 선택 규칙을 알아야 하는 문제가 발생합니다.

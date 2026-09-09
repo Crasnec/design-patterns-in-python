@@ -152,14 +152,14 @@ class Tree:
 
 구조는 다음과 같습니다.
 
-```text
-Tree 1 ───┐
-          │
-Tree 2 ───┼────> TreeType("Oak")
-          │          │
-Tree 3 ───┘          ├─ name
-                     ├─ color
-                     └─ texture
+```mermaid
+flowchart LR
+    tree_1[Tree 1] --> oak[TreeType: Oak]
+    tree_2[Tree 2] --> oak
+    tree_3[Tree 3] --> oak
+    oak --> name[name]
+    oak --> color[color]
+    oak --> texture[texture]
 
 ```
 
@@ -720,7 +720,7 @@ Context 객체조차 많다면 DOD(Data-Oriented Design) 관점에서 위치 배
 
 `WeakInternTable[Key, Value]`는 다른 강한 참조가 사라진 공유 객체를 회수 가능하게 만듭니다. 회수 시점은 런타임에 달려 있으며, 다음 요청에서 같은 값의 새 객체를 생성할 수 있습니다. 따라서 살아 있는 객체 사이의 공유에는 적합하지만, 프로그램 전체 수명에 걸친 동일한 객체 정체성은 보장하지 않습니다.
 
-### 11. Identity가 필요하지 않다면 Flyweight 자체가 구현 세부사항이 된다
+### 11. Identity가 필요하지 않다면 Flyweight 자체가 구현 세부 사항이 된다
 
 순수 함수형 언어나 최적화 컴파일러에서는 객체의 메모리 주소(Identity)보다 값 동등성(`a == b`)이 더 중요하므로, Flyweight가 디자인 패턴이 아닌 런타임 최적화 메커니즘으로 자동화될 수 있습니다.
 

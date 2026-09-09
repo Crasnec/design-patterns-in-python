@@ -86,12 +86,11 @@ audio_service = AudioService(config)
 
 개념적 흐름은 다음과 같습니다.
 
-```text
-GameConfig()
-     │
-     ├──────────────┐
-     ↓              ↓
- instance A      instance A
+```mermaid
+flowchart LR
+    caller_a[Caller A] --> config[GameConfig]
+    caller_b[Caller B] --> config
+    config --> instance[Shared instance A]
 
 ```
 
@@ -134,7 +133,7 @@ print(config2.difficulty)
 
 * **인스턴스 수 제어:** 특정 객체의 인스턴스가 단 하나만 생성되도록 생성 과정을 중앙에서 엄격히 관리할 수 있습니다.
 * **중복 초기화 방지:** 무거운 초기화 작업을 한 번만 수행하고 이후 동일한 객체를 재사용함으로써 자원을 절약합니다.
-* **공유 상태의 일관성:** 여러 클라이언트가 동일한 인스턴스를 바라보므로 객체 내부 상태의 일관성을 보장할 수 있습니다.
+* **공유 상태의 단일화:** 여러 클라이언트가 같은 인스턴스를 바라보므로 서로 다른 복사본이 엇갈리는 문제를 줄일 수 있습니다. 다만 동시 변경의 원자성까지 보장하지는 않으므로 별도의 동기화가 필요할 수 있습니다.
 * **공통 접근 지점 제공:** 애플리케이션의 어느 위치에서나 동일한 서비스나 레지스트리에 쉽게 접근할 수 있습니다.
 * **지연 초기화 가능:** 실제로 Singleton이 필요한 최초 시점까지 객체 생성을 지연하는 Lazy Initialization을 적용할 수 있습니다.
 
@@ -142,7 +141,7 @@ print(config2.difficulty)
 
 * **전역 상태(Global State) 문제:** Singleton 내부에 가변 상태가 존재하면 애플리케이션 전역에서 수정 가능한 공유 상태가 되어 시스템 예측 가능성을 떨어뜨립니다.
 * **숨겨진 의존성:** 함수나 객체가 내부에서 Singleton에 직접 접근할 경우, 함수 시그니처만으로는 해당 의존성을 명확히 파악하기 어렵습니다.
-* **테스트 격리의 어려움:** 한 테스트에서 변경한 Singleton의 상태가 다른 테스트에 남아 테스트 간 간섭을 일으키고 사이드 이펙트를 유발하기 쉽습니다.
+* **테스트 격리의 어려움:** 한 테스트에서 변경한 Singleton의 상태가 다른 테스트에 남아 테스트 간 간섭과 예기치 않은 실패를 일으키기 쉽습니다.
 * **동시성 이슈:** Lazy Initialization 적용 시 여러 스레드가 동시에 최초 인스턴스를 요청하면 중복 생성을 막기 위해 스레드 동기화 처리가 필요합니다.
 * **수명 주기의 경직성:** 프로세스 전체가 아닌 요청(Request), 세션(Session), 테넌트(Tenant) 등 더 짧거나 구체적인 범위의 수명이 필요한 객체에는 Singleton이 맞지 않습니다.
 * **결합도 증가:** 클라이언트가 `GameConfig()` 또는 `GameConfig.instance()` 같은 전역 접근 방식에 직접 의존하게 되면 향후 다른 구현체로 교체하기 어려워집니다.
@@ -193,7 +192,7 @@ Multiton:
 
 Python의 `Logger` 객체는 직접 생성자 연산을 수행하는 대신 일반적으로 `logging.getLogger(name)`을 통해 획득합니다.
 
-공식 문서에 따르면 동일한 이름으로 `getLogger()`를 여러 번 호출할 경우 항상 같은 `Logger` 객체에 대한 참조를 반환합니다. ([Python documentation](https://www.google.com/search?q=%5Bhttps%3A%2F%2Fdocs.python.org%2F3%2F%5D%28https%3A%2F%2Fdocs.python.org%2F3%2F%29))
+공식 문서에 따르면 동일한 이름으로 `getLogger()`를 여러 번 호출하면 항상 같은 `Logger` 객체에 대한 참조를 반환합니다.
 
 ```python
 import logging
@@ -231,20 +230,18 @@ if settings.DEBUG:
 
 ```
 
-Django 공식 문서에서는 `django.conf.settings`가 단순 모듈이 아닌 객체이며, 기본 설정과 프로젝트별 설정을 하나의 인터페이스로 추상화한다고 설명합니다. 또한 실행 중 임의로 설정을 변경하지 않을 것을 권장합니다. ([Django Project](https://www.google.com/search?q=%5Bhttps%3A%2F%2Fdocs.djangoproject.com%2F%5D%28https%3A%2F%2Fdocs.djangoproject.com%2F%29))
+Django 공식 문서에서는 `django.conf.settings`가 모듈이 아니라 기본 설정과 프로젝트 설정을 하나의 인터페이스로 추상화한 객체라고 설명합니다. 또한 실행 중 설정을 임의로 바꾸지 말 것을 권장합니다.
 
-```text
-Django application
-       │
-       ├──────────────┐
-       ↓              ↓
- django.conf.settings
-       ↑              ↑
-       └──────────────┘
+```mermaid
+flowchart LR
+    app[Application code] --> settings[django.conf.settings]
+    reusable[Reusable app] --> settings
+    settings --> defaults[Default settings]
+    settings --> project[Project settings]
 
 ```
 
-또한 수동 구성 시 `settings.configure()`는 단 한 번만 수행할 수 있으며, 이미 설정에 접근한 뒤 재구성하는 것은 오류를 발생시킵니다. ([Django Project](https://www.google.com/search?q=%5Bhttps%3A%2F%2Fdocs.djangoproject.com%2F%5D%28https%3A%2F%2Fdocs.djangoproject.com%2F%29))
+또한 수동 구성 시 `settings.configure()`는 한 번만 호출할 수 있으며, 이미 설정에 접근한 뒤 다시 구성해도 오류가 발생합니다.
 
 이 역시 전통적인 GoF Singleton 구현체라기보다는 **애플리케이션 전역에서 단 하나의 설정 인터페이스를 공유하는 Singleton-like Service Object**에 해당합니다.
 
@@ -254,7 +251,7 @@ Django application
 
 Python의 `import` 시스템은 모듈을 처음 불러올 때 모듈 객체를 생성하고, 이를 `sys.modules` 캐시에 저장합니다.
 
-같은 이름의 모듈이 다시 `import`될 때 `sys.modules`에 해당 항목이 존재하면 저장해 둔 기존 모듈 객체를 재사용합니다. ([Python documentation](https://www.google.com/search?q=%5Bhttps%3A%2F%2Fdocs.python.org%2F3%2F%5D%28https%3A%2F%2Fdocs.python.org%2F3%2F%29))
+같은 이름의 모듈을 다시 `import`할 때 `sys.modules`에 해당 항목이 있으면 저장된 모듈 객체를 재사용합니다.
 
 ```python
 # config.py
@@ -275,18 +272,16 @@ import config
 
 개념상 구조는 다음과 같습니다.
 
-```text
-battle.py ─────┐
-               ↓
-        sys.modules["config"]
-               ↑
-ui.py ─────────┘
+```mermaid
+flowchart LR
+    battle[battle.py] --> config[sys.modules: config]
+    ui[ui.py] --> config
 
 ```
 
 이러한 언어적 특성 덕분에 Python에서는 단순 전역 상태나 서비스 구현 시 별도의 Singleton 클래스를 정의하는 대신 **모듈 자체를 Singleton과 유사한 네임스페이스로 활용하는 방식**이 널리 쓰입니다.
 
-다만 이는 엄격한 Singleton 보장이 아닙니다. `sys.modules` 캐시를 직접 제거하고 다시 `import`하거나, 기존 참조가 남은 상태에서 재로드할 경우 복수의 모듈 객체가 동시에 존재할 위험이 있습니다. ([Python documentation](https://www.google.com/search?q=%5Bhttps%3A%2F%2Fdocs.python.org%2F3%2F%5D%28https%3A%2F%2Fdocs.python.org%2F3%2F%29))
+다만 이는 엄격한 Singleton 보장이 아닙니다. 기존 참조를 남겨 둔 채 `sys.modules`에서 캐시 항목을 제거하고 다시 `import`하면 서로 다른 모듈 객체가 동시에 존재할 수 있습니다. 반면 `importlib.reload()`는 기존 모듈 객체를 재사용합니다.
 
 ---
 
@@ -1101,4 +1096,4 @@ Singleton Class
 
 를 정교하게 구분하여 모델링하는 것이 핵심입니다.
 
-결론적으로 현대적 관점에서 싱글턴 패턴의 본질은 "공유되는 값과 자원의 정체성·소유권·접근 권한·수명 범위를 일관되게 통제하는 종합적인 설계 기법"으로 확장하여 이해할 수 있습니다.
+싱글턴의 핵심은 정해진 범위에서 인스턴스 생성을 하나로 제한하고 공통 접근 지점을 제공하는 데 있습니다. 적용하기 전에는 값의 공유, 자원의 유일성, 접근 권한, 수명 범위가 실제로 같은 요구인지 분리해서 판단해야 합니다.

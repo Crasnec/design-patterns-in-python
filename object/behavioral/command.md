@@ -439,10 +439,8 @@ classDiagram
 ```python
 from abc import ABC, abstractmethod
 
-
 # 1. Receiver
 class TextEditor:
-
     def __init__(self) -> None:
         self._text = ""
 
@@ -462,10 +460,8 @@ class TextEditor:
         self._text = self._text[:position] + self._text[position + length :]
         return deleted
 
-
 # 2. Command Interface
 class Command(ABC):
-
     @abstractmethod
     def execute(self) -> None:
         pass
@@ -474,10 +470,8 @@ class Command(ABC):
     def undo(self) -> None:
         pass
 
-
 # 3. Concrete Command - Insert
 class InsertTextCommand(Command):
-
     def __init__(self, editor: TextEditor, position: int, text: str):
         self._editor = editor
         self._position = position
@@ -489,10 +483,8 @@ class InsertTextCommand(Command):
     def undo(self) -> None:
         self._editor.delete(self._position, len(self._text))
 
-
 # 4. Concrete Command - Delete
 class DeleteTextCommand(Command):
-
     def __init__(self, editor: TextEditor, position: int, length: int):
         self._editor = editor
         self._position = position
@@ -505,10 +497,8 @@ class DeleteTextCommand(Command):
     def undo(self) -> None:
         self._editor.insert(self._position, self._deleted_text)
 
-
 # 5. Invoker
 class EditorHistory:
-
     def __init__(self) -> None:
         self._undo_stack: list[Command] = []
         self._redo_stack: list[Command] = []
@@ -536,10 +526,8 @@ class EditorHistory:
         self._redo_stack.pop()
         self._undo_stack.append(command)
 
-
 # 6. Composite Command (Macro Command)
 class MacroCommand(Command):
-
     def __init__(self, commands: list[Command]):
         self._commands = tuple(commands)
 
@@ -560,34 +548,26 @@ class MacroCommand(Command):
         for command in reversed(self._commands):
             command.undo()
 
-
 # 7. 실행 (Client / Usage)
 if __name__ == "__main__":
     editor = TextEditor()
     history = EditorHistory()
-
     # 1. 텍스트 삽입
     history.execute(InsertTextCommand(editor, position=0, text="Hello"))
     print(f"현재 텍스트: '{editor.text}'")  # Hello
-
     history.execute(InsertTextCommand(editor, position=5, text=" World"))
     print(f"현재 텍스트: '{editor.text}'")  # Hello World
-
     # 2. 텍스트 삭제
     history.execute(DeleteTextCommand(editor, position=5, length=6))
     print(f"삭제 후 텍스트: '{editor.text}'")  # Hello
-
     # 3. Undo 실행
     history.undo()
     print(f"Undo 1회: '{editor.text}'")  # Hello World
-
     history.undo()
     print(f"Undo 2회: '{editor.text}'")  # Hello
-
     # 4. Redo 실행
     history.redo()
     print(f"Redo 1회: '{editor.text}'")  # Hello World
-
     # 5. Macro Command 실행
     macro = MacroCommand(
         [
@@ -597,10 +577,8 @@ if __name__ == "__main__":
     )
     history.execute(macro)
     print(f"Macro 실행 후: '{editor.text}'")  # Hello World! Welcome
-
     history.undo()
     print(f"Macro Undo 후: '{editor.text}'")  # Hello World
-
 ```
 
 **실행 결과:**
@@ -685,7 +663,7 @@ History는 교체 작업의 세부 내용을 몰라도 한 번의 Undo로 원래
 
 저장 버튼이 나중에 `editor.insert()`를 호출하기만 하면 된다면, 별도의 Command 클래스 없이 함수를 보관할 수 있습니다.
 
-```python
+```text
 type Action = () -> Unit
 
 
@@ -708,7 +686,7 @@ action()
 
 이력 화면에 “0번 위치에 Hello 삽입”을 표시하거나 명령을 파일에 저장하려면 요청의 내용을 필드로 읽을 수 있어야 합니다.
 
-```python
+```text
 data EditorCommand =
     Insert(position: Int, text: String)
   | Delete(position: Int, length: Int)
@@ -738,7 +716,7 @@ def execute(editor: TextEditor, command: EditorCommand) -> Unit:
 
 본문의 Receiver는 내부 문자열을 변경합니다. 순수 함수에서는 이전 상태와 명령을 받아 새로운 상태를 반환하도록 바꿀 수 있습니다.
 
-```python
+```text
 immutable record EditorState:
     text: String
 
@@ -789,7 +767,7 @@ Delete(0, 5)
 
 역명령을 만들려면 **실행 전 상태와 실제 실행 결과**가 필요합니다. 본문의 `_deleted_text`가 그 정보를 보관합니다. 데이터 중심 설계에서는 요청과 실행 기록을 별도 값으로 나눌 수 있습니다.
 
-```python
+```text
 immutable record AppliedEdit:
     request: EditorCommand
     undo_command: EditorCommand
@@ -841,7 +819,7 @@ def apply_all(state: EditorState, commands: Vector[EditorCommand]):
 
 편집 명령을 큐로 전송하려면 편집기 객체의 메모리 참조 대신 문서 ID와 요청 정보를 보관합니다.
 
-```python
+```text
 immutable record EditMessage:
     request_id: RequestId
     document_id: DocumentId
@@ -868,7 +846,7 @@ immutable record EditMessage:
 
 편집기에는 텍스트를 읽는 요청과 길이를 읽는 요청도 있을 수 있습니다. 결과를 모두 `Any`로 반환하면 호출자가 명령과 결과 타입의 관계를 직접 기억해야 합니다.
 
-```python
+```text
 data EditorRequest[R] =
     ReadText -> EditorRequest[String]
   | ReadLength -> EditorRequest[Int]
@@ -895,7 +873,7 @@ GADT는 생성자마다 결과 타입을 연결하는 타입 표현입니다. �
 
 문서 상태 계산과 파일 저장을 나누면 계산은 순수 함수로 검사하고 저장 방식은 실행 환경에서 선택할 수 있습니다.
 
-```python
+```text
 effect DocumentStore:
     def save(document_id: DocumentId, state: EditorState) -> SaveResult
 ```

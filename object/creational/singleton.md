@@ -167,14 +167,12 @@ app = Application(
 * **Python의 모듈 대안:** 모듈 수준에 상태나 객체를 정의하면 일반적인 `import` 과정에서 동일한 모듈 객체가 재사용되므로, 단순한 전역 서비스라면 별도의 Singleton 클래스를 정의하지 않아도 됩니다.
 * **Singleton과 Multiton의 구별:** Singleton이 타입 전체에서 단 하나의 인스턴스를 유지한다면, Multiton은 특정 키(Key)별로 하나의 인스턴스를 유지하는 구조입니다.
 
-```text
-Singleton:
-    GameConfig → 1 instance
-
-Multiton:
-    Logger["database"] → 1 instance
-    Logger["network"]  → 1 instance
-    Logger["game"]     → 1 instance
+```mermaid
+flowchart LR
+    singleton[GameConfig type] --> instance[단일 instance]
+    registry[Logger registry] --> database[database instance]
+    registry --> network[network instance]
+    registry --> game[game instance]
 
 ```
 
@@ -327,117 +325,71 @@ classDiagram
 from threading import RLock
 from typing import Any
 
-
 # -------------------------------------------------------------------
 # 1. Singleton Meta Class
 # -------------------------------------------------------------------
 
 class SingletonMeta(type):
-
     _instances: dict[type, object] = {}
     _lock = RLock()
 
-    def __call__(
-        cls,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
-
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
         # 인스턴스 생성과 조회를 하나의 임계 구역에서 처리합니다.
         with cls._lock:
-
             if cls not in cls._instances:
-                instance = super().__call__(
-                    *args,
-                    **kwargs,
-                )
-
+                instance = super().__call__(*args, **kwargs)
                 cls._instances[cls] = instance
-
             return cls._instances[cls]
-
 
 # -------------------------------------------------------------------
 # 2. Singleton
 # -------------------------------------------------------------------
 
 class GameConfig(metaclass=SingletonMeta):
-
     def __init__(self):
         self.sound_volume = 80
         self.difficulty = "normal"
 
-    def set_difficulty(
-        self,
-        difficulty: str,
-    ) -> None:
-
+    def set_difficulty(self, difficulty: str) -> None:
         self.difficulty = difficulty
 
-    def set_sound_volume(
-        self,
-        volume: int,
-    ) -> None:
-
+    def set_sound_volume(self, volume: int) -> None:
         self.sound_volume = volume
 
     def show(self) -> None:
-        print(
-            f"볼륨: {self.sound_volume}, "
-            f"난이도: {self.difficulty}"
-        )
-
+        print(f"볼륨: {self.sound_volume}, " f"난이도: {self.difficulty}")
 
 # -------------------------------------------------------------------
 # 3. 클라이언트
 # -------------------------------------------------------------------
 
 class BattleService:
-
     def start(self) -> None:
         config = GameConfig()
-
-        print(
-            f"[전투 시스템] "
-            f"난이도={config.difficulty}"
-        )
-
+        print(f"[전투 시스템] " f"난이도={config.difficulty}")
 
 class UIService:
-
     def show_settings(self) -> None:
         config = GameConfig()
-
-        print(
-            f"[UI 시스템] "
-            f"볼륨={config.sound_volume}"
-        )
-
+        print(f"[UI 시스템] " f"볼륨={config.sound_volume}")
 
 # -------------------------------------------------------------------
 # 4. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
     config1 = GameConfig()
     config2 = GameConfig()
-
     print(config1 is config2)
     # True
-
     config1.set_difficulty("hard")
     config1.set_sound_volume(50)
-
     # 동일한 객체이므로 config2에서도 변경된 값 확인
     config2.show()
-
     battle_service = BattleService()
     ui_service = UIService()
-
     battle_service.start()
     ui_service.show_settings()
-
 ```
 
 실행 결과는 다음과 같습니다.
@@ -517,7 +469,7 @@ Singleton Class
 
 게임 설정이 다음과 같이 불변 레코드로 정의된다고 가정해 보겠습니다.
 
-```python
+```text
 immutable record GameConfig:
     difficulty: Difficulty
     sound_volume: Volume
@@ -606,7 +558,7 @@ calculate_damage
 
 Capability 개념을 지원하는 가상의 타입 시스템에서는 필요한 권한과 기능을 시그니처에 명시적으로 선언할 수 있습니다.
 
-```python
+```text
 capability GameSettings:
 
     def difficulty() -> Difficulty
@@ -617,7 +569,7 @@ capability GameSettings:
 
 함수는 이 Capability가 필요함을 명확히 요구합니다.
 
-```python
+```text
 def calculate_damage(
     hero: Hero,
     using settings: GameSettings,
@@ -632,7 +584,7 @@ def calculate_damage(
 
 호출 시 해당 Capability 구현체를 넘겨줍니다.
 
-```python
+```text
 damage = calculate_damage(
     hero,
     using settings,
@@ -644,7 +596,7 @@ damage = calculate_damage(
 
 테스트 환경에서는 다른 구현체를 쉽게 주입할 수 있습니다.
 
-```python
+```text
 test_settings =
     FixedGameSettings(
         difficulty=Easy,
@@ -676,7 +628,7 @@ save_result(result, database, logger, config)
 
 이를 해결하기 위해 실행 환경을 추상화한 가상의 Environment 타입을 정의해 봅니다.
 
-```python
+```text
 environment AppEnv:
     config: GameConfig
     database: Database
@@ -686,7 +638,7 @@ environment AppEnv:
 
 각 함수는 자신에게 필요한 환경 구성 요소만 선택적으로 선언합니다.
 
-```python
+```text
 def calculate_damage(
     hero: Hero,
 ) -> Damage
@@ -698,7 +650,7 @@ requires AppEnv.config:
 
 ```
 
-```python
+```text
 def load_user(
     id: UserId,
 ) -> User
@@ -710,7 +662,7 @@ requires AppEnv.database:
 
 애플리케이션 실행 경계(Entry Point)에서 환경을 한 번 바인딩해 줍니다.
 
-```python
+```text
 with environment AppEnv(
     config=production_config,
     database=production_database,
@@ -723,7 +675,7 @@ with environment AppEnv(
 
 테스트 시에는 테스트용 환경으로 손쉽게 대체할 수 있습니다.
 
-```python
+```text
 with environment AppEnv(
     config=test_config,
     database=in_memory_database,
@@ -747,7 +699,7 @@ with environment AppEnv(
 
 한 걸음 더 나아가, 구체적인 객체 인스턴스에 의존하는 대신 **"설정을 읽어오는 효과(Effect)"** 자체를 요구하도록 모델링할 수 있습니다.
 
-```python
+```text
 effect ConfigRead:
 
     def get_difficulty()
@@ -757,7 +709,7 @@ effect ConfigRead:
 
 함수는 연산 수행 중 발생할 수 있는 Effect를 선언합니다.
 
-```python
+```text
 def calculate_damage(
     hero: Hero,
 ) -> Damage
@@ -772,7 +724,7 @@ def calculate_damage(
 
 운영 환경에서는 실제 프로덕션 설정 기반의 Handler로 해당 Effect를 처리합니다.
 
-```python
+```text
 handle ConfigRead
 with ProductionConfig:
 
@@ -782,7 +734,7 @@ with ProductionConfig:
 
 테스트 환경에서는 고정된 가짜 데이터를 반환하는 Handler를 적용할 수 있습니다.
 
-```python
+```text
 handle ConfigRead
 with FixedConfig(Hard):
 
@@ -800,7 +752,7 @@ with FixedConfig(Hard):
 
 그러나 하드웨어 장치 제어권처럼 **실제로 물리적인 소유권이 단 하나만 존재해야 하는 자원**이 있을 수 있습니다.
 
-```python
+```text
 linear resource GPUDevice:
     handle: NativeGPUHandle
 
@@ -808,7 +760,7 @@ linear resource GPUDevice:
 
 프로그램 실행 시 단 하나의 GPU 제어권을 획득합니다.
 
-```python
+```text
 gpu =
     acquire_gpu()
 
@@ -816,7 +768,7 @@ gpu =
 
 선형 타입(Linear Type)으로 지정된 자원은 일반적인 값처럼 복사되거나 임의로 재할당될 수 없습니다.
 
-```python
+```text
 gpu1 =
     acquire_gpu()
 
@@ -839,7 +791,7 @@ gpu1 can no longer be used.
 
 명시적인 복제 역시 차단됩니다.
 
-```python
+```text
 gpu2 =
     clone(gpu1)
 
@@ -864,7 +816,7 @@ DB Connection Pool 같은 자원은 단 하나의 관리 주체가 유일 소유
 
 가상의 타입 시스템에서는 유일 소유권과 공유 접근 권한을 명확히 분리하여 표현할 수 있습니다.
 
-```python
+```text
 linear resource DatabasePool:
     ...
 
@@ -872,7 +824,7 @@ linear resource DatabasePool:
 
 프로그램 시작 시 자원의 단일 유일 소유권을 생성합니다.
 
-```python
+```text
 pool: Unique[DatabasePool] =
     DatabasePool.open(config)
 
@@ -880,7 +832,7 @@ pool: Unique[DatabasePool] =
 
 애플리케이션 각 서비스에는 Pool 자체의 유일 소유권을 넘기는 대신, 제약된 공유 접근 권한만을 생성하여 넘겨줍니다.
 
-```python
+```text
 database_access:
     Shared[DatabaseAccess]
         =
@@ -890,7 +842,7 @@ database_access:
 
 각 서비스 연산은 접근 Capability만을 전달받아 사용합니다.
 
-```python
+```text
 def load_user(
     id: UserId,
     using db: Shared[DatabaseAccess],
@@ -926,7 +878,7 @@ Singleton 패턴을 사용할 때 가장 모호해지기 쉬운 질문은 "도�
 
 Scope Type을 지원하는 가상의 환경을 가정해 보겠습니다.
 
-```python
+```text
 scope Process
 scope Request
 scope Session
@@ -936,7 +888,7 @@ scope Tenant[TenantId]
 
 프로세스 범위의 단일 캐시는 다음과 같이 명시 선언합니다.
 
-```python
+```text
 resource[
     scope=Process
 ] GlobalCache
@@ -945,7 +897,7 @@ resource[
 
 Request당 단 하나 존재해야 하는 객체는 다음과 같이 표현합니다.
 
-```python
+```text
 resource[
     scope=Request
 ] RequestContext
@@ -954,7 +906,7 @@ resource[
 
 Tenant별로 하나씩 지정되어야 하는 설정은 다음과 같습니다.
 
-```python
+```text
 resource[
     scope=Tenant[T]
 ] TenantConfig[T]
@@ -978,14 +930,14 @@ resource[
 
 타입 매개변수에 Key를 포함할 수 있는 가상의 구조를 정의해 봅니다.
 
-```python
+```text
 resource Logger[
     Name: Symbol
 ]
 
 ```
 
-```python
+```text
 game_logger:
     UniqueIn[
         Process,

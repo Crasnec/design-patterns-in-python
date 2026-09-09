@@ -4,7 +4,7 @@
 
 ## 1. 패턴이 없을 때 발생하는 문제점 (The Problem)
 
-비지터 패턴을 사용하지 않고 **여러 종류의 객체로 구성된 구조에 새로운 연산을 계속 추가하면**, 객체들이 자신의 본래 책임과 무관한 기능까지 과도하게 갖게 되는 문제가 발생합니다.
+방문자 패턴을 사용하지 않고 **여러 종류의 객체로 구성된 구조에 새로운 연산을 계속 추가하면**, 객체들이 자신의 본래 책임과 무관한 기능까지 과도하게 갖게 되는 문제가 발생합니다.
 
 예를 들어 게임 월드에 다음과 같은 요소들이 존재한다고 가정합니다.
 
@@ -144,7 +144,7 @@ AI Feature Extraction
 
 ```
 
-결과적으로 단일 도메인 클래스가 너무 많은 외부 요인으로 인해 변경되어 단일 책임 원칙(SRP)을 위반하게 됩니다.
+그 결과 단일 도메인 클래스가 여러 외부 요구 때문에 함께 변경되며, 단일 책임 원칙(SRP)을 지키기 어려워집니다.
 
 ---
 
@@ -201,26 +201,20 @@ def create_report(element) -> str:
 
 이 방식은 동일한 타입 분기 로직이 새로운 연산이 추가될 때마다 분산되어 중복 발생합니다.
 
-```text
-export_json()
-    ├─ City
-    ├─ Forest
-    └─ Mine
-
-calculate_value()
-    ├─ City
-    ├─ Forest
-    └─ Mine
-
-create_report()
-    ├─ City
-    ├─ Forest
-    └─ Mine
-
-validate()
-    ├─ City
-    ├─ Forest
-    └─ Mine
+```mermaid
+flowchart LR
+    export[export_json] --> city[City]
+    export --> forest[Forest]
+    export --> mine[Mine]
+    value[calculate_value] --> city
+    value --> forest
+    value --> mine
+    report[create_report] --> city
+    report --> forest
+    report --> mine
+    validate[validate] --> city
+    validate --> forest
+    validate --> mine
 
 ```
 
@@ -235,9 +229,9 @@ validate()
 
 ---
 
-## 2. 비지터 패턴으로 해결하기 (The Solution)
+## 2. 방문자 패턴으로 해결하기 (The Solution)
 
-비지터 패턴은 "객체 구조를 구성하는 Element 클래스는 안정적으로 유지하면서, 해당 구조에서 수행되는 연산을 별도의 Visitor 객체로 분리하여 정의하는 패턴"입니다.
+방문자 패턴은 "객체 구조를 구성하는 Element 클래스는 안정적으로 유지하면서, 해당 구조에서 수행되는 연산을 별도의 Visitor 객체로 분리하여 정의하는 패턴"입니다.
 
 기본적인 구조 흐름은 다음과 같습니다.
 
@@ -391,13 +385,13 @@ StatisticsVisitor   ──> visit_city(), visit_forest(), visit_mine()
 
 즉, 코드의 구조화 방향이 "Element 기준의 연산 파편화"에서 "Operation 기준의 타입별 처리 응집"으로 변경됩니다.
 
-본질적으로 비지터 패턴은 Element 타입 구조를 변경하지 않으면서, 타입별 연산을 외부 Visitor 클래스로 집중시키고, `accept()`를 통한 디스패치 매커니즘으로 알맞은 연산을 찾아 실행하도록 보장하는 설계 방식입니다.
+본질적으로 방문자 패턴은 Element 타입 구조를 변경하지 않으면서, 타입별 연산을 외부 Visitor 클래스로 집중시키고, `accept()`를 통한 디스패치 메커니즘으로 알맞은 연산을 찾아 실행하도록 보장하는 설계 방식입니다.
 
 ---
 
 ### Double Dispatch (이중 디스패치)
 
-비지터 패턴의 핵심 메커니즘은 **Double Dispatch**입니다.
+방문자 패턴의 핵심 메커니즘은 **Double Dispatch**입니다.
 
 일반적인 객체지향의 단일 디스패치(Single Dispatch)는 수신자(Receiver)의 런타임 타입만으로 메서드를 선택합니다.
 
@@ -450,8 +444,8 @@ Mine × StatisticsVisitor     → Mine 객체의 통계 집계
 ### 트레이드오프 (Trade-off)
 
 * **적합한 상황:** Element 타입의 구조가 매우 고정적이고, 연산(Operation)이 자주 추가되는 환경(예: 컴파일러 AST, 문서 구조 분석)에 최적입니다.
-* **부적합한 상황:** Element 타입의 종류가 자주 추가되거나 변하는 도메인에는 비지터 패턴 적용 시 수정 비용이 매우 큽니다.
-* **방향성:** 비지터 패턴은 연산 확장에는 열려있고(Open), 타입 확장에는 닫혀있는(Closed) 단방향 OCP 구조를 가집니다.
+* **부적합한 상황:** Element 타입의 종류가 자주 추가되거나 변하는 도메인에는 방문자 패턴 적용 시 수정 비용이 매우 큽니다.
+* **방향성:** 방문자 패턴은 연산 확장에는 열려 있고(Open), 타입 확장에는 닫혀 있는(Closed) 비대칭 OCP 구조를 가집니다.
 
 ---
 
@@ -491,7 +485,7 @@ Python 생태계에서는 AST(Abstract Syntax Tree)나 SQL Expression Tree처럼
 
 ### Python standard library `ast.NodeVisitor`
 
-Python의 `ast.NodeVisitor`는 비지터 패턴의 표준적 예시입니다. `visit(node)`를 호출하면 노드의 클래스 명칭을 기반으로 `visit_<ClassName>()` 메서드를 동적으로 탐색하여 실행하며, 명시된 메서드가 없으면 `generic_visit()`를 통해 하위 자식 노드 순회를 이어갑니다.
+Python의 `ast.NodeVisitor`는 방문자 패턴의 표준적 예시입니다. `visit(node)`를 호출하면 노드의 클래스 이름을 바탕으로 `visit_<ClassName>()` 메서드를 동적으로 찾아 실행하며, 해당 메서드가 없으면 `generic_visit()`로 자식 노드를 계속 순회합니다.
 
 ```python
 import ast
@@ -790,11 +784,11 @@ if __name__ == "__main__":
 
 ## 부록 (Appendix): 현대적 타입 시스템과 함수형 관점의 재해석
 
-비지터 패턴을 현대적인 타입 시스템 및 함수형 프로그래밍(FP) 관점에서 재해석하면, 본질적으로 "닫힌 데이터 Variant(변종) 집합에 대해 다양한 연산을 어떻게 유연하게 확장할 것인가?"에 대한 솔루션입니다.
+방문자 패턴을 현대적인 타입 시스템 및 함수형 프로그래밍(FP) 관점에서 재해석하면, 본질적으로 "닫힌 데이터 Variant(변종) 집합에 대해 다양한 연산을 어떻게 유연하게 확장할 것인가?"에 대한 해법입니다.
 
-### 1. Element 계층구조의 ADT(Sum Type) 전환
+### 1. Element 계층 구조의 ADT(Sum Type) 전환
 
-객체지향의 클래스 계층구조는 함수형 언어의 대수적 데이터 타입(ADT: Algebraic Data Type) 중 하나인 **Sum Type**으로 직관적으로 표현됩니다.
+객체지향의 클래스 계층 구조는 함수형 언어의 대수적 데이터 타입(ADT: Algebraic Data Type) 중 하나인 **Sum Type**으로 직관적으로 표현됩니다.
 
 ```text
 # OOP Subclassing                # FP ADT
@@ -823,11 +817,11 @@ def export_json(element: WorldElement) -> JsonValue:
 
 ```
 
-별도의 `accept()` 인터페이스나 Visitor 클래스를 작성할 필요 없이, 개별 함수 자체가 Visitor 역할을 완벽히 대체합니다.
+별도의 `accept()` 인터페이스나 Visitor 클래스를 작성하지 않고, 패턴 매칭 함수가 Visitor와 같은 연산 분배 역할을 맡습니다.
 
 ---
 
-### 3. Exhaustiveness Checking (전해 분석)
+### 3. Exhaustiveness Checking (완전성 검사)
 
 새로운 Variant(예: `River`)가 추가되었을 때, 정적 타입 검사기(Type Checker)나 컴파일러는 패턴 매칭의 누락을 감지하여 오류 메시지를 출력합니다.
 
@@ -836,36 +830,36 @@ Non-exhaustive pattern match: Missing case 'River'
 
 ```
 
-이로 인해 비지터 패턴이 주던 정적 타입 안전성을 함수형 스타일에서도 동일하게 보장받을 수 있습니다.
+이로써 방문자 패턴이 제공하던 정적 타입 안전성을 함수형 스타일에서도 동일하게 확보할 수 있습니다.
 
 ---
 
 ### 4. 핵심 이론적 배경: Expression Problem
 
-비지터 패턴과 패턴 매칭은 프로그래밍 언어론의 **Expression Problem**과 깊이 연관되어 있습니다.
+방문자 패턴과 패턴 매칭은 프로그래밍 언어론의 **Expression Problem**과 깊이 연관되어 있습니다.
 
-| 구 분 | 데이터 Variant 추가 | 연산(Operation) 추가 |
+| 구분 | 데이터 Variant 추가 | 연산(Operation) 추가 |
 | --- | --- | --- |
 | **전통적 OOP (Virtual Method)** | **쉬움** (새 클래스만 작성) | **어려움** (모든 클래스 수정 필요) |
-| **비지터 패턴 / FP (ADT + Match)** | **어려움** (모든 Visitor/Match 수정) | **쉬움** (새 Visitor/함수만 작성) |
+| **방문자 패턴 / FP (ADT + Match)** | **어려움** (모든 Visitor/Match 수정) | **쉬움** (새 Visitor/함수만 작성) |
 
-비지터 패턴은 전통적 OOP가 가진 축을 뒤집어, **연산 확장에 강점을 갖도록 구조화하는 패턴**임을 알 수 있습니다.
+방문자 패턴은 전통적 OOP의 확장 축을 뒤집어 **연산 추가에 유리하도록 구조화한 패턴**입니다.
 
 ---
 
 ### 비교 요약
 
-| 개념 | GoF 비지터 패턴 (OOP) | 현대 타입 시스템 / 함수형 (FP) |
+| 개념 | GoF 방문자 패턴 (OOP) | 현대 타입 시스템 / 함수형 (FP) |
 | --- | --- | --- |
-| **데이터 구조** | Element 클래스 계층구조 | Sum Type / ADT |
+| **데이터 구조** | Element 클래스 계층 구조 | Sum Type / ADT |
 | **연산 모듈화** | Concrete Visitor 클래스 | 단일 함수 / Algebra |
 | **타입별 분기** | `visit_xxx()` 동적 디스패치 | Pattern Matching |
-| **진입 매커니즘** | `element.accept(visitor)` | ADT Eliminator / 함수 인자 전달 |
+| **진입 메커니즘** | `element.accept(visitor)` | ADT Eliminator / 함수 인자 전달 |
 | **재귀 순회** | Recursive Visitor | Fold / Catamorphism |
-| **부작용/상태관리** | Visitor 내 가변 필드 | State / Writer / Monoid Effect |
+| **부수 효과/상태 관리** | Visitor 내 가변 필드 | State / Writer / Monoid Effect |
 
 ---
 
 ### 결론
 
-비지터 패턴의 본질은 "안정적인 데이터 구조에 계속 추가되는 연산들을 외부로 분리하여, 객체 구조의 수정 없이 타입 안전하게 기능을 확장하는 패턴"입니다.
+방문자 패턴의 본질은 "안정적인 데이터 구조에 계속 추가되는 연산을 외부로 분리하여, 객체 구조를 수정하지 않고도 타입 안전하게 기능을 확장하는 패턴"입니다.

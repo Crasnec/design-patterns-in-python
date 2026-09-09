@@ -26,7 +26,7 @@
 
 * **초급 코스 (빠른 개념 잡기)**
   * `1. 패턴이 없을 때 발생하는 문제점`
-  * `2. 추상 팩토리 패턴으로 해결하기`
+  * `2. 패턴으로 해결하기`
   * `6. 파이썬 예제 코드`
   * 코드가 만드는 문제 상황을 먼저 살펴본 뒤, 이를 어떻게 해결하는지 예제 코드로 확인하세요.
 
@@ -43,7 +43,7 @@
 
 객체 생성 메커니즘을 다루며, 상황에 맞는 적절한 객체를 생성하도록 돕습니다.
 
-* [싱글톤 (Singleton)](object/creational/singleton.md)
+* [싱글턴 (Singleton)](object/creational/singleton.md)
 * [팩토리 메서드 (Factory Method)](object/creational/factory-method.md)
 * [추상 팩토리 (Abstract Factory)](object/creational/abstract-factory.md)
 * [빌더 (Builder)](object/creational/builder.md)
@@ -57,7 +57,7 @@
 * [브리지 (Bridge)](object/structural/bridge.md)
 * [컴포지트 (Composite)](object/structural/composite.md)
 * [데코레이터 (Decorator)](object/structural/decorator.md)
-* [퍼사드 (Facade)](object/structural/facade.md)
+* [파사드 (Facade)](object/structural/facade.md)
 * [플라이웨이트 (Flyweight)](object/structural/flyweight.md)
 * [프록시 (Proxy)](object/structural/proxy.md)
 
@@ -65,14 +65,14 @@
 
 객체 간의 책임 분배와 알고리즘, 상호작용을 효율적으로 정의합니다.
 
-* [책임 체인 (Chain of Responsibility)](object/behavioral/chain-of-responsibility.md)
+* [책임 연쇄 (Chain of Responsibility)](object/behavioral/chain-of-responsibility.md)
 * [커맨드 (Command)](object/behavioral/command.md)
 * [인터프리터 (Interpreter)](object/behavioral/interpreter.md)
-* [반복자 (Iterator)](object/behavioral/iterator.md)
-* [중재자 (Mediator)](object/behavioral/mediator.md)
+* [이터레이터 (Iterator)](object/behavioral/iterator.md)
+* [미디에이터 (Mediator)](object/behavioral/mediator.md)
 * [메멘토 (Memento)](object/behavioral/memento.md)
 * [옵저버 (Observer)](object/behavioral/observer.md)
-* [상태 (State)](object/behavioral/state.md)
+* [스테이트 (State)](object/behavioral/state.md)
 * [전략 (Strategy)](object/behavioral/strategy.md)
 * [템플릿 메서드 (Template Method)](object/behavioral/template-method.md)
 * [방문자 (Visitor)](object/behavioral/visitor.md)

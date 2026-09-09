@@ -165,21 +165,11 @@ flowchart LR
 
 각 `Tree`는 작은 개별 상태만 가집니다.
 
-```text
-Tree 1:
-    x
-    y
-    tree_type ──┐
-                │
-Tree 2:         │
-    x           ├──> shared TreeType
-    y           │
-    tree_type ──┤
-                │
-Tree 3:         │
-    x           │
-    y           │
-    tree_type ──┘
+```mermaid
+flowchart LR
+    tree_1[Tree 1: x, y] --> shared[Shared TreeType]
+    tree_2[Tree 2: x, y] --> shared
+    tree_3[Tree 3: x, y] --> shared
 
 ```
 
@@ -480,7 +470,6 @@ class TreeType:
             f"→ ({x}, {y})에 렌더링"
         )
 
-
 # -------------------------------------------------------------------
 # 2. Flyweight Factory
 # -------------------------------------------------------------------
@@ -492,17 +481,14 @@ class TreeTypeFactory:
     def get(self, name: str, color: str, texture: str) -> TreeType:
         key = (name, color, texture)
         tree_type = self._types.get(key)
-
         if tree_type is None:
             tree_type = TreeType(name=name, color=color, texture=texture)
             self._types[key] = tree_type
             print(f"[Factory] 새 TreeType 생성: {key}")
-
         return tree_type
 
     def count(self) -> int:
         return len(self._types)
-
 
 # -------------------------------------------------------------------
 # 3. Context
@@ -517,7 +503,6 @@ class Tree:
     def draw(self) -> None:
         self.tree_type.draw(self.x, self.y)
 
-
 # -------------------------------------------------------------------
 # 4. Client
 # -------------------------------------------------------------------
@@ -527,14 +512,7 @@ class Forest:
         self._factory = factory
         self._trees: list[Tree] = []
 
-    def plant_tree(
-        self,
-        x: int,
-        y: int,
-        name: str,
-        color: str,
-        texture: str,
-    ) -> None:
+    def plant_tree(self, x: int, y: int, name: str, color: str, texture: str) -> None:
         tree_type = self._factory.get(name=name, color=color, texture=texture)
         self._trees.append(Tree(x=x, y=y, tree_type=tree_type))
 
@@ -545,7 +523,6 @@ class Forest:
     def tree_count(self) -> int:
         return len(self._trees)
 
-
 # -------------------------------------------------------------------
 # 5. 실행 (Usage)
 # -------------------------------------------------------------------
@@ -553,21 +530,16 @@ class Forest:
 if __name__ == "__main__":
     factory = TreeTypeFactory()
     forest = Forest(factory)
-
     # Oak 3개
     forest.plant_tree(10, 20, "Oak", "green", "oak.png")
     forest.plant_tree(30, 50, "Oak", "green", "oak.png")
     forest.plant_tree(100, 200, "Oak", "green", "oak.png")
-
     # Pine 2개
     forest.plant_tree(40, 60, "Pine", "dark-green", "pine.png")
     forest.plant_tree(80, 120, "Pine", "dark-green", "pine.png")
-
     forest.draw()
-
     print("\n실제 Tree 객체 수:", forest.tree_count())
     print("실제 TreeType 객체 수:", factory.count())
-
 ```
 
 예제의 `texture`는 실제 이미지 데이터가 아닌 파일명 문자열입니다. 따라서 이 코드는 **나무 5개가 TreeType 2개를 공유하는 구조**를 보여주며, 대용량 텍스처의 메모리 절감량을 측정하지는 않습니다. 다음 비교 예제에서 중복 데이터의 크기를 별도로 확인합니다.

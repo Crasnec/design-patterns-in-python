@@ -98,7 +98,7 @@ print(result)
 그러면 기존 함수에는 계속해서 새로운 분기문이 추가됩니다.
 
 ```python
-elif kind == "subtract":
+if kind == "subtract":
     ...
 elif kind == "divide":
     ...
@@ -176,13 +176,12 @@ Atom       ::= Number | Variable | "(" Expression ")"
 
 이 문법을 클래스 계층 구조로 설계합니다.
 
-```text
-Expression
-    │
-    ├─ NumberExpression
-    ├─ VariableExpression
-    ├─ AddExpression
-    └─ MultiplyExpression
+```mermaid
+flowchart TD
+    expression[Expression] --> number[NumberExpression]
+    expression --> variable[VariableExpression]
+    expression --> add[AddExpression]
+    expression --> multiply[MultiplyExpression]
 
 ```
 

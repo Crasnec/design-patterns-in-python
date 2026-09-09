@@ -355,12 +355,12 @@ function = some_decorator(function)
 
 GoF Decorator는 원래 객체 구조 패턴입니다.
 
-```text
-Component
-     ↑
-Decorator
-     │
-     └── Component
+```mermaid
+classDiagram
+    class Component
+    class Decorator
+    Component <|.. Decorator : implements
+    Decorator --> Component : wraps
 
 ```
 
@@ -586,13 +586,11 @@ from base64 import b64decode, b64encode
 from pathlib import Path
 from zlib import compress, decompress
 
-
 # -------------------------------------------------------------------
 # 1. Component
 # -------------------------------------------------------------------
 
 class DataSource(ABC):
-
     @abstractmethod
     def write(self, data: bytes) -> None:
         pass
@@ -601,13 +599,11 @@ class DataSource(ABC):
     def read(self) -> bytes:
         pass
 
-
 # -------------------------------------------------------------------
 # 2. Concrete Component
 # -------------------------------------------------------------------
 
 class FileDataSource(DataSource):
-
     def __init__(self, path: str):
         self._path = Path(path)
 
@@ -617,13 +613,11 @@ class FileDataSource(DataSource):
     def read(self) -> bytes:
         return self._path.read_bytes()
 
-
 # -------------------------------------------------------------------
 # 3. Base Decorator
 # -------------------------------------------------------------------
 
 class DataSourceDecorator(DataSource):
-
     def __init__(self, wrapped: DataSource):
         self._wrapped = wrapped
 
@@ -633,13 +627,11 @@ class DataSourceDecorator(DataSource):
     def read(self) -> bytes:
         return self._wrapped.read()
 
-
 # -------------------------------------------------------------------
 # 4. Concrete Decorator - Compression
 # -------------------------------------------------------------------
 
 class CompressionDecorator(DataSourceDecorator):
-
     def write(self, data: bytes) -> None:
         compressed = compress(data)
         self._wrapped.write(compressed)
@@ -648,13 +640,11 @@ class CompressionDecorator(DataSourceDecorator):
         compressed = self._wrapped.read()
         return decompress(compressed)
 
-
 # -------------------------------------------------------------------
 # 5. Concrete Decorator - Base64
 # -------------------------------------------------------------------
 
 class Base64Decorator(DataSourceDecorator):
-
     def write(self, data: bytes) -> None:
         encoded = b64encode(data)
         self._wrapped.write(encoded)
@@ -663,7 +653,6 @@ class Base64Decorator(DataSourceDecorator):
         encoded = self._wrapped.read()
         return b64decode(encoded)
 
-
 # -------------------------------------------------------------------
 # 6. 클라이언트
 # -------------------------------------------------------------------
@@ -671,23 +660,20 @@ class Base64Decorator(DataSourceDecorator):
 def save_message(source: DataSource, message: str) -> None:
     source.write(message.encode("utf-8"))
 
-
 def load_message(source: DataSource) -> str:
     return source.read().decode("utf-8")
-
 
 # -------------------------------------------------------------------
 # 7. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-    source: DataSource = CompressionDecorator(Base64Decorator(FileDataSource('message.dat')))
-
+    source: DataSource = CompressionDecorator(
+        Base64Decorator(FileDataSource('message.dat'))
+    )
     save_message(source, "Decorator Pattern")
     message = load_message(source)
-
     print(message)
-
 ```
 
 실행 결과:
@@ -795,14 +781,14 @@ Phantom Type과 Effect System은 각각 적용 기능의 기록과 실행 효과
 
 요청을 받아 응답을 반환하는 함수가 있다고 가정합니다.
 
-```python
+```text
 type Handler[Request, Response] = Request -> Response
 
 ```
 
 Decorator는 Handler를 받아 다시 같은 Handler를 반환합니다.
 
-```python
+```text
 type Decorator[Request, Response] = (
     Handler[Request, Response] -> Handler[Request, Response]
 )
@@ -852,7 +838,7 @@ def with_cache[Request: Hashable, Response](
 
 클래스 계층 없이 함수로 조합할 수 있습니다.
 
-```python
+```text
 handler = (
     base_handler
     |> with_cache
@@ -869,7 +855,7 @@ Decorator의 중요한 조건은 기존 인터페이스를 유지한다는 것�
 
 가상의 강력한 타입 시스템에서는 임의의 함수 시그니처를 보존하는 Decorator를 다음과 같이 표현할 수 있습니다.
 
-```python
+```text
 type Decorator = forall Args, R. (Args -> R) -> (Args -> R)
 
 ```
@@ -878,7 +864,7 @@ type Decorator = forall Args, R. (Args -> R) -> (Args -> R)
 
 예를 들어:
 
-```python
+```text
 def trace[*Args, R](
     fn: (*Args) -> R
 ) -> (*Args) -> R:
@@ -908,7 +894,7 @@ traced = trace(load_user)
 
 수학적으로 같은 타입을 입력받아 같은 타입을 반환하는 함수는 Endomorphism으로 볼 수 있습니다.
 
-```python
+```text
 type Endo[T] = T -> T
 
 ```
@@ -967,7 +953,7 @@ Decorator의 적용 순서는 단순 구현 세부 사항이 아니라 프로그
 
 Decorator 조합을 코드 구조로 직접 중첩하지 않고 데이터로 표현할 수도 있습니다.
 
-```python
+```text
 data Layer =
     Logging
   | Cache(capacity: Int)
@@ -1026,7 +1012,7 @@ Decorated Handler
 
 가상의 타입 시스템에서는 적용된 기능을 Phantom Type으로 기록할 수 있습니다.
 
-```python
+```text
 data Plain
 data Compressed
 data Encoded
@@ -1058,7 +1044,7 @@ def encode_source[F](
 
 사용:
 
-```python
+```text
 source = (
     file_source
     |> compress_source
@@ -1082,7 +1068,7 @@ Phantom Type은 런타임 데이터에 직접 저장하지 않는 타입 표식�
 
 이를 하나의 Codec으로 표현할 수 있습니다.
 
-```python
+```text
 record Codec[A, B]:
     encode: A -> B
     decode: B -> Result[A, DecodeError]
@@ -1139,7 +1125,7 @@ Metrics → Logging → Retry → Tracing → Authorization → Service
 
 효과 시스템(Effect System)을 지원하는 언어에서는 핵심 로직이 필요한 효과만 선언할 수 있습니다.
 
-```python
+```text
 def load_user(id: UserId) -> User ! Database + Logging + Metrics:
     ...
 
@@ -1147,7 +1133,7 @@ def load_user(id: UserId) -> User ! Database + Logging + Metrics:
 
 실행 경계에서 Handler를 적용합니다.
 
-```python
+```text
 handle Database with ProductionDatabase
 handle Logging with StructuredLogger
 handle Metrics with Prometheus:
@@ -1161,7 +1147,7 @@ handle Metrics with Prometheus:
 
 네트워크 호출이 다음 효과를 발생시킨다고 가정합니다.
 
-```python
+```text
 effect Network:
     def request(req: Request) -> Response
 
@@ -1169,7 +1155,7 @@ effect Network:
 
 비즈니스 로직:
 
-```python
+```text
 def load_profile(id: UserId) -> Profile ! Network:
     ...
 
@@ -1177,7 +1163,7 @@ def load_profile(id: UserId) -> Profile ! Network:
 
 Retry Decorator 대신 Network 효과를 처리하는 Handler를 만들 수 있습니다.
 
-```python
+```text
 handler retry_network(attempts: Int):
     on Network.request(req):
         repeat attempts:
@@ -1191,7 +1177,7 @@ handler retry_network(attempts: Int):
 
 Timeout 역시 별도의 Handler입니다.
 
-```python
+```text
 handler timeout_network(duration: Duration):
     ...
 
@@ -1216,7 +1202,7 @@ Decorator를 사용하는 이유 중 하나는 객체에 기능을 단계적으�
 
 가상의 타입 시스템에서 Capability를 합성할 수 있다고 가정합니다.
 
-```python
+```text
 trait Readable[T]:
     def read(value: T) -> Bytes
 
@@ -1237,7 +1223,7 @@ Source : Readable + Writable + Compressed
 
 함수는 필요한 기능만 요구합니다.
 
-```python
+```text
 def backup[T](source: T) -> Unit
 where Readable[T] + Compressed[T]:
     ...
@@ -1253,7 +1239,7 @@ where Readable[T] + Compressed[T]:
 * **Adapter:** 인터페이스를 변경합니다. (`A → B`)
 * **Decorator:** 인터페이스를 유지합니다. (`A → A`)
 
-```python
+```text
 Adapter: A -> B
 Decorator: A -> A
 
@@ -1293,7 +1279,7 @@ Decorator A → Decorator B → Decorator C → Component
 
 ---
 
-## 요약 및 비교
+### 요약 및 비교
 
 | 관점 | 데코레이터 패턴 (OOP 아키텍처) | 현대 타입 시스템 + 함수형 관점 |
 | --- | --- | --- |

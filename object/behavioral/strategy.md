@@ -109,7 +109,7 @@ HolidayExpress
 기존 `calculate()` 함수에는 계속 새로운 분기가 추가됩니다.
 
 ```python
-elif shipping_type == "same_day":
+if shipping_type == "same_day":
     ...
 
 elif shipping_type == "drone":
@@ -178,19 +178,13 @@ def estimate_arrival(
 
 일반적인 구조는 다음과 같습니다.
 
-```text
-Client
-   │
-   │ Strategy 선택
-   ↓
-Context
-   │
-   ↓
-Strategy
-   │
-   ├─ ConcreteStrategy A
-   ├─ ConcreteStrategy B
-   └─ ConcreteStrategy C
+```mermaid
+flowchart TD
+    client[Client] -->|Strategy 선택| context[Context]
+    context --> strategy[Strategy]
+    strategy --> concrete_a[ConcreteStrategy A]
+    strategy --> concrete_b[ConcreteStrategy B]
+    strategy --> concrete_c[ConcreteStrategy C]
 
 ```
 
@@ -2926,4 +2920,4 @@ State 패턴이:
 * 외부 서비스를 쓰는 Strategy $\leftrightarrow$ Capability / Effect
 * Strategy의 사전 조건 $\leftrightarrow$ Refinement Type
 
-현대적 관점에서 전략 패턴의 본질을 추상화하면, "하나의 계산 과정에서 구체적인 알고리즘을 고정하지 않고 동일한 계약을 만족하는 계산 방법 자체를 독립적인 값이나 타입 매개변수로 만들어, 사용하는 로직과 계산 방법을 분리하고 필요에 따라 선택·교체·조합할 수 있도록 하는 기법"으로 확장하여 이해할 수 있습니다.
+전략 패턴의 핵심은 같은 계약을 만족하는 계산 방법을 독립된 값이나 객체로 만들고, 이를 사용하는 Context와 분리하는 데 있습니다. 알고리즘을 언제 선택하고 어떤 입력·출력·실패 계약을 공유할지까지 정해야 실제로 안전하게 교체할 수 있습니다.

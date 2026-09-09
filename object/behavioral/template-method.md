@@ -239,28 +239,15 @@ YamlDataProcessor.process()
 
 전형적인 구조는 다음과 같습니다.
 
-```text
-AbstractClass
-    │
-    ├─ template_method()
-    │      │
-    │      ├─ step1()
-    │      ├─ step2()
-    │      ├─ common_step()
-    │      ├─ hook()
-    │      └─ step3()
-    │
-    ├─ abstract step1()
-    ├─ abstract step2()
-    ├─ common_step()
-    └─ hook()
-
-        ↑
-        │
-
-ConcreteClass
-    ├─ step1()
-    └─ step2()
+```mermaid
+flowchart TD
+    template[AbstractClass.template_method] --> step1[step1]
+    step1 --> step2[step2]
+    step2 --> common[common_step]
+    common --> hook[hook]
+    hook --> step3[step3]
+    concrete[ConcreteClass] -. 구현 .-> step1
+    concrete -. 구현 .-> step2
 
 ```
 
@@ -692,7 +679,7 @@ Strategy:
 
 Factory Method는 Template Method 내부의 특정 생성 단계로 자주 활용됩니다.
 
-```python
+```text
 def process(self):
 
     parser = (
@@ -1053,7 +1040,6 @@ import csv
 import io
 import json
 
-
 # -------------------------------------------------------------------
 # 1. Domain Model
 # -------------------------------------------------------------------
@@ -1063,292 +1049,122 @@ class Record:
     name: str
     value: int
 
-
 @dataclass(frozen=True)
 class AnalysisResult:
     count: int
     total: int
     average: float
 
-
 # -------------------------------------------------------------------
 # 2. Abstract Class
 # -------------------------------------------------------------------
 
 class DataProcessor(ABC):
-
     # ---------------------------------------------------------------
     # Template Method
     # ---------------------------------------------------------------
 
-    def process(
-        self,
-        source: str,
-    ) -> AnalysisResult:
-
-        print(
-            "1. 데이터를 읽습니다."
-        )
-
-        raw_data = self.read(
-            source
-        )
-
-        print(
-            "2. 데이터를 파싱합니다."
-        )
-
-        records = self.parse(
-            raw_data
-        )
-
-        print(
-            "3. 데이터를 정제합니다."
-        )
-
-        cleaned = self.clean(
-            records
-        )
-
+    def process(self, source: str) -> AnalysisResult:
+        print("1. 데이터를 읽습니다.")
+        raw_data = self.read(source)
+        print("2. 데이터를 파싱합니다.")
+        records = self.parse(raw_data)
+        print("3. 데이터를 정제합니다.")
+        cleaned = self.clean(records)
         # Optional Hook
-        self.before_analyze(
-            cleaned
-        )
-
-        print(
-            "4. 데이터를 분석합니다."
-        )
-
-        result = self.analyze(
-            cleaned
-        )
-
-        print(
-            "5. 결과를 저장합니다."
-        )
-
-        self.save(
-            result
-        )
-
+        self.before_analyze(cleaned)
+        print("4. 데이터를 분석합니다.")
+        result = self.analyze(cleaned)
+        print("5. 결과를 저장합니다.")
+        self.save(result)
         # Optional Hook
-        self.after_process(
-            result
-        )
-
+        self.after_process(result)
         return result
-
-
     # -------------------------------------------------------------------
     # 3. Primitive Operations
     # -------------------------------------------------------------------
 
     @abstractmethod
-    def read(
-        self,
-        source: str,
-    ) -> str:
+    def read(self, source: str) -> str:
         pass
 
     @abstractmethod
-    def parse(
-        self,
-        raw_data: str,
-    ) -> list[Record]:
+    def parse(self, raw_data: str) -> list[Record]:
         pass
-
-
     # -------------------------------------------------------------------
     # 4. Concrete Operations
     # -------------------------------------------------------------------
 
-    def clean(
-        self,
-        records: list[Record],
-    ) -> list[Record]:
+    def clean(self, records: list[Record]) -> list[Record]:
+        return [record for record in records if record.value >= 0]
 
-        return [
-            record
-            for record in records
-            if record.value >= 0
-        ]
+    def analyze(self, records: list[Record]) -> AnalysisResult:
+        count = len(records)
+        total = sum(record.value for record in records)
+        average = total / count if count else 0.0
+        return AnalysisResult(count=count, total=total, average=average)
 
-    def analyze(
-        self,
-        records: list[Record],
-    ) -> AnalysisResult:
-
-        count = len(
-            records
-        )
-
-        total = sum(
-            record.value
-            for record in records
-        )
-
-        average = (
-            total / count
-            if count
-            else 0.0
-        )
-
-        return AnalysisResult(
-            count=count,
-            total=total,
-            average=average,
-        )
-
-    def save(
-        self,
-        result: AnalysisResult,
-    ) -> None:
-
+    def save(self, result: AnalysisResult) -> None:
         print(
             "[Save] "
             f"count={result.count}, "
             f"total={result.total}, "
             f"average={result.average:.2f}"
         )
-
-
     # -------------------------------------------------------------------
     # 5. Hooks
     # -------------------------------------------------------------------
 
-    def before_analyze(
-        self,
-        records: list[Record],
-    ) -> None:
-
+    def before_analyze(self, records: list[Record]) -> None:
         # 기본 동작 없음 (선택적 재정의용)
         pass
 
-    def after_process(
-        self,
-        result: AnalysisResult,
-    ) -> None:
-
+    def after_process(self, result: AnalysisResult) -> None:
         # 기본 동작 없음 (선택적 재정의용)
         pass
-
 
 # -------------------------------------------------------------------
 # 6. Concrete Class - CSV
 # -------------------------------------------------------------------
 
-class CsvDataProcessor(
-    DataProcessor
-):
-
-    def read(
-        self,
-        source: str,
-    ) -> str:
-
-        print(
-            "[CSV] 소스를 읽습니다."
-        )
-
+class CsvDataProcessor(DataProcessor):
+    def read(self, source: str) -> str:
+        print("[CSV] 소스를 읽습니다.")
         return source
 
-    def parse(
-        self,
-        raw_data: str,
-    ) -> list[Record]:
-
-        reader = csv.DictReader(
-            io.StringIO(
-                raw_data
-            )
-        )
-
-        return [
-            Record(
-                name=row["name"],
-                value=int(
-                    row["value"]
-                ),
-            )
-            for row in reader
-        ]
-
+    def parse(self, raw_data: str) -> list[Record]:
+        reader = csv.DictReader(io.StringIO(raw_data))
+        return [Record(name=row["name"], value=int(row["value"])) for row in reader]
 
 # -------------------------------------------------------------------
 # 7. Concrete Class - JSON
 # -------------------------------------------------------------------
 
-class JsonDataProcessor(
-    DataProcessor
-):
-
-    def read(
-        self,
-        source: str,
-    ) -> str:
-
-        print(
-            "[JSON] 소스를 읽습니다."
-        )
-
+class JsonDataProcessor(DataProcessor):
+    def read(self, source: str) -> str:
+        print("[JSON] 소스를 읽습니다.")
         return source
 
-    def parse(
-        self,
-        raw_data: str,
-    ) -> list[Record]:
+    def parse(self, raw_data: str) -> list[Record]:
+        values = json.loads(raw_data)
+        return [Record(name=item["name"], value=int(item["value"])) for item in values]
 
-        values = json.loads(
-            raw_data
-        )
-
-        return [
-            Record(
-                name=item["name"],
-                value=int(
-                    item["value"]
-                ),
-            )
-            for item in values
-        ]
-
-    def before_analyze(
-        self,
-        records: list[Record],
-    ) -> None:
-
-        print(
-            "[JSON Hook] "
-            f"{len(records)}개의 "
-            "레코드를 분석합니다."
-        )
-
+    def before_analyze(self, records: list[Record]) -> None:
+        print("[JSON Hook] " f"{len(records)}개의 " "레코드를 분석합니다.")
 
 # -------------------------------------------------------------------
 # 8. Client
 # -------------------------------------------------------------------
 
-def run_processor(
-    processor: DataProcessor,
-    source: str,
-) -> None:
-
-    result = processor.process(
-        source
-    )
-
-    print(
-        "결과:",
-        result,
-    )
-
+def run_processor(processor: DataProcessor, source: str) -> None:
+    result = processor.process(source)
+    print("결과:", result)
 
 # -------------------------------------------------------------------
 # 9. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
     csv_source = """name,value
 sword,100
 shield,80
@@ -1372,24 +1188,10 @@ invalid,-10
 ]
 """
 
-    print(
-        "=== CSV ==="
-    )
-
-    run_processor(
-        CsvDataProcessor(),
-        csv_source,
-    )
-
-    print(
-        "\n=== JSON ==="
-    )
-
-    run_processor(
-        JsonDataProcessor(),
-        json_source,
-    )
-
+    print("=== CSV ===")
+    run_processor(CsvDataProcessor(), csv_source)
+    print("\n=== JSON ===")
+    run_processor(JsonDataProcessor(), json_source)
 ```
 
 클라이언트에서는 구현체 종류와 상관없이 템플릿 메서드만을 동일하게 호출합니다.
@@ -1540,7 +1342,7 @@ Base Class
 
 객체지향 방식의 Template Method 구조:
 
-```python
+```text
 def process(self):
 
     raw =
@@ -1563,7 +1365,7 @@ def process(self):
 
 이를 고차 함수 형태로 변환하면 각 단계를 인자로 주입받아 처리할 수 있습니다.
 
-```python
+```text
 def process[
     Raw,
     Data,
@@ -1650,7 +1452,7 @@ DataProcessor
 
 함수형 관점에서는 필요한 함수 조합을 전달하는 방식으로 표현합니다.
 
-```python
+```text
 csv_processor =
     process(
         read=read_csv,
@@ -1660,7 +1462,7 @@ csv_processor =
 
 ```
 
-```python
+```text
 json_processor =
     process(
         read=read_json,
@@ -1702,7 +1504,7 @@ process(
 
 관련된 단계들을 하나의 연산 레코드(Operations Record) 구조체로 그룹화합니다.
 
-```python
+```text
 record ProcessingOps[
     Raw,
     Data,
@@ -1728,7 +1530,7 @@ record ProcessingOps[
 
 Template 함수 표기:
 
-```python
+```text
 def process(
     source,
     using ops:
@@ -1780,7 +1582,7 @@ def before_analyze(
 
 함수형 타입 시스템에서는 이를 Optional 함수 타입으로 명시할 수 있습니다.
 
-```python
+```text
 before_analyze:
     Option[
         Data -> Unit
@@ -1831,7 +1633,7 @@ Optional:
 
 가상 타입 시스템에서는 레코드 분리를 통해 이를 표현합니다.
 
-```python
+```text
 record ProcessingTemplate:
 
     required:
@@ -1842,7 +1644,7 @@ record ProcessingTemplate:
 
 ```
 
-```python
+```text
 record RequiredSteps:
 
     read:
@@ -1853,7 +1655,7 @@ record RequiredSteps:
 
 ```
 
-```python
+```text
 record OptionalHooks:
 
     before_analyze:
@@ -1884,7 +1686,7 @@ Template Method 패턴의 기본 전제:
 
 가상 타입 시스템에서의 선언 예시:
 
-```python
+```text
 final def process(
     self,
     source: Source,
@@ -1895,7 +1697,7 @@ final def process(
 
 임의로 오버라이드를 시도할 경우 컴파일 타임에 오류가 발생합니다.
 
-```python
+```text
 override def process(...):
     ...
 
@@ -1915,7 +1717,7 @@ process() is final and cannot be overridden.
 
 클래스 내부의 모든 메서드를 오버라이드 가능하게 개방할 필요는 없습니다.
 
-```python
+```text
 sealed template DataProcessor:
 
     final def process(...)
@@ -1961,13 +1763,13 @@ clean() 수행 결과는 유효하지 않은 데이터가 제거된 상태여야
 
 Refinement Type(정제 타입)을 적용한 표현:
 
-```python
+```text
 type RawData
 type ParsedData
 
 ```
 
-```python
+```text
 type CleanData =
     ParsedData
     where
@@ -2023,7 +1825,7 @@ Unloaded → Loaded → Parsed → Cleaned → Analyzed → Saved
 
 각 상태를 독립된 타입으로 선언합니다.
 
-```python
+```text
 data Unloaded
 data Loaded
 data Parsed
@@ -2035,7 +1837,7 @@ data Saved
 
 상태를 포함하는 컨텍스트 레코드:
 
-```python
+```text
 record Process[
     State,
     Data,
@@ -2115,7 +1917,7 @@ found: Process[Loaded, ...]
 
 독립된 각 연산 단계를 파이프라인으로 합성하여 전체 알고리즘을 구성할 수 있습니다.
 
-```python
+```text
 pipeline =
     read
     >> parse
@@ -2150,7 +1952,7 @@ Unit
 
 파이프라인 자체를 데이터 구조화하여 선언할 수 있습니다.
 
-```python
+```text
 data Step[
     Input,
     Output,
@@ -2186,7 +1988,7 @@ Step[A, B] >> Step[X, C]  -->  Invalid (B != X)
 
 Strategy 패턴의 일반적인 함수 타입 표기:
 
-```python
+```text
 type Strategy[
     A,
     B,
@@ -2199,7 +2001,7 @@ type Strategy[
 
 Template Method의 함수 타입 표기:
 
-```python
+```text
 def template(
     step1: A -> B,
     step2: B -> C,
@@ -2241,7 +2043,7 @@ Save
 
 분석(Analyze) 단계에만 다양한 전략 구현체를 주입받도록 구성할 수 있습니다.
 
-```python
+```text
 def process(
     source,
     analyze_strategy:
@@ -2289,7 +2091,7 @@ save    → File I/O
 
 Effect System 적용 예시:
 
-```python
+```text
 def read(
     source: Path,
 ) -> Raw
@@ -2306,7 +2108,7 @@ def parse(
 
 ```
 
-```python
+```text
 def analyze(
     data: CleanData,
 ) -> Result
@@ -2317,7 +2119,7 @@ def analyze(
 
 Template의 전체 부수 효과는 세부 단계들의 효과 집합으로 합성됩니다.
 
-```python
+```text
 def process(
     source: Path,
 ) -> Result
@@ -2335,7 +2137,7 @@ def process(
 
 Template 실행 골격 자체는 구체적인 I/O 처리 방식에 의존하지 않도록 다형성을 부여할 수 있습니다.
 
-```python
+```text
 def process(
     source: Source,
 ) -> Result
@@ -2347,7 +2149,7 @@ def process(
 
 운영 환경에서의 핸들러 바인딩:
 
-```python
+```text
 handle Reader
 with LocalFileSystem:
 
@@ -2362,7 +2164,7 @@ with LocalFileSystem:
 
 테스트 환경에서의 핸들러 바인딩:
 
-```python
+```text
 handle Reader
 with InMemoryReader:
 
@@ -2393,7 +2195,7 @@ SaveError
 
 단계별 예외/오류 반환 타입:
 
-```python
+```text
 read:
     Source
         -> Result[
@@ -2403,7 +2205,7 @@ read:
 
 ```
 
-```python
+```text
 parse:
     Raw
         -> Result[
@@ -2415,7 +2217,7 @@ parse:
 
 Template 내부의 모나딕(Monadic) 오류 제어 흐름:
 
-```python
+```text
 def process(
     source: Source,
 ) -> Result[
@@ -2461,7 +2263,7 @@ def process(
 
 전체 파이프라인 오류를 대수적 데이터 타입(ADT)으로 정의합니다.
 
-```python
+```text
 data ProcessingError =
 
     ReadFailed(
@@ -2507,7 +2309,7 @@ Open Resource → Use Resource → Close Resource
 
 실패 여부와 관계없이 자원을 해제해야 하는 구조를 고차 함수로 정의할 수 있습니다 (`bracket`).
 
-```python
+```text
 def bracket[
     Resource,
     Result,
@@ -2546,7 +2348,7 @@ release
 
 자원 해제를 위한 Protocol 인터페이스:
 
-```python
+```text
 trait Resource[
     R
 ]:
@@ -2599,7 +2401,7 @@ after_analyze()
 
 각 처리 단계의 인자 및 반환 타입을 명확히 정의함으로써 순서 의존성을 정적 타입 수준에서 명시합니다.
 
-```python
+```text
 before_analyze:
     Cleaned -> Cleaned
 
@@ -2625,7 +2427,7 @@ BaseClass protected fields
 
 필요한 권한/기능만을 Capability 객체 형태로 전달합니다.
 
-```python
+```text
 capability ParseContext:
 
     def locale()
@@ -2636,7 +2438,7 @@ capability ParseContext:
 
 ```
 
-```python
+```text
 parse:
     Raw
         -> Data
@@ -2652,7 +2454,7 @@ parse:
 
 전체 알고리즘 연산 단계를 대수 구조(Algebra)로 정의합니다.
 
-```python
+```text
 trait ProcessingAlgebra[
     F[_]
 ]:
@@ -2681,7 +2483,7 @@ trait ProcessingAlgebra[
 
 Template은 선언된 대수 연산들의 실행 조합으로 프로그램을 구성합니다.
 
-```python
+```text
 def processing_program[
     F[_]
 ](

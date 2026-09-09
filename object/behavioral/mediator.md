@@ -526,7 +526,7 @@ Mediator는 외부 입력 여부와 관계없이 **여러 Colleague 사이의 �
 
 ### Python `asyncio` Event Loop
 
-Python의 `asyncio`에서 Event Loop는 Task와 Callback을 실행하고 네트워크 I/O와 subprocess 등을 관리하는 핵심 조정자입니다. Python 공식 문서는 Event Loop가 asynchronous task와 callback을 실행하고 network I/O와 subprocess를 수행하는 `asyncio` 애플리케이션의 핵심이라고 설명합니다. ([Python documentation](https://docs.python.org/3/howto/a-conceptual-overview-of-asyncio.html))
+Python의 `asyncio`에서 Event Loop는 Task와 Callback을 실행하고 네트워크 I/O와 subprocess 등을 관리하는 핵심 조정자입니다. Python 공식 문서는 Event Loop가 asynchronous task와 callback을 실행하고 network I/O와 subprocess를 수행하는 `asyncio` 애플리케이션의 핵심이라고 설명합니다. (Python documentation)
 
 개념적으로 다음과 같이 볼 수 있습니다.
 
@@ -539,7 +539,7 @@ flowchart LR
     timer["Timer"] --> loop
 ```
 
-Task가 서로 직접 실행 순서를 관리하지 않고 Event Loop가 실행 가능한 Task와 Callback을 스케줄링합니다. `asyncio.Task` 역시 Event Loop 안에서 실행되며, 하나의 Task가 Future를 기다리는 동안 Event Loop는 다른 Task나 Callback, I/O 작업을 수행합니다. ([Python documentation](https://docs.python.org/3/library/asyncio-task.html))
+Task가 서로 직접 실행 순서를 관리하지 않고 Event Loop가 실행 가능한 Task와 Callback을 스케줄링합니다. `asyncio.Task` 역시 Event Loop 안에서 실행되며, 하나의 Task가 Future를 기다리는 동안 Event Loop는 다른 Task나 Callback, I/O 작업을 수행합니다. (Python documentation)
 
 엄밀히는 Event Loop / Reactor / Scheduler 아키텍처의 성격이 더 강하지만, **여러 실행 주체 사이의 조정 책임을 중앙 구성 요소가 담당한다는 점에서 Mediator와 유사한 구조**로 볼 수 있습니다.
 
@@ -549,7 +549,7 @@ Task가 서로 직접 실행 순서를 관리하지 않고 Event Loop가 실행 
 
 Django Channels의 Channel Layer는 서로 다른 Application Instance나 Consumer 사이에서 메시지를 전달하는 통신 계층을 제공합니다.
 
-Channels 공식 문서는 Channel Layer가 서로 다른 프로세스 사이에서 메시지를 보내고 받을 수 있는 메커니즘을 제공하며, Consumer는 개별 Channel 또는 Group을 통해 메시지를 주고받을 수 있다고 설명합니다. ([Channels](https://channels.readthedocs.io/en/stable/topics/channel_layers.html))
+Channels 공식 문서는 Channel Layer가 서로 다른 프로세스 사이에서 메시지를 보내고 받을 수 있는 메커니즘을 제공하며, Consumer는 개별 Channel 또는 Group을 통해 메시지를 주고받을 수 있다고 설명합니다. (Channels documentation)
 
 예를 들어 채팅 시스템에서 Consumer들이 서로 직접 참조하지 않습니다.
 
@@ -573,7 +573,7 @@ await channel_layer.group_send(
 
 ```
 
-Channel Layer가 Group에 속한 Channel들로 메시지를 전달합니다. ([Channels](https://channels.readthedocs.io/en/stable/topics/channel_layers.html))
+Channel Layer가 Group에 속한 Channel들로 메시지를 전달합니다. (Channels documentation)
 
 이는 전통적인 객체형 Mediator보다 **Message Mediator / Message Bus**에 가까운 구조지만, 각 Consumer가 다른 Consumer의 구체 객체를 직접 알지 않고 중앙 메시징 계층을 통해 통신한다는 점에서 Mediator와 유사합니다.
 
@@ -583,7 +583,7 @@ Channel Layer가 Group에 속한 Channel들로 메시지를 전달합니다. ([C
 
 Celery에서는 Task를 요청하는 Client와 실제 Task를 실행하는 Worker 사이에 Broker가 위치합니다.
 
-Celery 공식 문서는 Task Queue가 작업을 Thread나 Machine에 분배하는 메커니즘이며, Celery는 일반적으로 Broker를 통해 Client와 Worker 사이를 중재(mediate)한다고 설명합니다. Client가 Queue에 메시지를 추가하면 Broker가 해당 메시지를 Worker에게 전달합니다. ([Celery Docs](https://docs.celeryq.dev/en/main/getting-started/introduction.html))
+Celery 공식 문서는 Task Queue를 스레드나 머신에 작업을 분배하는 메커니즘으로 설명합니다. Celery에서는 일반적으로 Broker가 Client와 Worker 사이에서 메시지를 전달합니다. Client가 Queue에 메시지를 추가하면 Broker가 이를 Worker에 전달합니다. (Celery documentation)
 
 구조는 다음과 같습니다.
 
@@ -598,7 +598,7 @@ flowchart LR
 
 Client는 특정 Worker 객체를 직접 선택하거나 참조할 필요가 없습니다.
 
-Celery는 여러 Broker transport를 지원하며 현재 문서에는 RabbitMQ, Redis, Amazon SQS, Kafka, Google Pub/Sub 등이 소개되어 있습니다. ([Celery Docs](https://docs.celeryq.dev/en/main/getting-started/backends-and-brokers/))
+Celery는 여러 Broker transport를 지원하며 현재 문서에는 RabbitMQ, Redis, Amazon SQS, Kafka, Google Pub/Sub 등이 소개되어 있습니다. (Celery documentation)
 
 이는 분산 시스템의 **Message Broker** 구조이므로 GoF Mediator와 구현 수준은 다르지만, **통신 당사자들의 직접 결합을 제거하고 중앙 중재 계층이 메시지 전달을 담당한다는 점**에서 Mediator 아이디어를 확장한 사례로 볼 수 있습니다.
 
@@ -712,211 +712,112 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-
 # -------------------------------------------------------------------
 # 1. Mediator
 # -------------------------------------------------------------------
 
 class Mediator(ABC):
-
     @abstractmethod
-    def notify(
-        self,
-        sender: Component,
-        event: str,
-    ) -> None:
+    def notify(self, sender: Component, event: str) -> None:
         pass
-
 
 # -------------------------------------------------------------------
 # 2. Base Component
 # -------------------------------------------------------------------
 
 class Component:
-
-    def __init__(
-        self,
-        mediator: Mediator | None = None,
-    ):
+    def __init__(self, mediator: Mediator | None = None):
         self._mediator = mediator
 
-    def set_mediator(
-        self,
-        mediator: Mediator,
-    ) -> None:
-
+    def set_mediator(self, mediator: Mediator) -> None:
         self._mediator = mediator
 
-    def _notify(
-        self,
-        event: str,
-    ) -> None:
-
+    def _notify(self, event: str) -> None:
         if self._mediator is not None:
-            self._mediator.notify(
-                self,
-                event,
-            )
-
+            self._mediator.notify(self, event)
 
 # -------------------------------------------------------------------
 # 3. Colleague - Username
 # -------------------------------------------------------------------
 
-class UsernameField(
-    Component
-):
-
+class UsernameField(Component):
     def __init__(self):
         super().__init__()
         self.value = ""
 
-    def set_value(
-        self,
-        value: str,
-    ) -> None:
-
+    def set_value(self, value: str) -> None:
         self.value = value
-
-        print(
-            f"[Username] {value}"
-        )
-
-        self._notify(
-            "changed"
-        )
-
+        print(f"[Username] {value}")
+        self._notify("changed")
 
 # -------------------------------------------------------------------
 # 4. Colleague - Password
 # -------------------------------------------------------------------
 
-class PasswordField(
-    Component
-):
-
+class PasswordField(Component):
     def __init__(self):
         super().__init__()
         self.value = ""
 
-    def set_value(
-        self,
-        value: str,
-    ) -> None:
-
+    def set_value(self, value: str) -> None:
         self.value = value
-
-        print(
-            "[Password] 변경됨"
-        )
-
-        self._notify(
-            "changed"
-        )
-
+        print("[Password] 변경됨")
+        self._notify("changed")
 
 # -------------------------------------------------------------------
 # 5. Colleague - Remember Me
 # -------------------------------------------------------------------
 
-class RememberMeCheckbox(
-    Component
-):
-
+class RememberMeCheckbox(Component):
     def __init__(self):
         super().__init__()
         self.checked = False
 
-    def set_checked(
-        self,
-        checked: bool,
-    ) -> None:
-
+    def set_checked(self, checked: bool) -> None:
         self.checked = checked
-
-        self._notify(
-            "changed"
-        )
-
+        self._notify("changed")
 
 # -------------------------------------------------------------------
 # 6. Colleague - Login Button
 # -------------------------------------------------------------------
 
-class LoginButton(
-    Component
-):
-
+class LoginButton(Component):
     def __init__(self):
         super().__init__()
         self.enabled = False
 
     def click(self) -> None:
-
         if not self.enabled:
-
-            print(
-                "[LoginButton] "
-                "현재 비활성 상태입니다."
-            )
-
+            print("[LoginButton] " "현재 비활성 상태입니다.")
             return
-
-        self._notify(
-            "click"
-        )
-
+        self._notify("click")
 
 # -------------------------------------------------------------------
 # 7. Colleague - Status
 # -------------------------------------------------------------------
 
-class StatusLabel(
-    Component
-):
-
+class StatusLabel(Component):
     def __init__(self):
         super().__init__()
         self.text = ""
 
-    def set_text(
-        self,
-        text: str,
-    ) -> None:
-
+    def set_text(self, text: str) -> None:
         self.text = text
-
-        print(
-            f"[Status] {text}"
-        )
-
+        print(f"[Status] {text}")
 
 # -------------------------------------------------------------------
 # 8. Service
 # -------------------------------------------------------------------
 
 class AuthService:
-
-    def login(
-        self,
-        username: str,
-        password: str,
-    ) -> bool:
-
-        return (
-            username == "aragorn"
-            and password == "anduril"
-        )
-
+    def login(self, username: str, password: str) -> bool:
+        return username == "aragorn" and password == "anduril"
 
 # -------------------------------------------------------------------
 # 9. Concrete Mediator
 # -------------------------------------------------------------------
 
-class LoginDialogMediator(
-    Mediator
-):
-
+class LoginDialogMediator(Mediator):
     def __init__(
         self,
         username: UsernameField,
@@ -929,133 +830,53 @@ class LoginDialogMediator(
         self._username = username
         self._password = password
         self._remember = remember
-        self._login_button = (
-            login_button
-        )
+        self._login_button = login_button
         self._status = status
-        self._auth_service = (
-            auth_service
-        )
+        self._auth_service = auth_service
+        username.set_mediator(self)
+        password.set_mediator(self)
+        remember.set_mediator(self)
+        login_button.set_mediator(self)
+        status.set_mediator(self)
 
-        username.set_mediator(
-            self
-        )
-
-        password.set_mediator(
-            self
-        )
-
-        remember.set_mediator(
-            self
-        )
-
-        login_button.set_mediator(
-            self
-        )
-
-        status.set_mediator(
-            self
-        )
-
-    def notify(
-        self,
-        sender: Component,
-        event: str,
-    ) -> None:
-
-        if (
-            event == "changed"
-            and (
-                sender is self._username
-                or sender is self._password
-            )
+    def notify(self, sender: Component, event: str) -> None:
+        if event == "changed" and (
+            sender is self._username or sender is self._password
         ):
             self._update_login_button()
-
-        elif (
-            sender is self._remember
-            and event == "changed"
-        ):
+        elif sender is self._remember and event == "changed":
             self._update_remember_status()
-
-        elif (
-            sender is self._login_button
-            and event == "click"
-        ):
+        elif sender is self._login_button and event == "click":
             self._login()
 
-    def _update_login_button(
-        self,
-    ) -> None:
+    def _update_login_button(self) -> None:
+        enabled = bool(self._username.value and self._password.value)
+        self._login_button.enabled = enabled
+        print("[Mediator] " f"LoginButton.enabled={enabled}")
 
-        enabled = bool(
-            self._username.value
-            and self._password.value
-        )
-
-        self._login_button.enabled = (
-            enabled
-        )
-
-        print(
-            "[Mediator] "
-            f"LoginButton.enabled={enabled}"
-        )
-
-    def _update_remember_status(
-        self,
-    ) -> None:
-
+    def _update_remember_status(self) -> None:
         if self._remember.checked:
-
-            print(
-                "[Mediator] "
-                "로그인 정보 저장 활성화"
-            )
-
+            print("[Mediator] " "로그인 정보 저장 활성화")
         else:
-
-            print(
-                "[Mediator] "
-                "로그인 정보 저장 비활성화"
-            )
+            print("[Mediator] " "로그인 정보 저장 비활성화")
 
     def _login(self) -> None:
-
-        success = (
-            self._auth_service.login(
-                self._username.value,
-                self._password.value,
-            )
-        )
-
+        success = self._auth_service.login(self._username.value, self._password.value)
         if success:
-
-            self._status.set_text(
-                "로그인 성공"
-            )
-
+            self._status.set_text("로그인 성공")
         else:
-
-            self._status.set_text(
-                "로그인 실패"
-            )
-
+            self._status.set_text("로그인 실패")
 
 # -------------------------------------------------------------------
 # 10. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
     username = UsernameField()
     password = PasswordField()
-    remember = (
-        RememberMeCheckbox()
-    )
+    remember = RememberMeCheckbox()
     login_button = LoginButton()
     status = StatusLabel()
-
     LoginDialogMediator(
         username=username,
         password=password,
@@ -1064,23 +885,11 @@ if __name__ == "__main__":
         status=status,
         auth_service=AuthService(),
     )
-
     login_button.click()
-
-    username.set_value(
-        "aragorn"
-    )
-
-    password.set_value(
-        "anduril"
-    )
-
-    remember.set_checked(
-        True
-    )
-
+    username.set_value("aragorn")
+    password.set_value("anduril")
+    remember.set_checked(True)
     login_button.click()
-
 ```
 
 실행 흐름은 다음과 같습니다.
@@ -1173,7 +982,7 @@ mediator.notify(self, "chnaged")
 
 대수적 데이터 타입(ADT)을 활용하면 잘못된 Event 표현 자체가 불가능해집니다.
 
-```python
+```text
 data LoginEvent =
     UsernameChanged(value: str)
   | PasswordChanged(value: str)
@@ -1213,7 +1022,7 @@ PasswordChanged(value="anduril")
 
 여러 UI Component에 흩어져 있던 가변 상태를 단일 불변 레코드(Immutable Record)로 표현합니다.
 
-```python
+```text
 immutable record LoginState:
     username: str
     password: str
@@ -1237,7 +1046,7 @@ initial = LoginState(
 
 Mediator는 객체들을 직접 변경하는 대신 **순수 상태 전이 함수(Reducer)** 역할을 수행합니다.
 
-```python
+```text
 def reduce(state: LoginState, event: LoginEvent) -> LoginState:
     match event:
         case UsernameChanged(value):
@@ -1276,7 +1085,7 @@ flowchart LR
 
 인증 서버 호출과 같은 외부 부수효과(Side Effect)를 명령(Effect Command)으로 추상화하여 순수성을 유지합니다.
 
-```python
+```text
 data LoginEffect =
     Authenticate(username: str, password: str)
   | SaveCredentials(username: str)
@@ -1323,7 +1132,7 @@ flowchart LR
 
 단일 Mediator가 너무 커지는 것을 방지하기 위해 기능 영역별로 메시지를 라우팅합니다.
 
-```python
+```text
 data Message =
     LoginMessage(LoginEvent)
   | SearchMessage(SearchEvent)
@@ -1350,7 +1159,7 @@ flowchart LR
 
 결과값의 타입 관계를 GADT(General Algebraic Data Type)로 정의하여 요청과 응답을 정적으로 검증합니다.
 
-```python
+```text
 data Request[Result] =
     Authenticate(username: str, password: str) -> Request[AuthResult]
   | LoadProfile(user_id: UserId)               -> Request[Profile]
@@ -1367,7 +1176,7 @@ result = await request(Authenticate(username, password))
 
 객체 참조 메서드를 직접 호출하는 대신 메일박스(Mailbox)를 통한 비동기 메시지 패싱으로 격리합니다.
 
-```python
+```text
 actor LoginCoordinator:
     on LoginClicked:
         send(auth_actor, Authenticate(...))
@@ -1413,7 +1222,7 @@ flowchart LR
 
 명령형 상태 변경을 반응형 데이터 흐름으로 전환합니다.
 
-```python
+```text
 login_enabled = combine_latest(username, password)
     |> map(lambda pair: bool(pair.username and pair.password))
 
@@ -1433,7 +1242,7 @@ flowchart LR
 
 FRP 환경에서는 명시적인 Mediator 객체가 사라지고 반응형 의존성 그래프(Reactive Dependency Graph)가 조정 규칙 역할을 대체합니다.
 
-```python
+```text
 login_enabled = username.non_empty AND password.non_empty
 status = login_result |> map(lambda r: "성공" if r.success else "실패")
 
@@ -1445,7 +1254,7 @@ status = login_result |> map(lambda r: "성공" if r.success else "실패")
 
 구체 Mediator 대신 필요한 효과(Effect)만 선언하고 실행 환경(Handler)에 위임합니다.
 
-```python
+```text
 effect LoginUI:
     def SetLoginEnabled(value: Bool) -> Unit
     def SetStatus(value: LoginStatus) -> Unit
@@ -1462,7 +1271,7 @@ def login_flow(username: str, password: str) -> Unit ! LoginUI + Authentication:
 
 객체 전체를 전달받는 대신, 필요한 행위 능력(Capability)만 제한적으로 주입하여 결합도를 낮춥니다.
 
-```python
+```text
 capability LoginView:
     def set_enabled(value: Bool) -> Unit
     def show_status(status: LoginStatus) -> Unit
@@ -1491,9 +1300,9 @@ app_reducer = combine_reducers(
 
 ### 17. State Machine을 활용한 유효 상태의 타입화
 
-상태 조합의 모순(예: `LoggedIn` 상태와 `Loading` 버튼의 동시 존재)을 ADT 기반 State Machine으로 원천 차단합니다.
+로그인 상태와 버튼 상태를 따로 저장하면 `LoggedIn`과 `Loading`처럼 모순된 조합이 생길 수 있습니다. 관련 UI 상태 전체를 하나의 닫힌 ADT로 모델링하면 정의하지 않은 조합을 생성하지 못하게 제한할 수 있습니다.
 
-```python
+```text
 data LoginState =
     Editing(username: str, password: str)
   | Authenticating
@@ -1543,7 +1352,7 @@ flowchart LR
 
 상호작용 자체를 도메인 언어(DSL)로 바라보고, Mediator를 해당 언어의 해석기(Interpreter)로 취급합니다.
 
-```python
+```text
 data LoginInteraction =
     UsernameChanged(...)
   | LoginClicked

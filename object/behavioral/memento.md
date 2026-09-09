@@ -190,11 +190,9 @@ flowchart TD
 
 복원 과정은 반대 방향입니다.
 
-```text
-Caretaker
-    │
-    ↓ Memento
-Originator.restore()
+```mermaid
+flowchart TD
+    caretaker[Caretaker] -->|Memento 전달| restore[Originator.restore]
 
 ```
 
@@ -775,11 +773,7 @@ TextEditor.restore()
 
 ```python
 from dataclasses import dataclass
-from datetime import (
-    datetime,
-    timezone,
-)
-
+from datetime import datetime, timezone
 
 # -------------------------------------------------------------------
 # 1. Memento
@@ -788,29 +782,19 @@ from datetime import (
 @dataclass(frozen=True)
 class EditorMemento:
     _text: str
-
     _cursor: int
-
-    _selection: (
-        tuple[int, int] | None
-    )
-
+    _selection: tuple[int, int] | None
     created_at: datetime
-
 
 # -------------------------------------------------------------------
 # 2. Originator
 # -------------------------------------------------------------------
 
 class TextEditor:
-
     def __init__(self):
         self._text = ""
         self._cursor = 0
-
-        self._selection: (
-            tuple[int, int] | None
-        ) = None
+        self._selection: tuple[int, int] | None = None
 
     @property
     def text(self) -> str:
@@ -820,239 +804,102 @@ class TextEditor:
     def cursor(self) -> int:
         return self._cursor
 
-    def insert(
-        self,
-        value: str,
-    ) -> None:
-
-        self._text = (
-            self._text[:self._cursor]
-            + value
-            + self._text[self._cursor:]
-        )
-
-        self._cursor += len(
-            value
-        )
-
+    def insert(self, value: str) -> None:
+        self._text = self._text[: self._cursor] + value + self._text[self._cursor :]
+        self._cursor += len(value)
         self._selection = None
 
-    def move_cursor(
-        self,
-        position: int,
-    ) -> None:
-
-        if not (
-            0
-            <= position
-            <= len(self._text)
-        ):
-            raise ValueError(
-                "잘못된 커서 위치입니다."
-            )
-
+    def move_cursor(self, position: int) -> None:
+        if not (0 <= position <= len(self._text)):
+            raise ValueError("잘못된 커서 위치입니다.")
         self._cursor = position
-
         self._selection = None
 
-    def select(
-        self,
-        start: int,
-        end: int,
-    ) -> None:
+    def select(self, start: int, end: int) -> None:
+        self._selection = (start, end)
 
-        self._selection = (
-            start,
-            end,
-        )
-
-    def create_memento(
-        self,
-    ) -> EditorMemento:
-
+    def create_memento(self) -> EditorMemento:
         return EditorMemento(
             _text=self._text,
             _cursor=self._cursor,
             _selection=self._selection,
-
-            created_at=datetime.now(
-                timezone.utc
-            ),
+            created_at=datetime.now(timezone.utc),
         )
 
-    def restore(
-        self,
-        memento: EditorMemento,
-    ) -> None:
-
-        self._text = (
-            memento._text
-        )
-
-        self._cursor = (
-            memento._cursor
-        )
-
-        self._selection = (
-            memento._selection
-        )
+    def restore(self, memento: EditorMemento) -> None:
+        self._text = memento._text
+        self._cursor = memento._cursor
+        self._selection = memento._selection
 
     def show(self) -> None:
-
         print(
             f"text={self._text!r}, "
             f"cursor={self._cursor}, "
             f"selection={self._selection}"
         )
 
-
 # -------------------------------------------------------------------
 # 3. Caretaker
 # -------------------------------------------------------------------
 
 class EditorHistory:
-
     def __init__(self):
+        self._undo_stack: list[EditorMemento] = []
+        self._redo_stack: list[EditorMemento] = []
 
-        self._undo_stack: list[
-            EditorMemento
-        ] = []
-
-        self._redo_stack: list[
-            EditorMemento
-        ] = []
-
-    def backup(
-        self,
-        editor: TextEditor,
-    ) -> None:
-
-        self._undo_stack.append(
-            editor.create_memento()
-        )
-
+    def backup(self, editor: TextEditor) -> None:
+        self._undo_stack.append(editor.create_memento())
         # 새로운 변경이 시작되면
         # 기존 Redo history는 무효화
         self._redo_stack.clear()
 
-    def undo(
-        self,
-        editor: TextEditor,
-    ) -> None:
-
+    def undo(self, editor: TextEditor) -> None:
         if not self._undo_stack:
             return
-
         # 현재 상태는 Redo용으로 저장
-        self._redo_stack.append(
-            editor.create_memento()
-        )
+        self._redo_stack.append(editor.create_memento())
+        previous = self._undo_stack.pop()
+        editor.restore(previous)
 
-        previous = (
-            self._undo_stack.pop()
-        )
-
-        editor.restore(
-            previous
-        )
-
-    def redo(
-        self,
-        editor: TextEditor,
-    ) -> None:
-
+    def redo(self, editor: TextEditor) -> None:
         if not self._redo_stack:
             return
-
         # 현재 상태는 다시 Undo용으로 저장
-        self._undo_stack.append(
-            editor.create_memento()
-        )
-
-        next_state = (
-            self._redo_stack.pop()
-        )
-
-        editor.restore(
-            next_state
-        )
-
+        self._undo_stack.append(editor.create_memento())
+        next_state = self._redo_stack.pop()
+        editor.restore(next_state)
 
 # -------------------------------------------------------------------
 # 4. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
     editor = TextEditor()
     history = EditorHistory()
-
-    history.backup(
-        editor
-    )
-
-    editor.insert(
-        "Hello"
-    )
-
+    history.backup(editor)
+    editor.insert("Hello")
     editor.show()
     # text='Hello', cursor=5
-
-    history.backup(
-        editor
-    )
-
-    editor.insert(
-        " World"
-    )
-
+    history.backup(editor)
+    editor.insert(" World")
     editor.show()
     # text='Hello World', cursor=11
-
-    history.backup(
-        editor
-    )
-
-    editor.move_cursor(
-        5
-    )
-
-    editor.insert(
-        ","
-    )
-
+    history.backup(editor)
+    editor.move_cursor(5)
+    editor.insert(",")
     editor.show()
     # text='Hello, World'
-
-    print(
-        "\n=== Undo ==="
-    )
-
-    history.undo(
-        editor
-    )
-
+    print("\n=== Undo ===")
+    history.undo(editor)
     editor.show()
     # Hello World
-
-    history.undo(
-        editor
-    )
-
+    history.undo(editor)
     editor.show()
     # Hello
-
-    print(
-        "\n=== Redo ==="
-    )
-
-    history.redo(
-        editor
-    )
-
+    print("\n=== Redo ===")
+    history.redo(editor)
     editor.show()
     # Hello World
-
 ```
 
 Caretaker는 다음 코드를 사용합니다.
@@ -1144,7 +991,7 @@ Mutable Originator (State₀) ──(Mutation)──> State₁ ──(Mutation)�
 
 텍스트 편집기의 전체 상태를 하나의 불변 값으로 정의합니다.
 
-```python
+```text
 immutable record EditorState:
     text: Rope
     cursor: Int
@@ -1211,7 +1058,7 @@ State₂ ──┘
 
 잘못된 Originator에 타 객체의 Memento가 전달되는 실수를 타입 시스템(Opaque Type 및 Type Parameter)으로 방지합니다.
 
-```python
+```text
 opaque type Memento[Owner, State]
 
 EditorMemento = Memento[TextEditor, EditorState]
@@ -1231,7 +1078,7 @@ restore(editor, game_snapshot)
 
 클래스 타입이 같더라도 서로 다른 객체 인스턴스 간 Memento 오용을 Generative Type으로 차단합니다.
 
-```python
+```text
 owner EditorA
 owner EditorB
 
@@ -1264,7 +1111,7 @@ def migrate(snapshot: Snapshot[Editor, V1]) -> Snapshot[Editor, V2]:
 
 한 번만 사용해야 하는 복원 Token은 Linear Type으로 선언하여 중복 소비를 컴파일 타임에 차단합니다.
 
-```python
+```text
 linear type RestoreToken[T]
 
 def restore[T](token: RestoreToken[T]) -> T: ...
@@ -1280,7 +1127,7 @@ restore(token) # Type Error: RestoreToken has already been consumed.
 
 상태가 거대할 경우 전체 Snapshot 대신 가역적 변환(Patch)만 저장하여 Memento를 경량화합니다.
 
-```python
+```text
 data EditorPatch =
     Insert(position: Int, text: str)
   | Delete(position: Int, text: str)
@@ -1307,7 +1154,7 @@ Snapshot₀ ──> 10 Patches ──> Snapshot₁ ──> 10 Patches ──> Sn
 
 Patch가 가역적(Reversible)이라면 역연산을 통해 이전 상태로 되돌립니다.
 
-```python
+```text
 trait Reversible[P]:
     def inverse(patch: P) -> P
 
@@ -1335,7 +1182,7 @@ def dispatch(history: History[EditorState], action: EditorAction) -> History[Edi
 
 History 자체도 불변 구조로 만들어 Undo/Redo 시 안전하게 상태 이력을 관리합니다.
 
-```python
+```text
 immutable record History[S]:
     past: PersistentStack[S]
     present: S
@@ -1409,7 +1256,7 @@ Snapshot₁₀₀₀ + (Subsequent Events 1001 ~ 1050) ──> Current State
 
 소켓, 파일 핸들 등 단순 값으로 캡처 불가능한 자원(Runtime Resources)은 Pure State와 분리하여 보상 트랜잭션 정책을 적용합니다.
 
-```python
+```text
 immutable record PureState:
     text: str
     cursor: Int
@@ -1425,7 +1272,7 @@ linear resource RuntimeResources:
 
 복원 가능성 능력을 타입 제약으로 선언하여 Snapshot이 불가능한 객체의 저장을 금지합니다.
 
-```python
+```text
 trait Snapshotable[T]:
     type Snapshot
     def snapshot(value: T) -> Snapshot
@@ -1439,7 +1286,7 @@ trait Snapshotable[T]:
 
 Snapshot 내부 구조를 외부에 완전히 은닉하여 컴파일러 수준에서 Memento 캡슐화를 강제합니다.
 
-```python
+```text
 opaque type EditorSnapshot
 
 # snapshot.text 접근 시 컴파일 에러 발생

@@ -318,16 +318,12 @@ calculator.set_strategy(
 
 Context의 코드는 변경되지 않습니다.
 
-```text
-ShippingCalculator
-       │
-       │ calculate()
-       ↓
-ShippingStrategy
-       │
-       ├─ StandardShipping
-       ├─ ExpressShipping
-       └─ InternationalShipping
+```mermaid
+flowchart TD
+    calculator[ShippingCalculator] -->|calculate| strategy[ShippingStrategy]
+    strategy --> standard[StandardShipping]
+    strategy --> express[ExpressShipping]
+    strategy --> international[InternationalShipping]
 
 ```
 
@@ -966,7 +962,6 @@ Express
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-
 # -------------------------------------------------------------------
 # 1. Domain Model
 # -------------------------------------------------------------------
@@ -977,209 +972,84 @@ class Order:
     distance_km: int
     country: str
 
-
 # -------------------------------------------------------------------
 # 2. Strategy
 # -------------------------------------------------------------------
 
 class ShippingStrategy(ABC):
-
     @abstractmethod
-    def calculate(
-        self,
-        order: Order,
-    ) -> int:
+    def calculate(self, order: Order) -> int:
         pass
-
 
 # -------------------------------------------------------------------
 # 3. Concrete Strategy - Standard
 # -------------------------------------------------------------------
 
-class StandardShipping(
-    ShippingStrategy
-):
-
-    def calculate(
-        self,
-        order: Order,
-    ) -> int:
-
+class StandardShipping(ShippingStrategy):
+    def calculate(self, order: Order) -> int:
         base = 3_000
-
-        weight_fee = int(
-            order.weight_kg
-            * 500
-        )
-
-        return (
-            base
-            + weight_fee
-        )
-
+        weight_fee = int(order.weight_kg * 500)
+        return base + weight_fee
 
 # -------------------------------------------------------------------
 # 4. Concrete Strategy - Express
 # -------------------------------------------------------------------
 
-class ExpressShipping(
-    ShippingStrategy
-):
-
-    def calculate(
-        self,
-        order: Order,
-    ) -> int:
-
+class ExpressShipping(ShippingStrategy):
+    def calculate(self, order: Order) -> int:
         base = 7_000
-
-        weight_fee = int(
-            order.weight_kg
-            * 900
-        )
-
-        distance_fee = (
-            order.distance_km
-            * 10
-        )
-
-        return (
-            base
-            + weight_fee
-            + distance_fee
-        )
-
+        weight_fee = int(order.weight_kg * 900)
+        distance_fee = order.distance_km * 10
+        return base + weight_fee + distance_fee
 
 # -------------------------------------------------------------------
 # 5. Concrete Strategy - International
 # -------------------------------------------------------------------
 
-class InternationalShipping(
-    ShippingStrategy
-):
-
-    def calculate(
-        self,
-        order: Order,
-    ) -> int:
-
+class InternationalShipping(ShippingStrategy):
+    def calculate(self, order: Order) -> int:
         base = 20_000
-
-        weight_fee = int(
-            order.weight_kg
-            * 2_000
-        )
-
-        distance_fee = int(
-            order.distance_km
-            * 5
-        )
-
-        return (
-            base
-            + weight_fee
-            + distance_fee
-        )
-
+        weight_fee = int(order.weight_kg * 2_000)
+        distance_fee = int(order.distance_km * 5)
+        return base + weight_fee + distance_fee
 
 # -------------------------------------------------------------------
 # 6. Context
 # -------------------------------------------------------------------
 
 class ShippingCalculator:
-
-    def __init__(
-        self,
-        strategy: ShippingStrategy,
-    ):
+    def __init__(self, strategy: ShippingStrategy):
         self._strategy = strategy
 
-    def set_strategy(
-        self,
-        strategy: ShippingStrategy,
-    ) -> None:
-
+    def set_strategy(self, strategy: ShippingStrategy) -> None:
         self._strategy = strategy
 
-    def calculate(
-        self,
-        order: Order,
-    ) -> int:
-
-        return self._strategy.calculate(
-            order
-        )
-
+    def calculate(self, order: Order) -> int:
+        return self._strategy.calculate(order)
 
 # -------------------------------------------------------------------
 # 7. Client
 # -------------------------------------------------------------------
 
-def print_shipping_cost(
-    calculator: ShippingCalculator,
-    order: Order,
-) -> None:
-
-    cost = calculator.calculate(
-        order
-    )
-
-    print(
-        f"배송비: {cost:,}원"
-    )
-
+def print_shipping_cost(calculator: ShippingCalculator, order: Order) -> None:
+    cost = calculator.calculate(order)
+    print(f"배송비: {cost:,}원")
 
 # -------------------------------------------------------------------
 # 8. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
-    order = Order(
-        weight_kg=4.5,
-        distance_km=120,
-        country="KR",
-    )
-
-    calculator = ShippingCalculator(
-        StandardShipping()
-    )
-
-    print(
-        "=== Standard ==="
-    )
-
-    print_shipping_cost(
-        calculator,
-        order,
-    )
-
-    calculator.set_strategy(
-        ExpressShipping()
-    )
-
-    print(
-        "\n=== Express ==="
-    )
-
-    print_shipping_cost(
-        calculator,
-        order,
-    )
-
-    calculator.set_strategy(
-        InternationalShipping()
-    )
-
-    print(
-        "\n=== International ==="
-    )
-
-    print_shipping_cost(
-        calculator,
-        order,
-    )
-
+    order = Order(weight_kg=4.5, distance_km=120, country="KR")
+    calculator = ShippingCalculator(StandardShipping())
+    print("=== Standard ===")
+    print_shipping_cost(calculator, order)
+    calculator.set_strategy(ExpressShipping())
+    print("\n=== Express ===")
+    print_shipping_cost(calculator, order)
+    calculator.set_strategy(InternationalShipping())
+    print("\n=== International ===")
+    print_shipping_cost(calculator, order)
 ```
 
 클라이언트가 호출하는 방식은 항상 동일합니다.
@@ -1385,7 +1255,7 @@ $$\text{Strategy} = \text{Input} \rightarrow \text{Output}$$
 
 배송비 Strategy의 타입은 다음과 같습니다.
 
-```python
+```text
 type ShippingStrategy =
     Order -> Money
 
@@ -1440,7 +1310,7 @@ def calculate_shipping(
 
 사용:
 
-```python
+```text
 cost =
     calculate_shipping(
         order,
@@ -1482,7 +1352,7 @@ ShippingCalculator
 
 하지만 Context의 역할이 단순히 Strategy를 호출하는 것뿐이라면 별도의 객체가 필요하지 않을 수도 있습니다.
 
-```python
+```text
 def calculate[
     A,
     B,
@@ -1535,7 +1405,7 @@ InternationalShipping
 
 함수형에서는 Closure를 만들 수 있습니다.
 
-```python
+```text
 def international_shipping(
     tax_rate: Decimal,
 ) -> ShippingStrategy:
@@ -1558,7 +1428,7 @@ def international_shipping(
 
 Strategy 생성:
 
-```python
+```text
 korea_to_us =
     international_shipping(
         tax_rate=0.12
@@ -1568,7 +1438,7 @@ korea_to_us =
 
 사용:
 
-```python
+```text
 cost =
     korea_to_us(
         order
@@ -1612,7 +1482,7 @@ def shipping_cost(
 
 `policy`를 먼저 고정합니다.
 
-```python
+```text
 express =
     partial(
         shipping_cost,
@@ -1653,7 +1523,7 @@ Strategy를 만들어 냅니다.
 
 Strategy는 배송비에 국한된 개념이 아닙니다.
 
-```python
+```text
 type Strategy[
     Input,
     Output,
@@ -1717,7 +1587,7 @@ Strategy의 객체지향 패턴을 **함수 타입의 parametric abstraction**�
 
 모든 Strategy가 하나의 `Input -> Output` 인터페이스를 공유한다고 해도 Strategy 종류별 Input/Output 관계를 보존하고 싶을 수 있습니다.
 
-```python
+```text
 trait Strategy[
     S
 ]:
@@ -1734,12 +1604,12 @@ trait Strategy[
 
 배송 Strategy:
 
-```python
+```text
 immutable record ExpressShipping
 
 ```
 
-```python
+```text
 impl Strategy[
     ExpressShipping
 ]:
@@ -1763,12 +1633,12 @@ impl Strategy[
 
 압축 Strategy:
 
-```python
+```text
 immutable record Gzip
 
 ```
 
-```python
+```text
 impl Strategy[
     Gzip
 ]:
@@ -1796,7 +1666,7 @@ impl Strategy[
 
 서로 아무런 상속 관계가 없는 타입들이 있다고 가정합니다.
 
-```python
+```text
 immutable record Standard
 
 immutable record Express
@@ -1807,7 +1677,7 @@ immutable record International
 
 각 타입에 배송 계산 능력을 외부에서 부여합니다.
 
-```python
+```text
 trait Shipping[
     S
 ]:
@@ -1819,7 +1689,7 @@ trait Shipping[
 
 ```
 
-```python
+```text
 impl Shipping[
     Standard
 ]:
@@ -1833,7 +1703,7 @@ impl Shipping[
 
 ```
 
-```python
+```text
 impl Shipping[
     Express
 ]:
@@ -1849,7 +1719,7 @@ impl Shipping[
 
 사용:
 
-```python
+```text
 def checkout[
     S
 ](
@@ -1883,7 +1753,7 @@ Unknown Strategy
 
 예:
 
-```python
+```text
 strategy =
     if config.fast
     then Express()
@@ -1897,7 +1767,7 @@ strategy =
 
 반면 알고리즘이 컴파일 시점에 결정된다면 Generic Type으로 표현할 수 있습니다.
 
-```python
+```text
 record ShippingCalculator[
     S
 ]
@@ -1907,7 +1777,7 @@ where Shipping[S]:
 
 ```
 
-```python
+```text
 calculator:
     ShippingCalculator[
         Express
@@ -1975,7 +1845,7 @@ express(order)
 
 지원할 알고리즘 종류가 미리 정해져 있다고 가정합니다.
 
-```python
+```text
 data ShippingMode =
 
     Standard
@@ -2009,7 +1879,7 @@ def calculate(
 
 새로운 종류가 추가되면 exhaustive checking이 누락된 처리를 알려줄 수 있습니다.
 
-```python
+```text
 data ShippingMode =
     ...
   | Drone
@@ -2103,7 +1973,7 @@ Pattern Matching
 
 Strategy Selector를 별도로 정의할 수 있습니다.
 
-```python
+```text
 type StrategySelector[
     Context,
     Strategy,
@@ -2134,7 +2004,7 @@ def select_shipping(
 
 전체 계산:
 
-```python
+```text
 strategy =
     select_shipping(
         request
@@ -2166,7 +2036,7 @@ Strategy Execution
 
 Strategy 선택 정책을 단순 데이터로 표현할 수 있습니다.
 
-```python
+```text
 data ShippingPolicy =
 
     StandardPolicy(
@@ -2271,7 +2141,7 @@ Code-driven Strategy
 
 하나의 거대한 Strategy로 만들 수도 있지만 각 정책을 독립적인 함수로 만들 수 있습니다.
 
-```python
+```text
 type PricingRule =
     (
         Order,
@@ -2312,7 +2182,7 @@ def premium_discount(
 
 Strategy를 조합합니다.
 
-```python
+```text
 express =
     compose_rules(
         base_price(7000),
@@ -2387,7 +2257,7 @@ policy = [
 
 가상의 결과 타입:
 
-```python
+```text
 data ShippingError =
 
     UnsupportedCountry
@@ -2400,7 +2270,7 @@ data ShippingError =
 
 Strategy 타입:
 
-```python
+```text
 type ShippingStrategy =
 
     Order
@@ -2446,7 +2316,7 @@ WeatherError
 
 같은 차이가 있다고 가정합니다.
 
-```python
+```text
 trait Strategy[
     S
 ]:
@@ -2493,7 +2363,7 @@ Money
 
 가상의 효과 타입:
 
-```python
+```text
 def calculate(
     order: Order,
 ) -> Result[
@@ -2507,7 +2377,7 @@ def calculate(
 
 Strategy의 일반형:
 
-```python
+```text
 type Strategy[
     Input,
     Output,
@@ -2540,7 +2410,7 @@ def local_shipping(
 
 ```
 
-```python
+```text
 def realtime_shipping(
     order: Order,
     using carrier: CarrierRates,
@@ -2583,7 +2453,7 @@ def drone_shipping(
 
 Refinement Type을 지원한다면:
 
-```python
+```text
 type DroneOrder =
     Order
     where
@@ -2624,7 +2494,7 @@ Strategy 내부 런타임 검사
 
 많은 OOP Strategy 인터페이스는 실제로 데이터 없이 함수 하나만 가집니다.
 
-```python
+```text
 class ShippingStrategy:
 
     def calculate(...):
@@ -2641,7 +2511,7 @@ Strategy Dictionary
 
 를 명시적으로 전달할 수도 있습니다.
 
-```python
+```text
 record ShippingOps:
 
     calculate:
@@ -2682,7 +2552,7 @@ def checkout(
 
 각각을 독립적으로 교체하면 서로 호환되지 않는 조합이 만들어질 수 있습니다.
 
-```python
+```text
 record ShippingStrategy:
 
     can_ship:

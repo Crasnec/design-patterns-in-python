@@ -96,21 +96,16 @@ class LoginButton:
 
 각 객체가 서로 필요한 객체를 직접 참조하게 됩니다.
 
-```text
-UsernameField
-    ├── PasswordField
-    └── LoginButton
-
-PasswordField
-    ├── UsernameField
-    └── LoginButton
-
-LoginButton
-    ├── UsernameField
-    ├── PasswordField
-    ├── StatusLabel
-    └── AuthService
-
+```mermaid
+flowchart LR
+    username["UsernameField"] --> password["PasswordField"]
+    username --> login["LoginButton"]
+    password --> username
+    password --> login
+    login --> username
+    login --> password
+    login --> status["StatusLabel"]
+    login --> auth["AuthService"]
 ```
 
 여기에 다음 기능이 추가된다고 가정합니다.
@@ -163,13 +158,11 @@ self.login_button.enabled = bool(
 
 일반적인 구조는 다음과 같습니다.
 
-```text
-Colleague A ──┐
-              │
-Colleague B ──┼──> Mediator
-              │
-Colleague C ──┘
-
+```mermaid
+flowchart LR
+    colleague_a["Colleague A"] --> mediator["Mediator"]
+    colleague_b["Colleague B"] --> mediator
+    colleague_c["Colleague C"] --> mediator
 ```
 
 각 Component는 다른 Component를 직접 알지 않습니다.
@@ -282,36 +275,33 @@ def _login(self) -> None:
 
 구조가 다음과 같이 바뀝니다.
 
-```text
-UsernameField ──────┐
-PasswordField ──────┤
-RememberCheckbox ───┼──> LoginDialogMediator
-LoginButton ────────┤
-StatusLabel ─────────┘
-
+```mermaid
+flowchart LR
+    username["UsernameField"] --> mediator["LoginDialogMediator"]
+    password["PasswordField"] --> mediator
+    remember["RememberCheckbox"] --> mediator
+    login["LoginButton"] --> mediator
+    status["StatusLabel"] --> mediator
 ```
 
 `UsernameField`는 더 이상 `PasswordField`나 `LoginButton`을 알지 않습니다.
 
-```text
-Before:
+```mermaid
+flowchart LR
+    subgraph before["Before"]
+        direction TB
+        b_username["UsernameField"] --> b_password["PasswordField"]
+        b_password --> b_login["LoginButton"]
+        b_login --> b_status["StatusLabel"]
+    end
 
-UsernameField
-      ↓
-PasswordField
-      ↓
-LoginButton
-      ↓
-StatusLabel
-
-
-After:
-
-UsernameField ─┐
-PasswordField ─┼─> Mediator
-LoginButton ───┤
-StatusLabel ───┘
-
+    subgraph after["After"]
+        direction LR
+        a_username["UsernameField"] --> mediator["Mediator"]
+        a_password["PasswordField"] --> mediator
+        a_login["LoginButton"] --> mediator
+        a_status["StatusLabel"] --> mediator
+    end
 ```
 
 핵심은 단순히 이벤트 처리 코드를 하나의 클래스로 옮기는 것이 아닙니다.
@@ -375,13 +365,11 @@ CheckoutMediator
 
 Observer의 구조는 일반적으로 다음과 같습니다.
 
-```text
-Subject
-   │
-   ├──> Observer A
-   ├──> Observer B
-   └──> Observer C
-
+```mermaid
+flowchart LR
+    subject["Subject"] --> observer_a["Observer A"]
+    subject --> observer_b["Observer B"]
+    subject --> observer_c["Observer C"]
 ```
 
 Subject는 상태 변화가 발생했음을 여러 Observer에게 알립니다.
@@ -397,11 +385,11 @@ Subject는 상태 변화가 발생했음을 여러 Observer에게 알립니다.
 
 Mediator는 다음과 같습니다.
 
-```text
-Component A ─┐
-Component B ─┼──> Mediator
-Component C ─┘
-
+```mermaid
+flowchart LR
+    component_a["Component A"] --> mediator["Mediator"]
+    component_b["Component B"] --> mediator
+    component_c["Component C"] --> mediator
 ```
 
 Mediator가 여러 객체의 상호작용 규칙을 알고 조정합니다.
@@ -440,26 +428,20 @@ Facade 역시 여러 객체 앞에 하나의 중앙 객체를 둘 수 있습니�
 
 Facade는 일반적으로:
 
-```text
-Client
-   ↓
-Facade
-   ↓
-Subsystem
-
+```mermaid
+flowchart TB
+    client["Client"] --> facade["Facade"]
+    facade --> subsystem["Subsystem"]
 ```
 
 처럼 외부 Client가 복잡한 Subsystem을 쉽게 사용하도록 합니다.
 
 Mediator는:
 
-```text
-Component A
-     ↓
- Mediator
-     ↓
-Component B
-
+```mermaid
+flowchart TB
+    component_a["Component A"] --> mediator["Mediator"]
+    mediator --> component_b["Component B"]
 ```
 
 처럼 **Subsystem 내부 객체끼리의 협력 관계를 조정**합니다.
@@ -485,24 +467,19 @@ Mediator:
 
 Chain of Responsibility에서는 요청이 여러 Handler를 순차적으로 이동합니다.
 
-```text
-Handler A
-    ↓
-Handler B
-    ↓
-Handler C
-
+```mermaid
+flowchart TB
+    handler_a["Handler A"] --> handler_b["Handler B"]
+    handler_b --> handler_c["Handler C"]
 ```
 
 Mediator에서는 요청이 중앙 조정자에게 전달되고 Mediator가 필요한 객체의 동작을 결정합니다.
 
-```text
-Component
-    ↓
-Mediator
-   ├──> Component B
-   └──> Component C
-
+```mermaid
+flowchart TB
+    component["Component"] --> mediator["Mediator"]
+    mediator --> component_b["Component B"]
+    mediator --> component_c["Component C"]
 ```
 
 따라서:
@@ -526,13 +503,11 @@ MVC의 Controller와 Mediator는 형태가 비슷해질 수 있습니다.
 
 Controller는 일반적으로:
 
-```text
-User Input
-    ↓
-Controller
-    ↓
-Model / View
-
+```mermaid
+flowchart TB
+    input["User Input"] --> controller["Controller"]
+    controller --> model["Model"]
+    controller --> view["View"]
 ```
 
 처럼 외부 입력을 애플리케이션 동작으로 변환합니다.
@@ -555,13 +530,13 @@ Python의 `asyncio`에서 Event Loop는 Task와 Callback을 실행하고 네트�
 
 개념적으로 다음과 같이 볼 수 있습니다.
 
-```text
-Task A ──────┐
-Task B ──────┤
-Callback ────┼──> Event Loop
-Socket I/O ──┤
-Timer ───────┘
-
+```mermaid
+flowchart LR
+    task_a["Task A"] --> loop["Event Loop"]
+    task_b["Task B"] --> loop
+    callback["Callback"] --> loop
+    socket["Socket I/O"] --> loop
+    timer["Timer"] --> loop
 ```
 
 Task가 서로 직접 실행 순서를 관리하지 않고 Event Loop가 실행 가능한 Task와 Callback을 스케줄링합니다. `asyncio.Task` 역시 Event Loop 안에서 실행되며, 하나의 Task가 Future를 기다리는 동안 Event Loop는 다른 Task나 Callback, I/O 작업을 수행합니다. ([Python documentation](https://docs.python.org/3/library/asyncio-task.html))
@@ -578,11 +553,11 @@ Channels 공식 문서는 Channel Layer가 서로 다른 프로세스 사이에�
 
 예를 들어 채팅 시스템에서 Consumer들이 서로 직접 참조하지 않습니다.
 
-```text
-Consumer A ──┐
-Consumer B ──┼──> Channel Layer
-Consumer C ──┘
-
+```mermaid
+flowchart LR
+    consumer_a["Consumer A"] --> layer["Channel Layer"]
+    consumer_b["Consumer B"] --> layer
+    consumer_c["Consumer C"] --> layer
 ```
 
 메시지는 Group을 통해 전달할 수 있습니다.
@@ -612,11 +587,13 @@ Celery 공식 문서는 Task Queue가 작업을 Thread나 Machine에 분배하�
 
 구조는 다음과 같습니다.
 
-```text
-Producer A ──┐
-Producer B ──┼──> Broker ──> Worker A
-Producer C ──┘          └──> Worker B
-
+```mermaid
+flowchart LR
+    producer_a["Producer A"] --> broker["Broker"]
+    producer_b["Producer B"] --> broker
+    producer_c["Producer C"] --> broker
+    broker --> worker_a["Worker A"]
+    broker --> worker_b["Worker B"]
 ```
 
 Client는 특정 Worker 객체를 직접 선택하거나 참조할 필요가 없습니다.
@@ -715,17 +692,13 @@ Colleagues
 
 핵심 구조는 다음과 같습니다.
 
-```text
-          UsernameField
-                │
-PasswordField ──┤
-                │
-Checkbox ───────┼──> LoginDialogMediator
-                │
-LoginButton ────┤
-                │
-StatusLabel ────┘
-
+```mermaid
+flowchart LR
+    username["UsernameField"] --> mediator["LoginDialogMediator"]
+    password["PasswordField"] --> mediator
+    checkbox["Checkbox"] --> mediator
+    login["LoginButton"] --> mediator
+    status["StatusLabel"] --> mediator
 ```
 
 Colleague들은 서로 직접 참조하지 않습니다.
@@ -1112,34 +1085,25 @@ if __name__ == "__main__":
 
 실행 흐름은 다음과 같습니다.
 
-```text
-LoginButton.click()
-        │
-        └─ 비활성 상태
+```mermaid
+sequenceDiagram
+    participant U as UsernameField
+    participant P as PasswordField
+    participant B as LoginButton
+    participant M as Mediator
+    participant A as AuthService
+    participant S as StatusLabel
 
-
-Username 변경
-        ↓
-Mediator.notify()
-        ↓
-LoginButton 활성 조건 검사
-
-
-Password 변경
-        ↓
-Mediator.notify()
-        ↓
-LoginButton.enabled = True
-
-
-LoginButton.click()
-        ↓
-Mediator.notify()
-        ↓
-AuthService.login()
-        ↓
-StatusLabel 변경
-
+    B->>B: click()
+    Note right of B: 비활성 상태
+    U->>M: changed
+    M->>B: 활성 조건 검사
+    P->>M: changed
+    M->>B: enabled = True
+    B->>M: click
+    M->>A: login()
+    A-->>M: 인증 결과
+    M->>S: 상태 변경
 ```
 
 중요한 점은 `UsernameField`가 다음 객체들을 전혀 알지 않는다는 것입니다.
@@ -1174,19 +1138,19 @@ Mediator
 
 ### 고전적 구조 대 추상화된 구조
 
-```text
-[고전적 구조]
-Colleague ──(Event)──> Mediator ──┬──> Colleague A 변경
-                                 ├──> Colleague B 호출
-                                 └──> Colleague C 상태 갱신
+```mermaid
+flowchart LR
+    subgraph classic["고전적 구조"]
+        colleague["Colleague"] -->|Event| mediator["Mediator"]
+        mediator --> change_a["Colleague A 변경"]
+        mediator --> call_b["Colleague B 호출"]
+        mediator --> update_c["Colleague C 상태 갱신"]
+    end
 
-[추상화된 구조]
-현재 시스템 상태 + 발생한 Event
-            ↓
-       상호작용 규칙
-            ↓
-  새로운 상태 + 수행할 Effect
-
+    subgraph abstracted["추상화된 구조"]
+        current["현재 시스템 상태 + 발생한 Event"] --> rules["상호작용 규칙"]
+        rules --> result["새로운 상태 + 수행할 Effect"]
+    end
 ```
 
 > **핵심 질문**
@@ -1293,10 +1257,17 @@ def reduce(state: LoginState, event: LoginEvent) -> LoginState:
 
 ```
 
-```text
-[고전적 방식]  Event         ──> Mediator ──> 여러 Component 직접 수정
-[함수형 방식]  State + Event ──> Reducer  ──> New State
+```mermaid
+flowchart LR
+    subgraph classic["고전적 방식"]
+        event["Event"] --> mediator["Mediator"]
+        mediator --> components["여러 Component 직접 수정"]
+    end
 
+    subgraph functional["함수형 방식"]
+        state_event["State + Event"] --> reducer["Reducer"]
+        reducer --> new_state["New State"]
+    end
 ```
 
 ---
@@ -1323,9 +1294,11 @@ def reduce(state: LoginState, event: LoginEvent) -> (LoginState, Vector[LoginEff
 
 ```
 
-```text
-State + Event ──> Reducer ──> New State + Effects ──> Runtime (Interpreter)
-
+```mermaid
+flowchart LR
+    input["State + Event"] --> reducer["Reducer"]
+    reducer --> output["New State + Effects"]
+    output --> runtime["Runtime (Interpreter)"]
 ```
 
 ---
@@ -1334,11 +1307,14 @@ State + Event ──> Reducer ──> New State + Effects ──> Runtime (Inter
 
 외부 작업의 결과 역시 이벤트로 환원하여 모든 상태 변화 경로를 단일화합니다.
 
-```text
-LoginClicked ──> Reducer ──> Authenticate Effect ──> Auth Server
-                                                         │
-LoggedIn State <── Reducer <── AuthSucceeded Event <─────┘
-
+```mermaid
+flowchart LR
+    clicked["LoginClicked"] --> reducer_request["Reducer"]
+    reducer_request --> effect["Authenticate Effect"]
+    effect --> server["Auth Server"]
+    server --> succeeded["AuthSucceeded Event"]
+    succeeded --> reducer_result["Reducer"]
+    reducer_result --> logged_in["LoggedIn State"]
 ```
 
 ---
@@ -1361,11 +1337,11 @@ def route(message: Message) -> Unit:
 
 ```
 
-```text
-                 ┌──> LoginMediator
-MessageBus ──────┼──> SearchMediator
-                 └──> WindowMediator
-
+```mermaid
+flowchart LR
+    bus["MessageBus"] --> login["LoginMediator"]
+    bus --> search["SearchMediator"]
+    bus --> window["WindowMediator"]
 ```
 
 ---
@@ -1398,11 +1374,11 @@ actor LoginCoordinator:
 
 ```
 
-```text
-Username Actor ──┐
-Password Actor ──┼──> LoginCoordinator Actor (Mailbox)
-Button Actor ───┘
-
+```mermaid
+flowchart LR
+    username["Username Actor"] --> coordinator["LoginCoordinator Actor (Mailbox)"]
+    password["Password Actor"] --> coordinator
+    button["Button Actor"] --> coordinator
 ```
 
 ---
@@ -1411,12 +1387,15 @@ Button Actor ───┘
 
 상태를 직접 수정하지 않고 Mailbox의 메시지를 순차 처리함으로써 동시성 이슈(Synchronization)를 자연스럽게 해결합니다.
 
-```text
-[Mailbox Queue]                    [Mediator Actor]
-Event A ───┐
-Event B ───┼── (순차적 메시지 처리) ──> Event A 처리 -> Event B 처리 -> Event C 처리
-Event C ───┘
-
+```mermaid
+flowchart LR
+    event_a["Event A"] --> mailbox["Mailbox Queue"]
+    event_b["Event B"] --> mailbox
+    event_c["Event C"] --> mailbox
+    mailbox --> actor["Mediator Actor"]
+    actor --> handle_a["Event A 처리"]
+    handle_a --> handle_b["Event B 처리"]
+    handle_b --> handle_c["Event C 처리"]
 ```
 
 ---
@@ -1440,11 +1419,12 @@ login_enabled = combine_latest(username, password)
 
 ```
 
-```text
-Username Stream ──┐
-                  ├──> combineLatest ──> map(valid?) ──> Button Enabled
-Password Stream ──┘
-
+```mermaid
+flowchart LR
+    username["Username Stream"] --> combine["combineLatest"]
+    password["Password Stream"] --> combine
+    combine --> validate["map(valid?)"]
+    validate --> enabled["Button Enabled"]
 ```
 
 ---
@@ -1522,10 +1502,11 @@ data LoginState =
 
 ```
 
-```text
-Editing ──(LoginClicked)──> Authenticating ──┬──(Success)──> LoggedIn
-                                             └──(Failure)──> Failed
-
+```mermaid
+stateDiagram-v2
+    Editing --> Authenticating: LoginClicked
+    Authenticating --> LoggedIn: Success
+    Authenticating --> Failed: Failure
 ```
 
 ---
@@ -1534,12 +1515,22 @@ Editing ──(LoginClicked)──> Authenticating ──┬──(Success)─�
 
 Mediator는 의존성 그래프를 복잡한 N:M 구조에서 Star 형태(1:N)로 단순화합니다.
 
-```text
-[Mediator 미도입]        [Mediator 도입]
-   A ── B                  A ──┐
-   │ ╳  │                  B ──┼── M
-   C ── D                  C ──┘
+```mermaid
+flowchart LR
+    subgraph without["Mediator 미도입"]
+        a1["A"] --- b1["B"]
+        a1 --- c1["C"]
+        a1 --- d1["D"]
+        b1 --- c1
+        b1 --- d1
+        c1 --- d1
+    end
 
+    subgraph with["Mediator 도입"]
+        a2["A"] --> mediator["M"]
+        b2["B"] --> mediator
+        c2["C"] --> mediator
+    end
 ```
 
 > **주의**: 도메인의 본질적인 상호작용 복잡성이 사라지는 것이 아니라 **Mediator 내부로 집약(Interaction Localization)**되는 것입니다.
@@ -1605,11 +1596,11 @@ Mediator 패턴의 본질은 "참여 자간의 직접적인 알림/의존성을 
 
 객체지향에서는:
 
-```text
-Colleague A ─┐
-Colleague B ─┼──> Mediator
-Colleague C ─┘
-
+```mermaid
+flowchart LR
+    colleague_a["Colleague A"] --> mediator["Mediator"]
+    colleague_b["Colleague B"] --> mediator
+    colleague_c["Colleague C"] --> mediator
 ```
 
 라는 구조로 표현합니다.

@@ -127,16 +127,13 @@ def run_game_for_test():
 
 일반적인 구조는 다음과 같습니다.
 
-```text
-Client
-   │
-   ↓
-Facade
-   │
-   ├─ Subsystem A
-   ├─ Subsystem B
-   ├─ Subsystem C
-   └─ Subsystem D
+```mermaid
+flowchart TD
+    client[Client] --> facade[Facade]
+    facade --> subsystem_a[Subsystem A]
+    facade --> subsystem_b[Subsystem B]
+    facade --> subsystem_c[Subsystem C]
+    facade --> subsystem_d[Subsystem D]
 
 ```
 

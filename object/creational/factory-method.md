@@ -482,7 +482,7 @@ $$\text{ConcreteCreator} \longrightarrow \text{ConcreteProduct}$$
 
 **"어떤 구체 값을 생성할 것인가라는 계산을, 그 값을 사용하는 상위 로직으로부터 어떻게 분리하고 교체 가능하게 만들 것인가?"**
 
-이 부록에서는 고차 함수(Higher-Order Function), 대수적 데이터 타입(ADT), 타입클래스(Type Class), 연관 타입(Associated Type), 효과 타입(Effect Type)을 지원하는 가상의 Python 확장 문법을 가정하여 설명합니다. *(아래 코드는 이해를 돕기 위한 가상 pseudocode입니다.)*
+이 부록에서는 고차 함수(Higher-Order Function), 대수적 데이터 타입(ADT), 타입클래스(Type Class), 연관 타입(Associated Type), 효과 타입(Effect Type)을 지원하는 가상의 Python 확장 문법을 가정하여 설명합니다. *(아래 코드는 이해를 돕기 위한 가상 의사 코드입니다.)*
 
 ### 1. Factory Method를 함수 타입으로 표현하기
 
@@ -911,4 +911,4 @@ type Factory[
 * **생성 실패 예외** $\leftrightarrow$ **`Result[Product, Error]`**
 * **암묵적 부수효과** $\leftrightarrow$ **Effect Type**
 
-현대적 관점에서 팩토리 메서드 패턴의 본질은 "값을 생성하는 계산을 사용하는 로직으로부터 분리하고, 그 생성 계산을 교체 가능한 추상화로 정립하는 기법"으로 통합하여 이해할 수 있습니다.
+팩토리 메서드의 핵심은 제품을 사용하는 상위 알고리즘에서 구체 제품의 생성 결정을 분리하고, 그 생성 지점을 재정의할 수 있게 만드는 데 있습니다. 일급 생성 함수와 타입 클래스는 같은 결정을 상속 없이 표현하는 선택지입니다.

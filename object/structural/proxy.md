@@ -168,18 +168,14 @@ images[0].display()
 
 ```
 
-```text
-ImageProxy
-   │
-   │ display()
-   ▼
-RealImage 생성
-   │
-   ▼
-파일 로딩
-   │
-   ▼
-display()
+```mermaid
+sequenceDiagram
+    participant Proxy as ImageProxy
+    participant Real as RealImage
+    participant File as Image file
+    Proxy->>Real: 최초 display에서 생성
+    Real->>File: 파일 로딩
+    Proxy->>Real: display
 
 ```
 
@@ -454,24 +450,20 @@ Client ──> Image
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-
 # -------------------------------------------------------------------
 # 1. Subject
 # -------------------------------------------------------------------
 
 class Image(ABC):
-
     @abstractmethod
     def display(self) -> None:
         pass
-
 
 # -------------------------------------------------------------------
 # 2. Real Subject
 # -------------------------------------------------------------------
 
 class RealImage(Image):
-
     def __init__(self, path: str):
         self._path = Path(path)
         # 실제 객체 생성 시 비용이 큰 로딩 작업 수행
@@ -485,13 +477,11 @@ class RealImage(Image):
     def display(self) -> None:
         print(f"[RealImage] {self._path} 표시")
 
-
 # -------------------------------------------------------------------
 # 3. Proxy
 # -------------------------------------------------------------------
 
 class ImageProxy(Image):
-
     def __init__(self, path: str):
         self._path = path
         self._real_image: RealImage | None = None
@@ -501,10 +491,8 @@ class ImageProxy(Image):
         if self._real_image is None:
             print("[Proxy] RealImage를 생성합니다.")
             self._real_image = RealImage(self._path)
-
         # 이후 호출은 실제 객체에 위임
         self._real_image.display()
-
 
 # -------------------------------------------------------------------
 # 4. 클라이언트
@@ -513,31 +501,24 @@ class ImageProxy(Image):
 def show_image(image: Image) -> None:
     image.display()
 
-
 # -------------------------------------------------------------------
 # 5. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
     images: list[Image] = [
         ImageProxy("photo1.jpg"),
         ImageProxy("photo2.jpg"),
         ImageProxy("photo3.jpg"),
     ]
-
     print("=== Proxy 객체 생성 완료 ===")
     # 아직 어떤 실제 이미지도 로딩되지 않음
-
     print("\n=== 첫 번째 이미지 표시 ===")
     show_image(images[0])
-
     print("\n=== 첫 번째 이미지 다시 표시 ===")
     show_image(images[0])
-
     print("\n=== 세 번째 이미지 표시 ===")
     show_image(images[2])
-
 ```
 
 실행 결과는 다음과 같습니다.
@@ -623,14 +604,14 @@ Proxy 생성 ──> (아직 Real Subject 없음) ──> 최초 method 호출 �
 
 이를 타입으로 직접 표현할 수 있습니다.
 
-```python
+```text
 data Lazy[T] = Unevaluated(thunk: () -> T) | Evaluated(T)
 
 ```
 
 값을 지연 생성합니다.
 
-```python
+```text
 image: Lazy[Image] = lazy { load_image("photo.jpg") }
 
 ```
@@ -662,7 +643,7 @@ again = force(image)
 
 단순한 Thunk는 지연된 계산입니다.
 
-```python
+```text
 type Thunk[T] = () -> T
 
 ```
@@ -711,7 +692,7 @@ proxy.delete_user(user_id)
 
 하지만 현대적인 Capability 기반 타입 시스템에서는 **권한이 없는 코드에 해당 연산 자체를 제공하지 않는 방식**으로 접근할 수 있습니다.
 
-```python
+```text
 capability DeleteUser:
     def delete_user(id: UserId) -> Unit
 
@@ -726,7 +707,7 @@ admin_capability: DeleteUser
 
 함수는 해당 권한을 요구합니다.
 
-```python
+```text
 def remove_user(id: UserId, using permission: DeleteUser) -> Unit:
     permission.delete_user(id)
 
@@ -747,7 +728,7 @@ Type Error: Missing capability: DeleteUser
 
 실제 객체가 다음 기능을 모두 가진다고 가정합니다.
 
-```python
+```text
 class UserRepository:
     def read(...)
     def create(...)
@@ -758,7 +739,7 @@ class UserRepository:
 
 Proxy를 하나 두고 역할별로 검사할 수도 있지만, Capability 시스템에서는 능력을 나눌 수 있습니다.
 
-```python
+```text
 capability ReadUser:
     def read(id: UserId) -> User
 
@@ -785,7 +766,7 @@ Proxy에서 런타임 조건문으로 접근을 검사하는 대신, 타입 수�
 
 하지만 Remote Object는 실제로 로컬 값과 동일하지 않으므로 이를 타입에 명시할 수 있습니다.
 
-```python
+```text
 opaque type RemoteHandle[T]
 
 ```
@@ -833,7 +814,7 @@ result = call(user_service, UserService.get_user, user_id)
 
 원격 호출 자체를 하나의 효과(Effect)로 정의할 수도 있습니다.
 
-```python
+```text
 effect RemoteCall:
     def invoke[Request, Response](request: Request) -> Response
 
@@ -841,7 +822,7 @@ effect RemoteCall:
 
 비즈니스 로직:
 
-```python
+```text
 def load_user(id: UserId) -> User ! RemoteCall:
     return perform invoke(GetUser(id))
 
@@ -866,13 +847,13 @@ Client ──> Caching Proxy ──┬── Cache Hit  ──> Result
 
 함수형 관점에서는 순수 함수의 Memoization으로 표현할 수 있습니다.
 
-```python
+```text
 def memoize[A: Hashable, B](fn: A -> B) -> A -> B:
     ...
 
 ```
 
-```python
+```text
 calculate_price : ItemId -> Money
 cached_price    : ItemId -> Money  # memoize(calculate_price)
 
@@ -886,7 +867,7 @@ cached_price    : ItemId -> Money  # memoize(calculate_price)
 
 다음 함수가 있다고 가정합니다.
 
-```python
+```text
 def get_balance(account: AccountId) -> Money ! Database:
     ...
 
@@ -896,7 +877,7 @@ def get_balance(account: AccountId) -> Money ! Database:
 
 효과 시스템에서는 캐시 정책을 별도 효과 Handler로 표현할 수 있습니다.
 
-```python
+```text
 handle DatabaseRead with Cache(ttl=30.seconds)
 
 ```
@@ -923,7 +904,7 @@ handle DatabaseRead with Cache(ttl=30.seconds)
 
 어떤 자원은 정확히 한 번 닫아야 한다고 가정합니다.
 
-```python
+```text
 linear resource Connection:
     ...
 
@@ -960,7 +941,7 @@ Client ──> ThreadSafeProxy ──> Lock / Queue ──> RealSubject
 
 Actor 기반 모델에서는 객체 자체를 직접 공유하지 않고 Handle만 제공합니다.
 
-```python
+```text
 actor Counter:
     state: value: Int
     message Increment

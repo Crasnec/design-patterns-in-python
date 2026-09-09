@@ -75,16 +75,14 @@ def calculate_power(
 
 현재 부대 계층 구조는 다음과 같습니다.
 
-```text
-Platoon
-   │
-   ├─ Squad
-   │    ├─ Soldier
-   │    └─ Soldier
-   │
-   └─ Squad
-        ├─ Soldier
-        └─ Soldier
+```mermaid
+flowchart TD
+    platoon[Platoon] --> squad_a[Squad]
+    platoon --> squad_b[Squad]
+    squad_a --> soldier_a1[Soldier]
+    squad_a --> soldier_a2[Soldier]
+    squad_b --> soldier_b1[Soldier]
+    squad_b --> soldier_b2[Soldier]
 
 ```
 
@@ -105,7 +103,7 @@ class Division:
 이 경우 기존 계산 함수에도 새로운 조건 분기를 추가해야 합니다.
 
 ```python
-elif isinstance(unit, Division):
+if isinstance(unit, Division):
 
     return sum(
         soldier.power
@@ -261,7 +259,7 @@ Client
 
 ```
 
-컴포지트 패턴의 본질은 단순히 트리 자료구조를 구축하는 데 있지 않습니다. `Leaf`와 `Composite`가 동일한 추상 인터페이스를 공유하여, **단일 객체와 객체의 재귀적 집합을 클라이언트 관점에서 완전히 동일하게 취급**할 수 있게 하는 것이 패턴의 핵심입니다.
+컴포지트 패턴의 본질은 단순히 트리 자료구조를 구축하는 데 있지 않습니다. `Leaf`와 `Composite`가 같은 추상 인터페이스를 공유하여, **단일 객체와 객체의 재귀적 집합을 클라이언트가 같은 계약으로 다루게 하는 것**이 패턴의 핵심입니다.
 
 ---
 
@@ -314,7 +312,7 @@ class Unit(ABC):
 
 ```
 
-* **장점**: 클라이언트는 모든 Component를 완전히 동일한 인터페이스로 다룰 수 있습니다.
+* **장점**: 클라이언트는 모든 Component를 같은 인터페이스로 다룰 수 있습니다.
 * **단점**: 자식을 가질 수 없는 `Leaf` 노드에도 `add()` 메서드가 노출됩니다.
 
 ```python
@@ -832,7 +830,7 @@ unit.get_power()
 
 ```
 
-반면 ADT 관점에서는 데이터의 정의와 연산 로직을 완벽히 분리할 수 있습니다.
+반면 ADT 관점에서는 데이터 정의와 연산 로직을 서로 분리할 수 있습니다.
 
 ```python
 def get_power(
@@ -861,7 +859,7 @@ def get_power(
 * **`Soldier`**: `power` 값을 그대로 반환
 * **`Group`**: 자식 노드(`children`) 각각에 `get_power`를 재귀적으로 적용하고 그 결과를 합산
 
-이 재귀적 함수 정의는 객체지향의 `sum(child.get_power() for child in self._children)`과 완전히 동일하게 동작합니다. 차이점은 연산 로직이 클래스별로 분산되지 않고, 하나의 함수 내에 모여 있다는 것입니다.
+이 재귀 함수는 객체지향의 `sum(child.get_power() for child in self._children)`과 같은 방식으로 결과를 계산합니다. 차이는 연산 로직이 클래스별로 분산되지 않고 하나의 함수에 모인다는 점입니다.
 
 ---
 
@@ -1206,7 +1204,7 @@ async def load_status(
 
 ```
 
-효과 시스템을 지원하는 타입 환경에서는 트리 순회 로직과 부수 효과 로직을 완벽하게 분리할 수 있습니다.
+효과 시스템을 지원하는 타입 환경에서는 트리 순회 로직과 부수 효과 로직의 경계를 타입에 드러낼 수 있습니다.
 
 ```python
 def traverse_unit[
@@ -1280,7 +1278,7 @@ power = cata(power_algebra, army)
 
 ```
 
-객체지향의 "재귀적 객체 구조 + 재귀적 메서드 호출"이 "재귀 타입 구조(`Fix`) + Algebra + Recursion Scheme(`cata`)"으로 완벽하게 분해됩니다.
+이 표현에서는 객체지향의 "재귀적 객체 구조 + 재귀적 메서드 호출"을 "재귀 타입 구조(`Fix`) + Algebra + Recursion Scheme(`cata`)"으로 분해합니다.
 
 ---
 

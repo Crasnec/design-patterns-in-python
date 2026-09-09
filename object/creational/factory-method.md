@@ -330,46 +330,36 @@ classDiagram
 ```python
 from abc import ABC, abstractmethod
 
-
 # -------------------------------------------------------------------
 # 1. 제품 인터페이스 (Product)
 # -------------------------------------------------------------------
 
 class Monster(ABC):
-
     @abstractmethod
     def attack(self) -> None:
         pass
-
 
 # -------------------------------------------------------------------
 # 2. 구체 제품 (Concrete Products)
 # -------------------------------------------------------------------
 
 class Goblin(Monster):
-
     def attack(self) -> None:
         print("[고블린] 단검 공격!")
 
-
 class IceGolem(Monster):
-
     def attack(self) -> None:
         print("[아이스 골렘] 얼음 주먹 공격!")
 
-
 class FireDragon(Monster):
-
     def attack(self) -> None:
         print("[화염 드래곤] 브레스 공격!")
-
 
 # -------------------------------------------------------------------
 # 3. Creator
 # -------------------------------------------------------------------
 
 class Dungeon(ABC):
-
     @abstractmethod
     def create_monster(self) -> Monster:
         """Factory Method"""
@@ -378,60 +368,41 @@ class Dungeon(ABC):
     def enter(self) -> None:
         # 어떤 구체 Monster가 생성되는지는 알지 못함
         monster = self.create_monster()
-
         print("\n=== 던전 입장 ===")
         monster.attack()
-
 
 # -------------------------------------------------------------------
 # 4. 구체 Creator (Concrete Creators)
 # -------------------------------------------------------------------
 
 class ForestDungeon(Dungeon):
-
     def create_monster(self) -> Monster:
         return Goblin()
 
-
 class IceDungeon(Dungeon):
-
     def create_monster(self) -> Monster:
         return IceGolem()
 
-
 class VolcanoDungeon(Dungeon):
-
     def create_monster(self) -> Monster:
         return FireDragon()
-
 
 # -------------------------------------------------------------------
 # 5. 클라이언트
 # -------------------------------------------------------------------
 
-def explore_dungeon(
-    dungeon: Dungeon,
-) -> None:
-
+def explore_dungeon(dungeon: Dungeon) -> None:
     # 클라이언트는 어떤 Monster가 생성되는지 알 필요가 없음
     dungeon.enter()
-
 
 # -------------------------------------------------------------------
 # 6. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
-    dungeons: list[Dungeon] = [
-        ForestDungeon(),
-        IceDungeon(),
-        VolcanoDungeon(),
-    ]
-
+    dungeons: list[Dungeon] = [ForestDungeon(), IceDungeon(), VolcanoDungeon()]
     for dungeon in dungeons:
         explore_dungeon(dungeon)
-
 ```
 
 **실행 결과:**
@@ -498,7 +469,7 @@ class Dungeon:
 
 하지만 함수가 일급 객체인 언어에서는 "무언가를 생성하는 행위" 자체를 하나의 값으로 표현할 수 있습니다.
 
-```python
+```text
 type Factory[T] = () -> T
 
 ```
@@ -524,7 +495,7 @@ def create_ice_golem() -> IceGolem:
 
 상위 알고리즘은 생성 함수를 매개변수로 받아 사용합니다.
 
-```python
+```text
 def enter_dungeon[M <: Monster](
     factory: Factory[M],
 ) -> None:
@@ -550,14 +521,14 @@ enter_dungeon(create_ice_golem)
 
 생성 과정에 입력값이 필요하다면 Factory의 타입을 일반화할 수 있습니다.
 
-```python
+```text
 type Factory[Context, Product] = Context -> Product
 
 ```
 
 예를 들어 몬스터 생성에 던전의 난이도와 플레이어 레벨이 필요한 상황을 가정해 보겠습니다.
 
-```python
+```text
 immutable record SpawnContext:
     player_level: Int
     difficulty: Difficulty
@@ -593,7 +564,7 @@ def create_ice_golem(
 
 상위 알고리즘은 구체 제품에 관계없이 동작합니다.
 
-```python
+```text
 def spawn[M <: Monster](
     context: SpawnContext,
     factory: Factory[SpawnContext, M],
@@ -621,7 +592,7 @@ monster = spawn(
 
 단순히 모든 Factory가 `Monster`를 반환한다고 정의하면 구체 Factory와 생성되는 구체 제품 사이의 관계가 타입 수준에서 흐려질 수 있습니다. 더 강력한 타입 시스템에서는 Factory마다 자신이 생성하는 Product 타입을 타입 수준에 직접 연결할 수 있습니다.
 
-```python
+```text
 trait Factory[F]:
 
     type Product
@@ -634,7 +605,7 @@ trait Factory[F]:
 
 숲 던전의 Factory를 정의합니다.
 
-```python
+```text
 immutable record ForestFactory
 impl Factory[ForestFactory]:
 
@@ -650,7 +621,7 @@ impl Factory[ForestFactory]:
 
 얼음 던전은 다른 연관 타입을 가집니다.
 
-```python
+```text
 immutable record IceFactory
 impl Factory[IceFactory]:
 
@@ -682,7 +653,7 @@ $$\text{Dungeon} \longleftarrow \{\text{ForestDungeon}, \text{IceDungeon}, \text
 
 반면 타입클래스를 지원하는 언어에서는 기존 타입을 수정하거나 공통 부모 클래스를 만들지 않고도 생성 능력을 부여할 수 있습니다.
 
-```python
+```text
 immutable record Forest
 immutable record IceField
 immutable record Volcano
@@ -691,7 +662,7 @@ immutable record Volcano
 
 각 타입에 Factory 구현을 부여합니다.
 
-```python
+```text
 impl Factory[Forest]:
 
     type Product = Goblin
@@ -711,7 +682,7 @@ impl Factory[IceField]:
 
 상위 함수는 Factory 제약만 요구합니다.
 
-```python
+```text
 def enter[D](
     dungeon: D,
 ) -> None
@@ -728,7 +699,7 @@ where Factory[D]:
 
 Factory Method는 새로운 Concrete Product가 지속적으로 추가될 수 있는 개방된 확장(Open Extension)에 유용합니다. 하지만 생성 가능한 제품 종류가 결정되어 있는 경우라면 대수적 데이터 타입(ADT)을 통한 접근이 더 간결할 수 있습니다.
 
-```python
+```text
 data DungeonType =
     Forest
   | Ice
@@ -738,7 +709,7 @@ data DungeonType =
 
 몬스터 역시 닫힌 ADT로 정의합니다.
 
-```python
+```text
 data Monster =
     Goblin(attack: Int)
   | IceGolem(attack: Int)
@@ -768,7 +739,7 @@ def create_monster(
 
 만약 새로운 `DungeonType`이 추가되었는데 생성 분기에 누락되어 있다면 완전성 검사(Exhaustive Pattern Matching)를 통해 컴파일 타임에 즉시 탐지됩니다.
 
-```python
+```text
 data DungeonType =
     Forest
   | Ice
@@ -788,7 +759,7 @@ data DungeonType =
 
 함수형 관점에서는 성공과 실패를 ADT로 명시합니다.
 
-```python
+```text
 data Result[T, E] =
     Ok(T)
   | Err(E)
@@ -797,12 +768,12 @@ data Result[T, E] =
 
 Factory 타입 역시 실패 가능성을 서명에 포함하도록 변경됩니다.
 
-```python
+```text
 type Factory[T, E] = () -> Result[T, E]
 
 ```
 
-```python
+```text
 def create_boss() -> Result[Boss, ResourceError]:
 
     resource = load_resource("boss.json")?
@@ -830,7 +801,7 @@ match create_boss():
 
 가상의 효과 시스템(Effect System)에서는 이러한 부수효과를 함수 서명에 명시할 수 있습니다.
 
-```python
+```text
 def create_remote_monster(
     config: ServerConfig,
 ) -> Result[RemoteMonster, NetworkError] ! Network:
@@ -864,7 +835,7 @@ $$\text{Creator.operation()} \longrightarrow \text{Factory Method} \longrightarr
 
 $$\text{Context} \longrightarrow \text{Result[Product, Error]} + \text{Effects}$$
 
-```python
+```text
 type Factory[
     Context,
     Product,
@@ -897,7 +868,7 @@ type Factory[
 
 ---
 
-## 결론
+### 결론
 
 고전적인 Factory Method 패턴은 객체 생성 지점을 상위 클래스에 추상 메서드로 정의하고, 구체 제품의 생성을 하위 클래스에 위임하는 OOP 생성 패턴입니다. 이를 통해 상위 알고리즘은 구체 제품에 의존하지 않고도 객체를 생성하고 활용할 수 있습니다.
 

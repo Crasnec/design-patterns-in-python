@@ -283,18 +283,12 @@ result = expression.interpret({"x": 5})
 
 각 Expression은 자신의 역할에 맞는 해석 규칙만 수행합니다.
 
-```text
-Number
-    → 자신의 값을 그대로 반환
-
-Variable
-    → Context에서 변수명을 조회하여 반환
-
-Add
-    → 좌/우 표현식을 각각 해석한 뒤 덧셈 수행
-
-Multiply
-    → 좌/우 표현식을 각각 해석한 뒤 곱셈 수행
+```mermaid
+flowchart LR
+    number[Number] --> number_rule[자신의 값을 반환]
+    variable[Variable] --> variable_rule[Context에서 변수명을 조회]
+    add[Add] --> add_rule[좌우 표현식을 해석한 뒤 덧셈]
+    multiply[Multiply] --> multiply_rule[좌우 표현식을 해석한 뒤 곱셈]
 
 ```
 
@@ -746,7 +740,6 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Mapping
 
-
 # -------------------------------------------------------------------
 # 1. Context (문맥 정보)
 # -------------------------------------------------------------------
@@ -766,17 +759,14 @@ class Context:
             raise ValueError(f"정의되지 않은 변수입니다: {name}")
         return self.variables[name]
 
-
 # -------------------------------------------------------------------
 # 2. Abstract Expression (추상 표현식 인터페이스)
 # -------------------------------------------------------------------
 
 class Expression(ABC):
-
     @abstractmethod
     def interpret(self, context: Context) -> int:
         pass
-
 
 # -------------------------------------------------------------------
 # 3. Terminal Expression - Number (숫자)
@@ -793,7 +783,6 @@ class NumberExpression(Expression):
     def interpret(self, context: Context) -> int:
         return self.value
 
-
 # -------------------------------------------------------------------
 # 4. Terminal Expression - Variable (변수)
 # -------------------------------------------------------------------
@@ -804,7 +793,6 @@ class VariableExpression(Expression):
 
     def interpret(self, context: Context) -> int:
         return context.get(self.name)
-
 
 # -------------------------------------------------------------------
 # 5. Nonterminal Expression - Add (덧셈)
@@ -820,7 +808,6 @@ class AddExpression(Expression):
         right_value = self.right.interpret(context)
         return left_value + right_value
 
-
 # -------------------------------------------------------------------
 # 6. Nonterminal Expression - Multiply (곱셈)
 # -------------------------------------------------------------------
@@ -835,7 +822,6 @@ class MultiplyExpression(Expression):
         right_value = self.right.interpret(context)
         return left_value * right_value
 
-
 # -------------------------------------------------------------------
 # 7. Client (클라이언트 및 트리를 빌드하는 함수)
 # -------------------------------------------------------------------
@@ -844,12 +830,8 @@ def build_expression() -> Expression:
     # 10 + x * 2 표현식 생성
     return AddExpression(
         NumberExpression(10),
-        MultiplyExpression(
-            VariableExpression("x"),
-            NumberExpression(2),
-        ),
+        MultiplyExpression(VariableExpression("x"), NumberExpression(2)),
     )
-
 
 # -------------------------------------------------------------------
 # 8. 실행 예시
@@ -858,7 +840,6 @@ def build_expression() -> Expression:
 if __name__ == "__main__":
     expression = build_expression()
     context = Context(variables={"x": 5})
-
     result = expression.interpret(context)
     print(result)
     print(expression.interpret(Context(variables={"x": 8})))
@@ -866,7 +847,6 @@ if __name__ == "__main__":
         expression.interpret(Context(variables={}))
     except ValueError as error:
         print(error)
-
 ```
 
 **실행 결과:**
@@ -1004,7 +984,7 @@ CallExpression
 
 객체지향의 클래스 계층을 가능한 노드 종류를 나열한 합 타입으로 바꾸어 봅니다.
 
-```python
+```text
 data Expr =
     Number(value: Int)
   | Variable(name: String)
@@ -1062,7 +1042,7 @@ def eval_expr(expr: Expr, env: Environment) -> Int:
 
 환경에 `x`가 없다면 식을 정상적으로 계산할 수 없습니다. 실패를 값으로 표현하면 각 노드가 성공과 실패를 어떻게 조합하는지 드러납니다.
 
-```python
+```text
 data EvalError = UndefinedVariable(name: String)
 
 
@@ -1163,7 +1143,7 @@ Add(BoolLiteral(True), IntLiteral(10))
 
 결과 타입을 노드의 타입 매개변수에 포함하면 허용되는 조합을 더 구체적으로 표현할 수 있습니다.
 
-```python
+```text
 data TypedExpr[T] =
     IntLiteral(value: Int) -> TypedExpr[Int]
   | BoolLiteral(value: Bool) -> TypedExpr[Bool]
@@ -1215,7 +1195,7 @@ def eval_typed[T](expr: TypedExpr[T]) -> T:
 
 Parser는 괄호와 연산자 우선순위에 따라 트리를 만듭니다. 타입 검사기는 그 트리의 피연산자 조합이 언어 규칙에 맞는지 확인합니다.
 
-```python
+```text
 def parse(source: String) -> Result[RawExpr, ParseError]:
     ...
 
@@ -1228,7 +1208,7 @@ def type_check(expr: RawExpr) -> Result[exists T. TypedExpr[T], TypeError]:
 
 Parser Combinator는 작은 파서 함수를 결합하는 방식으로 이 파싱 단계를 구현합니다.
 
-```python
+```text
 type Parser[A] = TokenStream -> Result[(A, TokenStream), ParseError]
 
 # 덧셈 항들을 읽는 골격
@@ -1243,7 +1223,7 @@ addition = term.then(many(plus.then(term)))
 
 프로그램을 직접 작성하고, 값 계산과 문자열 출력을 바꾸어 사용하려면 구체 노드 대신 추상 연산을 호출하는 방법도 있습니다.
 
-```python
+```text
 trait Arithmetic[R]:
     def number(value: Int) -> R
     def variable(name: String) -> R
@@ -1260,7 +1240,7 @@ def program[R](algebra: Arithmetic[R]) -> R:
 
 평가 구현은 환경을 보관하고 변수 이름을 조회합니다. 출력 구현은 변수 이름을 그대로 문자열에 넣습니다.
 
-```python
+```text
 class Evaluate implements Arithmetic[Int]:
     env: Environment
 
@@ -1294,7 +1274,7 @@ program(Pretty())               → "(10 + (x * 2))"
 
 변수 값을 메모리에서 읽는 대신 외부 서비스에서 가져오고 결과를 기록해야 한다면, 문법의 의미에 외부 효과가 포함됩니다.
 
-```python
+```text
 effect EnvironmentRead:
     def lookup(name: String) -> Result[Int, LookupError]
 
@@ -1307,7 +1287,7 @@ Effect Handler는 조회와 출력을 실제 서비스 또는 테스트 구현�
 
 연산 자체를 기록할 필요가 있다면 다음처럼 데이터로 표현할 수도 있습니다.
 
-```python
+```text
 data ScriptOp[Next] =
     ReadVariable(name: String, continuation: Int -> Next)
   | Print(message: String, next: Next)

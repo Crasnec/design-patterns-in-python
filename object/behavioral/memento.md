@@ -181,15 +181,10 @@ History가 이러한 필드를 모두 복사하고 복원한다면 사실상 Tex
 
 일반적인 구조는 다음과 같습니다.
 
-```text
-Originator
-    │
-    │ create_memento()
-    ↓
- Memento
-    │
-    ↓ stored by
-Caretaker
+```mermaid
+flowchart TD
+    originator[Originator] -->|create_memento| memento[Memento]
+    memento -->|stored by| caretaker[Caretaker]
 
 ```
 
@@ -1505,15 +1500,10 @@ t₂ ──> State₂
 
 객체지향에서는:
 
-```text
-Originator
-    │
-    │ snapshot
-    ↓
- Memento
-    │
-    ↓
-Caretaker
+```mermaid
+flowchart TD
+    originator[Originator] -->|snapshot| memento[Memento]
+    memento -->|보관| caretaker[Caretaker]
 
 ```
 
@@ -1521,14 +1511,10 @@ Caretaker
 
 복원은:
 
-```text
-Caretaker
-    │
-    ↓ Memento
-Originator
-    │
-    ↓ restore
-Previous State
+```mermaid
+flowchart TD
+    caretaker[Caretaker] -->|Memento 전달| originator[Originator]
+    originator -->|restore| previous[Previous state]
 
 ```
 
@@ -1554,4 +1540,4 @@ Command가 "무엇을 했는가?"를 저장한다면 Memento는 "그때 상태�
 * 전체 변화 기록 $\leftrightarrow$ Event Sourcing
 * 긴 Event Stream의 최적화 $\leftrightarrow$ Snapshot Checkpoint
 
-현대적 관점에서 메멘토 패턴의 본질을 추상화하면, "가변 객체의 특정 시점 상태를 외부에 내부 표현을 노출하지 않는 독립적인 값으로 보존하고, 그 값을 이용해 시간축의 이전 상태로 안전하게 이동할 수 있도록 상태의 역사와 복원 경계를 모델링하는 기법"으로 확장하여 이해할 수 있습니다.
+메멘토의 핵심은 객체의 내부 표현을 외부에 공개하지 않으면서 특정 시점의 복원 가능한 상태를 값으로 보존하고, 그 값의 보관 책임과 복원 책임을 분리하는 데 있습니다.

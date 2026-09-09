@@ -116,8 +116,11 @@ if isinstance(unit, Division):
 
 계층 단계가 늘어날수록 클라이언트는 다음 구조를 직접 순회하고 탐색해야 합니다.
 
-```text
-Division ──> Platoon ──> Squad ──> Soldier
+```mermaid
+flowchart LR
+    division[Division] --> platoon[Platoon]
+    platoon --> squad[Squad]
+    squad --> soldier[Soldier]
 
 ```
 
@@ -527,148 +530,90 @@ UnitGroup ── contains ──> Unit
 ```python
 from abc import ABC, abstractmethod
 
-
 # -------------------------------------------------------------------
 # 1. Component
 # -------------------------------------------------------------------
 
 class Unit(ABC):
-
     @abstractmethod
     def get_power(self) -> int:
         pass
 
     @abstractmethod
-    def show(
-        self,
-        indent: int = 0,
-    ) -> None:
+    def show(self, indent: int = 0) -> None:
         pass
-
 
 # -------------------------------------------------------------------
 # 2. Leaf
 # -------------------------------------------------------------------
 
 class Soldier(Unit):
-
-    def __init__(
-        self,
-        name: str,
-        power: int,
-    ):
+    def __init__(self, name: str, power: int):
         self.name = name
         self.power = power
 
     def get_power(self) -> int:
         return self.power
 
-    def show(
-        self,
-        indent: int = 0,
-    ) -> None:
-
+    def show(self, indent: int = 0) -> None:
         prefix = " " * indent
-
         print(f'{prefix}- Soldier: {self.name} (전투력: {self.power})')
-
 
 # -------------------------------------------------------------------
 # 3. Composite
 # -------------------------------------------------------------------
 
 class UnitGroup(Unit):
-
-    def __init__(
-        self,
-        name: str,
-    ):
+    def __init__(self, name: str):
         self.name = name
         self._children: list[Unit] = []
 
-    def add(
-        self,
-        unit: Unit,
-    ) -> None:
-
+    def add(self, unit: Unit) -> None:
         self._children.append(unit)
 
-    def remove(
-        self,
-        unit: Unit,
-    ) -> None:
-
+    def remove(self, unit: Unit) -> None:
         self._children.remove(unit)
 
     def get_power(self) -> int:
-
         return sum((child.get_power() for child in self._children))
 
-    def show(
-        self,
-        indent: int = 0,
-    ) -> None:
-
+    def show(self, indent: int = 0) -> None:
         prefix = " " * indent
-
         print(f'{prefix}+ {self.name} (총 전투력: {self.get_power()})')
-
         for child in self._children:
             child.show(indent + 4)
-
 
 # -------------------------------------------------------------------
 # 4. 클라이언트
 # -------------------------------------------------------------------
 
-def print_unit_info(
-    unit: Unit,
-) -> None:
-
+def print_unit_info(unit: Unit) -> None:
     unit.show()
-
-    print(
-        f"\n총 전투력: "
-        f"{unit.get_power()}"
-    )
-
+    print(f"\n총 전투력: " f"{unit.get_power()}")
 
 # -------------------------------------------------------------------
 # 5. 실행 (Usage)
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-
     # Leaf 생성
     aragorn = Soldier(name='아라곤', power=100)
-
     legolas = Soldier(name='레골라스', power=90)
-
     gimli = Soldier(name='김리', power=95)
-
     boromir = Soldier(name='보로미르', power=85)
-
     # Composite 생성
     fellowship = UnitGroup('반지원정대')
-
     fellowship.add(aragorn)
     fellowship.add(legolas)
     fellowship.add(gimli)
-
     # 또 다른 Composite 생성
     gondor = UnitGroup('곤도르 부대')
-
     gondor.add(boromir)
-
     # Composite 내부에 Composite 추가
     allied_forces = UnitGroup('연합군')
-
     allied_forces.add(fellowship)
-
     allied_forces.add(gondor)
-
     print_unit_info(allied_forces)
-
 ```
 
 ### 실행 결과
@@ -761,7 +706,7 @@ ADT는 가능한 노드 종류를 나열한 타입이며, Fold는 자식의 계�
 
 객체지향에서의 `Soldier`와 `UnitGroup` 타입을 하나의 재귀적 ADT로 정의할 수 있습니다.
 
-```python
+```text
 data Unit =
 
     Soldier(
@@ -868,7 +813,7 @@ def get_power(
 전투력 계산 외에도 인원수, 총 비용, 트리 출력, 최대 전투력 구하기 등 다양한 연산이 필요하다고 가정해 봅니다.
 함수마다 재귀 탐색 로직을 매번 작성하면 패턴이 중복됩니다.
 
-```python
+```text
 match node:
     case Leaf:
         ...
@@ -879,7 +824,7 @@ match node:
 
 이 재귀 구조 자체를 `fold` 기법으로 추상화할 수 있습니다.
 
-```python
+```text
 def fold_unit[R](
     unit: Unit,
     soldier: (
@@ -1007,7 +952,7 @@ Composite 패턴으로 다루는 연산들은 대부분 하위 노드의 결과�
 
 이 연산들은 모두 항등원(Identity)과 결합법칙을 만족하는 연산(Combine)을 가집니다. 즉, **모노이드(Monoid)** 구조를 형성합니다.
 
-```python
+```text
 trait Monoid[T]:
 
     def empty() -> T
@@ -1021,7 +966,7 @@ trait Monoid[T]:
 
 정수 합산에 대한 모노이드 구현 예시입니다.
 
-```python
+```text
 impl Monoid[Sum[Int]]:
 
     def empty() -> Sum[Int]:
@@ -1040,7 +985,7 @@ impl Monoid[Sum[Int]]:
 
 모노이드를 활용하면 Composite 트리의 집계 연산을 다음과 같이 극도로 일반화할 수 있습니다.
 
-```python
+```text
 def aggregate[T](
     tree: Tree[T],
 ) -> T
@@ -1111,7 +1056,7 @@ group.remove(unit)
 이 같은 가변 트리는 다중 참조 환경에서 의도치 않은 상태 변경 문제를 야기할 수 있습니다.
 불변(Immutable) 데이터 모델에서는 트리를 직접 수정하는 대신 연산 결과로 새로운 트리를 반환합니다.
 
-```python
+```text
 immutable data Unit =
 
     Soldier(...)
@@ -1125,7 +1070,7 @@ immutable data Unit =
 
 자식을 추가하는 함수는 기존 객체를 수정하지 않고 새로운 `Group`을 생성합니다.
 
-```python
+```text
 def add_child(
     group: Group,
     child: Unit,
@@ -1206,7 +1151,7 @@ async def load_status(
 
 효과 시스템을 지원하는 타입 환경에서는 트리 순회 로직과 부수 효과 로직의 경계를 타입에 드러낼 수 있습니다.
 
-```python
+```text
 def traverse_unit[
     F[_]
 ](
@@ -1233,7 +1178,7 @@ status: Async[UnitStatus] = traverse_unit(army, load_status)
 
 우선 재귀 호출을 제외한 단일 단계의 구조만 정의합니다.
 
-```python
+```text
 data UnitF[A] =
 
     SoldierF(
@@ -1250,7 +1195,7 @@ data UnitF[A] =
 
 이후 `Fix` 타입을 통해 재귀를 주입합니다.
 
-```python
+```text
 newtype Fix[F] = Fix(value: F[Fix[F]])
 
 type Unit = Fix[UnitF]
@@ -1298,7 +1243,7 @@ $$\text{Tree}[A] = \text{Leaf}[A] \;\vert\; \text{Branch}(\text{List}[\text{Tree
 
 ---
 
-## 요약 및 비교
+### 요약 및 비교
 
 | 관점 | 컴포지트 패턴 (OOP 아키텍처) | 현대 타입 시스템 + 함수형 관점 (FP) |
 | --- | --- | --- |

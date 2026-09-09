@@ -73,27 +73,23 @@ class BadSupportService:
 새로운 요청 종류가 추가되면 기존 분기문을 수정해야 합니다.
 
 ```python
-elif ticket.category == "security":
+if ticket.category == "security":
     return self.security_support.handle(ticket)
 
 ```
 
 문제가 여기에서 끝나지 않을 수도 있습니다. 예를 들어 일반 문의라고 하더라도 FAQ에서 처리할 수 없는 질문은 다음 담당자에게 넘겨야 한다고 가정합니다.
 
-```text
-긴급 요청인가? ── Yes → Emergency
-    │ No
-    ↓
-FAQ가 처리 가능한가? ── Yes → FAQ
-    │ No
-    ↓
-Billing이 처리 가능한가? ── Yes → Billing
-    │ No
-    ↓
-Technical이 처리 가능한가? ── Yes → Technical
-    │ No
-    ↓
-Human Operator
+```mermaid
+flowchart TD
+    emergency_check{긴급 요청인가?} -->|Yes| emergency[Emergency]
+    emergency_check -->|No| faq_check{FAQ가 처리 가능한가?}
+    faq_check -->|Yes| faq[FAQ]
+    faq_check -->|No| billing_check{Billing이 처리 가능한가?}
+    billing_check -->|Yes| billing[Billing]
+    billing_check -->|No| technical_check{Technical이 처리 가능한가?}
+    technical_check -->|Yes| technical[Technical]
+    technical_check -->|No| human[Human Operator]
 
 ```
 
@@ -290,7 +286,7 @@ handlers = {
 
 ```
 
-* **Chain 순서는 비즈니스 정책:** 먼저 배치된 Handler가 요청을 선점할 수 있으므로 순서를 단순한 구현 세부사항으로 취급해서는 안 됩니다.
+* **Chain 순서는 비즈니스 정책:** 먼저 배치된 Handler가 요청을 선점할 수 있으므로 순서를 단순한 구현 세부 사항으로 취급해서는 안 됩니다.
 * **미처리 결과의 명시:** 마지막에 Fallback Handler를 두면 담당자가 없는 요청의 경로를 정할 수 있습니다. 상담원 연결은 접수 방식이며, 실제 요청 해결이나 외부 작업의 성공까지 보장하지는 않습니다.
 
 ```text

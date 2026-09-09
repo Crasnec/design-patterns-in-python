@@ -107,10 +107,12 @@ def undo(self) -> None:
 
 일반적인 구조는 다음과 같습니다.
 
-```text
-Client ──► Command ──► Receiver
-             ▲
-Invoker ─────┘  (execute / undo)
+```mermaid
+flowchart LR
+    client[Client] -->|생성·설정| command[Command]
+    client --> invoker[Invoker]
+    invoker -->|execute / undo| command
+    command --> receiver[Receiver]
 
 ```
 

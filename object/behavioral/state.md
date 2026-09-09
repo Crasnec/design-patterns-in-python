@@ -8,12 +8,10 @@
 
 예를 들어 주문이 다음 상태를 가진다고 가정합니다.
 
-```text
-Pending
-    ↓ 결제
-Paid
-    ↓ 배송
-Shipped
+```mermaid
+stateDiagram-v2
+    Pending --> Paid: 결제
+    Paid --> Shipped: 배송
 
 ```
 
@@ -183,18 +181,15 @@ Cancelled
 
 ```python
 def pay(self):
-    ...
-    elif self.state == "refund_requested":
+    if self.state == "refund_requested":
         ...
 
 def ship(self):
-    ...
-    elif self.state == "refund_requested":
+    if self.state == "refund_requested":
         ...
 
 def cancel(self):
-    ...
-    elif self.state == "refund_requested":
+    if self.state == "refund_requested":
         ...
 
 ```
@@ -2384,10 +2379,12 @@ State Space + Input Events + Transition Relation + Outputs / Effects
 
 객체지향에서는:
 
-```text
-Context ───> State ───┬───> State A
-                      ├───> State B
-                      └───> State C
+```mermaid
+flowchart LR
+    context[Context] --> current[Current State]
+    current -. 런타임 교체 .-> state_a[State A]
+    current -. 런타임 교체 .-> state_b[State B]
+    current -. 런타임 교체 .-> state_c[State C]
 
 ```
 
@@ -2402,10 +2399,12 @@ order.pay()
 
 실제 의미는 현재 State에 의해 결정됩니다.
 
-```text
-Pending → 결제하고 Paid로 전이
-Paid    → 이미 결제됨
-Shipped → 허용되지 않음
+```mermaid
+flowchart LR
+    pay[pay 호출] --> pending{현재 상태}
+    pending -->|Pending| paid[결제 후 Paid로 전이]
+    pending -->|Paid| already[이미 결제됨]
+    pending -->|Shipped| denied[허용되지 않음]
 
 ```
 
@@ -2426,6 +2425,4 @@ Shipped → 허용되지 않음
 * 상태 변화의 원인 저장 $\leftrightarrow$ Event Sourcing
 * 하나의 논리 상태 보장 $\leftrightarrow$ Linear Typestate
 
-현대적 관점에서 상태 패턴의 본질을 추상화하면, "객체가 가질 수 있는 유효한 상태와 각 상태에서 허용되는 행동, 그리고 상태 사이의 전이 규칙을 명시적인 모델로 분리하여 현재 상태에 따라 프로그램의 가능한 행동 자체를 제한하고 변화시키는 기법"으로 확장하여 이해할 수 있습니다.
-
-```
+상태 패턴의 핵심은 유효한 상태, 상태별 행동, 전이 규칙을 명시적인 모델로 분리해 현재 상태가 객체의 행동을 결정하도록 만드는 데 있습니다. ADT와 Typestate는 같은 규칙을 데이터와 타입 수준에서 더 엄격하게 표현하는 선택지입니다.

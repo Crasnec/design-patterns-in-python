@@ -20,32 +20,16 @@
 
 ```python
 class TextEditor:
-
     def __init__(self):
         self.text = ""
         self.cursor = 0
-        self.selection: (
-            tuple[int, int] | None
-        ) = None
+        self.selection: tuple[int, int] | None = None
 
-    def insert(
-        self,
-        value: str,
-    ) -> None:
-
-        self.text = (
-            self.text[:self.cursor]
-            + value
-            + self.text[self.cursor:]
-        )
-
+    def insert(self, value: str) -> None:
+        self.text = self.text[: self.cursor] + value + self.text[self.cursor :]
         self.cursor += len(value)
 
-    def move_cursor(
-        self,
-        position: int,
-    ) -> None:
-
+    def move_cursor(self, position: int) -> None:
         self.cursor = position
 ```
 
@@ -53,29 +37,16 @@ Undo 기능을 구현하기 위해 외부 History 객체가 현재 상태를 직
 
 ```python
 class BadEditorHistory:
-
-    def __init__(
-        self,
-        editor: TextEditor,
-    ):
+    def __init__(self, editor: TextEditor):
         self.editor = editor
-
-        self.history: list[
-            dict[str, object]
-        ] = []
+        self.history: list[dict[str, object]] = []
 
     def backup(self) -> None:
-
         self.history.append(
             {
-                "text":
-                    self.editor.text,
-
-                "cursor":
-                    self.editor.cursor,
-
-                "selection":
-                    self.editor.selection,
+                "text": self.editor.text,
+                "cursor": self.editor.cursor,
+                "selection": self.editor.selection,
             }
         )
 ```
@@ -84,23 +55,12 @@ class BadEditorHistory:
 
 ```python
 def undo(self) -> None:
-
     if not self.history:
         return
-
     state = self.history.pop()
-
-    self.editor.text = str(
-        state["text"]
-    )
-
-    self.editor.cursor = int(
-        state["cursor"]
-    )
-
-    self.editor.selection = (
-        state["selection"]
-    )
+    self.editor.text = str(state["text"])
+    self.editor.cursor = int(state["cursor"])
+    self.editor.selection = state["selection"]
 ```
 
 이제 TextEditor 내부 구현이 변경된다고 가정합니다.
@@ -126,17 +86,10 @@ TextEditor뿐 아니라 BadEditorHistory도 함께 수정해야 합니다.
 ```python
 self.history.append(
     {
-        "document":
-            self.editor.document,
-
-        "caret":
-            self.editor.caret,
-
-        "selection_start":
-            self.editor.selection_start,
-
-        "selection_end":
-            self.editor.selection_end,
+        "document": self.editor.document,
+        "caret": self.editor.caret,
+        "selection_start": self.editor.selection_start,
+        "selection_end": self.editor.selection_end,
     }
 )
 ```
@@ -190,14 +143,9 @@ flowchart TD
 TextEditor가 자신의 상태를 직접 Snapshot으로 만듭니다.
 
 ```python
-def create_memento(
-    self,
-) -> EditorMemento:
-
+def create_memento(self) -> EditorMemento:
     return EditorMemento(
-        text=self._text,
-        cursor=self._cursor,
-        selection=self._selection,
+        text=self._text, cursor=self._cursor, selection=self._selection
     )
 ```
 
@@ -206,21 +154,14 @@ def create_memento(
 History는 내부 필드를 알 필요가 없습니다.
 
 ```python
-memento = (
-    editor.create_memento()
-)
-
-history.append(
-    memento
-)
+memento = editor.create_memento()
+history.append(memento)
 ```
 
 복원 역시 Originator가 담당합니다.
 
 ```python
-editor.restore(
-    memento
-)
+editor.restore(memento)
 ```
 
 History는 다음 정보를 알 필요가 없습니다.
@@ -234,25 +175,18 @@ TextEditor가 어떤 필드를 가지고 있는가?
 
 구조는 다음과 같이 바뀝니다.
 
-```text
-Before:
-
-History
-   │
-   ├─ editor.text
-   ├─ editor.cursor
-   ├─ editor.selection
-   └─ 직접 복원
-
-
-After:
-
-History
-   │
-   └─ Memento 저장
-          │
-          ↓
-      TextEditor.restore()
+```mermaid
+flowchart TD
+    subgraph Before
+        h1[History] --> t1[editor.text]
+        h1 --> t2[editor.cursor]
+        h1 --> t3[editor.selection]
+        h1 --> t4[직접 복원]
+    end
+    subgraph After
+        h2[History] --> m[Memento 저장]
+        m --> r[TextEditor.restore]
+    end
 ```
 
 Caretaker는 Memento의 내용이 아니라 Memento 자체의 수명과 순서만 관리합니다.
@@ -314,10 +248,9 @@ MoveCursor(10)
 
 Undo는 역연산을 실행할 수 있습니다.
 
-```text
-Insert
-   ↕
-Delete
+```mermaid
+flowchart LR
+    insert[Insert] <--> delete[Delete]
 ```
 
 반면 Memento는 그 시점의 상태가 무엇이었는가를 저장합니다.
@@ -330,10 +263,9 @@ Editor State at t₂
 
 Undo는 이전 Snapshot을 복원합니다.
 
-```text
-State t₂
-   ↓ undo
-State t₁
+```mermaid
+flowchart TD
+    state2[State t₂] -->|undo| state1[State t₁]
 ```
 
 단순화하면:
@@ -348,12 +280,10 @@ Memento:
 
 입니다. 두 패턴은 함께 사용할 수도 있습니다.
 
-```text
-Command
-   │
-   ├─ execute()
-   │
-   └─ before: Memento
+```mermaid
+flowchart TD
+    command[Command] --> execute[execute]
+    command --> before[before: Memento]
 ```
 
 ---
@@ -362,10 +292,9 @@ Command
 
 Prototype 역시 객체 상태를 복제합니다.
 
-```text
-Prototype
-    ↓ clone()
-New Object
+```mermaid
+flowchart TD
+    prototype[Prototype] -->|clone| newobj[New Object]
 ```
 
 하지만 목적이 다릅니다.
@@ -391,11 +320,10 @@ Memento:
 
 State 패턴의 State 객체는 현재 상태에 따라 객체 행동을 바꾸기 위한 전략적인 상태 객체입니다.
 
-```text
-TCPConnection
-    │
-    ├─ ConnectedState
-    └─ ClosedState
+```mermaid
+flowchart TD
+    tcp[TCPConnection] --> connected[ConnectedState]
+    tcp --> closed[ClosedState]
 ```
 
 Memento는 특정 시점의 상태를 저장한 수동적인 Snapshot입니다.
@@ -426,24 +354,20 @@ Memento:
 
 Serialization은 주로:
 
-```text
-Object
-   ↓
-Bytes / JSON
-   ↓
-Storage / Network
+```mermaid
+flowchart TD
+    object[Object] --> bytes[Bytes / JSON]
+    bytes --> storage[Storage / Network]
 ```
 
 처럼 전송 또는 영속 저장 가능한 표현으로 변환하는 것이 목적입니다.
 
 Memento는:
 
-```text
-Originator
-   ↓
-Snapshot
-   ↓
-Restore
+```mermaid
+flowchart TD
+    originator[Originator] --> snapshot[Snapshot]
+    snapshot --> restore[Restore]
 ```
 
 처럼 상태 복원이 목적입니다.
@@ -473,14 +397,10 @@ CursorMoved
 
 현재 상태는 Event들을 다시 적용하여 계산합니다.
 
-```text
-Initial State
-     │
-     ↓ Event₁
-State₁
-     │
-     ↓ Event₂
-State₂
+```mermaid
+flowchart TD
+    initial[Initial State] -->|Event₁| state1[State₁]
+    state1 -->|Event₂| state2[State₂]
 ```
 
 즉:
@@ -512,35 +432,22 @@ Python의 `random` 모듈은 현재 의사 난수 생성기의 내부 상태를 
 ```python
 import random
 
-
 state = random.getstate()
-
 first = random.random()
 second = random.random()
-
-random.setstate(
-    state
-)
-
+random.setstate(state)
 again_first = random.random()
 again_second = random.random()
-
 assert first == again_first
 assert second == again_second
 ```
 
 구조는 다음과 같습니다.
 
-```text
-Random Generator
-      │
-      │ getstate()
-      ↓
-    State
-      │
-      │ setstate()
-      ↓
-Random Generator
+```mermaid
+flowchart TD
+    random1[Random Generator] -->|getstate| state[State]
+    state -->|setstate| random2[Random Generator]
 ```
 
 호출자는 난수 생성기의 내부 알고리즘이나 정확한 상태 표현을 알 필요가 없습니다.
@@ -565,41 +472,21 @@ Originator:
 ```python
 from contextvars import ContextVar
 
-
-current_user = ContextVar(
-    "current_user",
-    default="guest",
-)
-
-token = current_user.set(
-    "aragorn"
-)
-
-print(
-    current_user.get()
-)
+current_user = ContextVar("current_user", default="guest")
+token = current_user.set("aragorn")
+print(current_user.get())
 # aragorn
-
-current_user.reset(
-    token
-)
-
-print(
-    current_user.get()
-)
+current_user.reset(token)
+print(current_user.get())
 # guest
 ```
 
 개념적으로:
 
-```text
-Previous Context State
-       │
-       ↓ set()
-     Token
-       │
-       ↓ reset()
-Previous Context State
+```mermaid
+flowchart TD
+    prev1[Previous Context State] -->|set| token[Token]
+    token -->|reset| prev2[Previous Context State]
 ```
 
 입니다.
@@ -613,34 +500,20 @@ Previous Context State
 `decimal.localcontext()`는 현재 Decimal Context의 복사본을 사용하도록 일시적으로 환경을 변경하고 `with` 블록을 빠져나갈 때 이전 Context를 자동으로 복원합니다.
 
 ```python
-from decimal import (
-    Decimal,
-    localcontext,
-)
-
+from decimal import Decimal, localcontext
 
 with localcontext() as context:
-
     context.prec = 50
-
-    value = (
-        Decimal(1)
-        / Decimal(7)
-    )
-
+    value = Decimal(1) / Decimal(7)
 # 여기서는 이전 Decimal Context가 복원됨
 ```
 
 구조적으로:
 
-```text
-Current Context
-      │
-      ↓ snapshot/copy
-Temporary Context
-      │
-      ↓ scope exit
-Previous Context
+```mermaid
+flowchart TD
+    current[Current Context] -->|snapshot/copy| temp[Temporary Context]
+    temp -->|scope exit| previous[Previous Context]
 ```
 
 라는 Snapshot / Restore 구조를 가집니다.
@@ -708,21 +581,12 @@ Client
 
 핵심 관계는 다음과 같습니다.
 
-```text
-TextEditor
-    │
-    │ create_memento()
-    ↓
-EditorMemento
-    │
-    ↓
-EditorHistory
+```mermaid
+flowchart TD
+    editor[TextEditor] -->|create_memento| memento[EditorMemento]
+    memento --> history1[EditorHistory]
 
-
-EditorHistory
-    │
-    ↓ previous memento
-TextEditor.restore()
+    history2[EditorHistory] -->|previous memento| restore[TextEditor.restore]
 ```
 
 ---
@@ -733,10 +597,10 @@ TextEditor.restore()
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
+
 # -------------------------------------------------------------------
 # 1. Memento
 # -------------------------------------------------------------------
-
 @dataclass(frozen=True)
 class EditorMemento:
     _text: str
@@ -744,10 +608,10 @@ class EditorMemento:
     _selection: tuple[int, int] | None
     created_at: datetime
 
+
 # -------------------------------------------------------------------
 # 2. Originator
 # -------------------------------------------------------------------
-
 class TextEditor:
     def __init__(self):
         self._text = ""
@@ -796,10 +660,10 @@ class TextEditor:
             f"selection={self._selection}"
         )
 
+
 # -------------------------------------------------------------------
 # 3. Caretaker
 # -------------------------------------------------------------------
-
 class EditorHistory:
     def __init__(self):
         self._undo_stack: list[EditorMemento] = []
@@ -827,10 +691,10 @@ class EditorHistory:
         next_state = self._redo_stack.pop()
         editor.restore(next_state)
 
+
 # -------------------------------------------------------------------
 # 4. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     editor = TextEditor()
     history = EditorHistory()
@@ -869,9 +733,7 @@ editor.create_memento()
 그리고:
 
 ```python
-editor.restore(
-    memento
-)
+editor.restore(memento)
 ```
 
 만 호출합니다.
@@ -891,18 +753,15 @@ history.cursor = editor._cursor
 
 ```python
 @dataclass(frozen=True)
-class EditorMemento:
-    ...
+class EditorMemento: ...
 ```
 
 Snapshot이 생성된 이후 변경 가능하다면:
 
-```text
-State t₁
-   ↓ snapshot
-Memento t₁
-   ↓ 외부 변경
-실제로는 t₁이 아닌 상태
+```mermaid
+flowchart TD
+    state1[State t₁] -->|snapshot| memento1[Memento t₁]
+    memento1 -->|외부 변경| corrupted[실제로는 t₁이 아닌 상태]
 ```
 
 가 되어 History의 의미가 깨질 수 있기 때문입니다.
@@ -990,12 +849,12 @@ current = history.previous()
 
 불변 상태를 계속 저장하더라도 영속적 자료구조(Persistent Data Structure)를 사용하면 변경되지 않은 내부 구조를 공유하므로 메모리가 폭발적으로 증가하지 않습니다.
 
-```text
-State₀ ──┐
-         ├── shared structure
-State₁ ──┤
-         ├── shared structure
-State₂ ──┘
+```mermaid
+flowchart TD
+    s0[State₀] --- shared1[shared structure]
+    s1[State₁] --- shared1
+    s1 --- shared2[shared structure]
+    s2[State₂] --- shared2
 ```
 
 > **Full Snapshot Semantics** + **Structural Sharing**을 동시에 얻을 수 있습니다.
@@ -1044,7 +903,6 @@ restore(editor_b, snapshot_a)
 
 ```python
 def restore(snapshot: Snapshot[Editor, V2]) -> Editor: ...
-
 def migrate(snapshot: Snapshot[Editor, V1]) -> Snapshot[Editor, V2]:
     # v1 -> v2 변환 로직
     ...
@@ -1086,8 +944,9 @@ def apply(state: EditorState, patch: EditorPatch) -> EditorState: ...
 
 복원 속도와 메모리 사용량의 Trade-off를 맞추기 위해 일정 간격마다 Checkpoint Snapshot을 두고 사이사이에 Delta를 적용합니다.
 
-```text
-Snapshot₀ ──> 10 Patches ──> Snapshot₁ ──> 10 Patches ──> Snapshot₂
+```mermaid
+flowchart LR
+    s0[Snapshot₀] -->|10 Patches| s1[Snapshot₁] -->|10 Patches| s2[Snapshot₂]
 ```
 
 ---
@@ -1111,7 +970,9 @@ previous = apply(current, inverse(patch))
 모든 변경을 순수 함수 전이(`reduce`)로 모델링하면 Memento를 명시적으로 생성하지 않아도 중앙 아키텍처가 전이 이전 상태를 자동 추적합니다.
 
 ```python
-def dispatch(history: History[EditorState], action: EditorAction) -> History[EditorState]:
+def dispatch(
+    history: History[EditorState], action: EditorAction
+) -> History[EditorState]:
     next = reduce(history.current, action)
     return history.push(next)
 ```
@@ -1149,8 +1010,10 @@ Undo 후:  Past [S₀]      |  Present S₁  |  Future [S₂, S₃, S₄]
 ```python
 snapshot = begin_transaction(state)
 match execute_changes():
-    case Ok:  commit(snapshot)
-    case Err: state = rollback(snapshot)
+    case Ok:
+        commit(snapshot)
+    case Err:
+        state = rollback(snapshot)
 ```
 
 ---
@@ -1180,8 +1043,9 @@ state = fold(events, initial_state, evolve)
 
 수많은 이벤트를 매번 재실행하는 비효율을 막기 위해 중간 지점에 Memento(Snapshot)를 도입합니다.
 
-```text
-Snapshot₁₀₀₀ + (Subsequent Events 1001 ~ 1050) ──> Current State
+```mermaid
+flowchart LR
+    snapshot["Snapshot₁₀₀₀ + Events 1001~1050"] --> current[Current State]
 ```
 
 ---
@@ -1231,10 +1095,11 @@ opaque type EditorSnapshot
 
 메멘토 패턴의 본질은 객체를 다루는 시각을 단일 시점에서 시간축 위의 값($State \times Time$)으로 확장하는 것입니다.
 
-```text
-t₀ ──> State₀
-t₁ ──> State₁
-t₂ ──> State₂
+```mermaid
+flowchart LR
+    t0[t₀] --> s0[State₀]
+    t1[t₁] --> s1[State₁]
+    t2[t₂] --> s2[State₂]
 ```
 
 * **OOP**: 캡슐화된 Memento 객체

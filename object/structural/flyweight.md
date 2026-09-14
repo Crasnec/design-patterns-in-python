@@ -15,14 +15,7 @@
 
 ```python
 class Tree:
-    def __init__(
-        self,
-        x: int,
-        y: int,
-        name: str,
-        color: str,
-        texture: bytes,
-    ):
+    def __init__(self, x: int, y: int, name: str, color: str, texture: bytes):
         self.x = x
         self.y = y
         self.name = name
@@ -37,27 +30,9 @@ class Tree:
 
 ```python
 trees = [
-    Tree(
-        x=10,
-        y=20,
-        name="Oak",
-        color="green",
-        texture=load_texture("oak.png"),
-    ),
-    Tree(
-        x=30,
-        y=50,
-        name="Oak",
-        color="green",
-        texture=load_texture("oak.png"),
-    ),
-    Tree(
-        x=100,
-        y=200,
-        name="Oak",
-        color="green",
-        texture=load_texture("oak.png"),
-    ),
+    Tree(x=10, y=20, name="Oak", color="green", texture=load_texture("oak.png")),
+    Tree(x=30, y=50, name="Oak", color="green", texture=load_texture("oak.png")),
+    Tree(x=100, y=200, name="Oak", color="green", texture=load_texture("oak.png")),
 ]
 ```
 
@@ -113,12 +88,7 @@ $$100,000 \times 1\text{MB}$$
 
 ```python
 class TreeType:
-    def __init__(
-        self,
-        name: str,
-        color: str,
-        texture: bytes,
-    ):
+    def __init__(self, name: str, color: str, texture: bytes):
         self.name = name
         self.color = color
         self.texture = texture
@@ -131,12 +101,7 @@ class TreeType:
 
 ```python
 class Tree:
-    def __init__(
-        self,
-        x: int,
-        y: int,
-        tree_type: TreeType,
-    ):
+    def __init__(self, x: int, y: int, tree_type: TreeType):
         self.x = x
         self.y = y
         self.tree_type = tree_type
@@ -173,21 +138,12 @@ class TreeTypeFactory:
     def __init__(self):
         self._types = {}
 
-    def get(
-        self,
-        name: str,
-        color: str,
-        texture_path: str,
-    ) -> TreeType:
+    def get(self, name: str, color: str, texture_path: str) -> TreeType:
         key = (name, color, texture_path)
-
         if key not in self._types:
             self._types[key] = TreeType(
-                name=name,
-                color=color,
-                texture=load_texture(texture_path),
+                name=name, color=color, texture=load_texture(texture_path)
             )
-
         return self._types[key]
 ```
 
@@ -196,7 +152,6 @@ class TreeTypeFactory:
 ```python
 oak1 = factory.get("Oak", "green", "oak.png")
 oak2 = factory.get("Oak", "green", "oak.png")
-
 assert oak1 is oak2
 ```
 
@@ -236,14 +191,16 @@ assert oak1 is oak2
 
 Singleton은 특정 클래스 전체에서 하나의 인스턴스만 존재하도록 제한합니다. Flyweight는 여러 종류의 객체가 존재할 수 있으며, 같은 Intrinsic State를 가진 요청끼리 동일한 객체를 공유합니다.
 
-```text
-Singleton:
-    GameConfig → 1 instance
-
-Flyweight:
-    TreeType["Oak"]   → 1 shared instance
-    TreeType["Pine"]  → 1 shared instance
-    TreeType["Birch"] → 1 shared instance
+```mermaid
+flowchart LR
+    subgraph Singleton
+        gameconfig[GameConfig] --> instance1[1 instance]
+    end
+    subgraph Flyweight
+        oak["TreeType: Oak"] --> shared1[1 shared instance]
+        pine["TreeType: Pine"] --> shared2[1 shared instance]
+        birch["TreeType: Birch"] --> shared3[1 shared instance]
+    end
 ```
 
 > **참고**: Flyweight Factory는 키별로 객체를 하나씩 유지한다는 점에서 Registry 또는 Multiton과 비슷한 형태를 가질 수 있지만, 목적은 대량 객체의 상태 공유와 메모리 절감입니다.
@@ -252,12 +209,14 @@ Flyweight:
 
 Prototype은 기존 객체를 복제하여 새로운 객체를 생성하는 것이 목적입니다. Flyweight는 동일한 상태의 객체를 새로 만들지 않고 기존 객체를 공유하는 것이 목적입니다.
 
-```text
-Prototype:
-    기존 객체 ──(clone)──> 새로운 객체
-
-Flyweight:
-    기존 객체 <──(공유)─── 여러 Context들
+```mermaid
+flowchart LR
+    subgraph Prototype
+        orig1[기존 객체] -->|clone| new1[새로운 객체]
+    end
+    subgraph Flyweight
+        ctx[여러 Context들] -->|공유| orig2[기존 객체]
+    end
 ```
 
 #### Flyweight vs Object Pool
@@ -294,18 +253,16 @@ from sys import intern
 
 a = intern("player_health")
 b = intern("player_health")
-
 assert a is b
 ```
 
 개념적으로 다음과 같습니다.
 
-```text
-"player_health" ──┐
-                  │
-"player_health" ──┼──> canonical str object
-                  │
-"player_health" ──┘
+```mermaid
+flowchart LR
+    a[player_health] --> canonical[canonical str object]
+    b[player_health] --> canonical
+    c[player_health] --> canonical
 ```
 
 CPython의 현재 내부 문서 역시 intern된 문자열을 인터프리터 범위의 집합처럼 설명하며, 같은 내용의 interned string이 중복되지 않도록 관리한다고 설명합니다. CPython은 이를 딕셔너리 및 attribute lookup 등의 최적화에 활용합니다. 이는 동일한 Intrinsic Value를 하나의 canonical object로 공유한다는 점에서 Flyweight와 매우 직접적으로 유사한 사례입니다.
@@ -318,19 +275,17 @@ Python의 `functools.cache`는 함수 인자에 따라 계산 결과를 저장�
 from dataclasses import dataclass
 from functools import cache
 
+
 @dataclass(frozen=True)
 class TreeType:
     name: str
     color: str
     texture: str
 
+
 @cache
 def get_tree_type(name: str, color: str, texture: str) -> TreeType:
-    return TreeType(
-        name=name,
-        color=color,
-        texture=texture,
-    )
+    return TreeType(name=name, color=color, texture=texture)
 ```
 
 동일한 인자로 호출하면 캐시된 결과를 사용합니다.
@@ -338,7 +293,6 @@ def get_tree_type(name: str, color: str, texture: str) -> TreeType:
 ```python
 oak1 = get_tree_type("Oak", "green", "oak.png")
 oak2 = get_tree_type("Oak", "green", "oak.png")
-
 assert oak1 is oak2
 ```
 
@@ -348,8 +302,9 @@ assert oak1 is oak2
 
 Flyweight Factory가 모든 객체를 강한 참조로 영구 보관하면 메모리 누수 문제가 발생할 수 있습니다.
 
-```text
-한 번 생성된 Flyweight ──> Cache가 계속 참조 ──> 사용되지 않아도 메모리 유지
+```mermaid
+flowchart LR
+    created[한 번 생성된 Flyweight] --> cached[Cache가 계속 참조] --> retained[사용되지 않아도 메모리 유지]
 ```
 
 Python의 `weakref.WeakValueDictionary`는 값을 약한 참조로 저장하며, 해당 객체에 대한 강한 참조가 더 이상 존재하지 않으면 엔트리가 자동으로 제거됩니다. 이를 Flyweight Registry에 활용할 수 있습니다.
@@ -357,25 +312,21 @@ Python의 `weakref.WeakValueDictionary`는 값을 약한 참조로 저장하며,
 ```python
 from weakref import WeakValueDictionary
 
+
 class TreeTypeFactory:
     def __init__(self):
         self._types = WeakValueDictionary()
 
-    def get(self, key):
-        ...
+    def get(self, key): ...
 ```
 
 구조는 다음과 같습니다.
 
-```text
-Flyweight Factory
-      │
-      ↓
-Weak Cache
-      │
-      ├─ 사용 중인 Flyweight         ──> 유지
-      │
-      └─ 아무도 사용하지 않는 Flyweight ──> GC 가능
+```mermaid
+flowchart TD
+    factory[Flyweight Factory] --> cache[Weak Cache]
+    cache --> used[사용 중인 Flyweight] --> keep[유지]
+    cache --> unused[아무도 사용하지 않는 Flyweight] --> gc[GC 가능]
 ```
 
 `WeakValueDictionary` 역시 Flyweight 패턴 그 자체는 아니지만 Flyweight의 canonical object cache를 수명 주기까지 고려하여 구현할 때 유용한 기반 구조입니다.
@@ -434,10 +385,10 @@ classDiagram
 ```python
 from dataclasses import dataclass
 
+
 # -------------------------------------------------------------------
 # 1. Flyweight
 # -------------------------------------------------------------------
-
 @dataclass(frozen=True)
 class TreeType:
     name: str
@@ -451,10 +402,10 @@ class TreeType:
             f"→ ({x}, {y})에 렌더링"
         )
 
+
 # -------------------------------------------------------------------
 # 2. Flyweight Factory
 # -------------------------------------------------------------------
-
 class TreeTypeFactory:
     def __init__(self):
         self._types: dict[tuple[str, str, str], TreeType] = {}
@@ -471,10 +422,10 @@ class TreeTypeFactory:
     def count(self) -> int:
         return len(self._types)
 
+
 # -------------------------------------------------------------------
 # 3. Context
 # -------------------------------------------------------------------
-
 @dataclass
 class Tree:
     x: int
@@ -484,10 +435,10 @@ class Tree:
     def draw(self) -> None:
         self.tree_type.draw(self.x, self.y)
 
+
 # -------------------------------------------------------------------
 # 4. Client
 # -------------------------------------------------------------------
-
 class Forest:
     def __init__(self, factory: TreeTypeFactory):
         self._factory = factory
@@ -504,10 +455,10 @@ class Forest:
     def tree_count(self) -> int:
         return len(self._trees)
 
+
 # -------------------------------------------------------------------
 # 5. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     factory = TreeTypeFactory()
     forest = Forest(factory)
@@ -542,16 +493,13 @@ if __name__ == "__main__":
 
 논리적으로는 나무가 다섯 개 존재하지만(`Tree x 5`), 무거운 공통 상태는 두 종류만 존재합니다 (`Oak TreeType x 1`, `Pine TreeType x 1`).
 
-```text
-Tree(x=10, y=20) ───┐
-                    │
-Tree(x=30, y=50) ───┼──> Oak TreeType
-                    │
-Tree(x=100, y=200) ─┘
-
-Tree(x=40, y=60) ───┐
-                    ├──> Pine TreeType
-Tree(x=80, y=120) ──┘
+```mermaid
+flowchart LR
+    t1["Tree(x=10, y=20)"] --> oak[Oak TreeType]
+    t2["Tree(x=30, y=50)"] --> oak
+    t3["Tree(x=100, y=200)"] --> oak
+    t4["Tree(x=40, y=60)"] --> pine[Pine TreeType]
+    t5["Tree(x=80, y=120)"] --> pine
 ```
 
 > **`frozen=True` 사용 이유**:
@@ -583,7 +531,6 @@ if __name__ == "__main__":
     copied = [load_texture(species) for species in SPECIES]
     pool = {species: load_texture(species) for species in set(SPECIES)}
     shared = [pool[species] for species in SPECIES]
-
     print("복제 데이터:", payload_size(copied), "bytes")
     print("공유 데이터:", payload_size(shared), "bytes")
     print("동일 수종 공유:", shared[0] is shared[2])
@@ -637,8 +584,9 @@ Python에서는 불변 객체도 `is`로 정체성을 비교할 수 있으므로
 
 AST(구문 분석 트리)와 같이 재귀적인 트리 구조에서 동일한 하위 트리가 발견될 때 `node()` 생성 함수가 해시 기반 캐시를 활용하면, 트리 형태를 동일 서브구조를 공유하는 **DAG(Directed Acyclic Graph)** 형태로 바꿀 수 있습니다.
 
-```text
-  Tree (중복 노드 존재) ────(Hash-Consing)────> DAG (공유 서브구조)
+```mermaid
+flowchart LR
+    tree[Tree 중복 노드 존재] -->|Hash-Consing| dag[DAG 공유 서브구조]
 ```
 
 ### 5. Structural Sharing과 Flyweight의 차이

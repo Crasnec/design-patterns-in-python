@@ -22,10 +22,7 @@
 class ConfigLoader:
     def load(self, path: str) -> dict[str, object]:
         print(f"설정 파일 로딩: {path}")
-        return {
-            "resolution": "1920x1080",
-            "volume": 80,
-        }
+        return {"resolution": "1920x1080", "volume": 80}
 
 
 class AssetManager:
@@ -68,18 +65,13 @@ asset_manager = AssetManager()
 audio_system = AudioSystem()
 renderer = Renderer()
 game_engine = GameEngine()
-
 config = config_loader.load("game.json")
-
 asset_manager.initialize()
 asset_manager.load_common_assets()
-
 renderer.initialize(resolution=str(config["resolution"]))
 renderer.create_window()
-
 audio_system.initialize(volume=int(config["volume"]))
 audio_system.play_bgm()
-
 game_engine.initialize()
 game_engine.start()
 ```
@@ -96,14 +88,9 @@ game_engine.start()
 다른 실행 진입점에서도 동일한 과정이 필요하다면 복잡한 호출 절차가 반복됩니다.
 
 ```python
-def run_game_from_launcher():
-    ...
-
-def run_game_from_editor():
-    ...
-
-def run_game_for_test():
-    ...
+def run_game_from_launcher(): ...
+def run_game_from_editor(): ...
+def run_game_for_test(): ...
 ```
 
 이 상황에서 서브시스템의 초기화 방법이나 순서가 변경되면 모든 클라이언트 코드를 수정해야 합니다.
@@ -153,16 +140,12 @@ class GameFacade:
 
     def start_game(self, config_path: str) -> None:
         config = self._config_loader.load(config_path)
-
         self._asset_manager.initialize()
         self._asset_manager.load_common_assets()
-
         self._renderer.initialize(resolution=str(config["resolution"]))
         self._renderer.create_window()
-
         self._audio_system.initialize(volume=int(config["volume"]))
         self._audio_system.play_bgm()
-
         self._game_engine.initialize()
         self._game_engine.start()
 ```
@@ -171,13 +154,8 @@ class GameFacade:
 
 ```python
 game = GameFacade(
-    ConfigLoader(),
-    AssetManager(),
-    AudioSystem(),
-    Renderer(),
-    GameEngine(),
+    ConfigLoader(), AssetManager(), AudioSystem(), Renderer(), GameEngine()
 )
-
 game.start_game("game.json")
 ```
 
@@ -210,7 +188,6 @@ flowchart TD
 # 세밀한 제어가 필요한 경우: 저수준 API 직접 사용
 renderer = Renderer()
 renderer.initialize("3840x2160")
-
 # 일반적인 경우: Facade 사용
 game.start_game("game.json")
 ```
@@ -256,14 +233,11 @@ game.start_game("game.json")
 
 Facade를 적용했다고 해서 서브시스템을 외부에서 절대 접근하지 못하게 차단해야 하는 것은 아닙니다.
 
-```text
-Client
-   │
-   ├────> Facade
-   │        │
-   │        └────> Subsystem
-   │
-   └─────────────> Subsystem
+```mermaid
+flowchart TD
+    client[Client] --> facade[Facade]
+    facade --> subsystem1[Subsystem]
+    client --> subsystem2[Subsystem]
 ```
 
 일반적인 클라이언트는 Facade를 사용하고, 고급 기능이 필요한 클라이언트는 서브시스템을 직접 활용할 수 있습니다. 즉, Facade의 목적은 "서브시스템을 완전히 숨겨 접근을 막는 것"이라기보다는 "대부분의 사용자가 서브시스템 전체를 이해하지 않아도 주요 작업을 쉽게 수행하도록 돕는 것"입니다.
@@ -281,24 +255,19 @@ Python의 `subprocess` 모듈은 프로세스 생성, 표준 입출력/에러 �
 ```python
 import subprocess
 
-result = subprocess.run(
-    ["python", "--version"],
-    capture_output=True,
-    text=True,
-)
+result = subprocess.run(["python", "--version"], capture_output=True, text=True)
 ```
 
 상위 API인 `subprocess.run()`은 내부적으로 `Popen`을 호출하여 더 세밀한 프로세스 관리를 수행합니다.
 
-```text
-일반적인 사용 ──> subprocess.run()
-                     │
-                     ↓
-                   Popen
-                     ├─ process creation
-                     ├─ stdin/stdout/stderr
-                     ├─ communicate()
-                     └─ return code
+```mermaid
+flowchart TD
+    usage[일반적인 사용] --> run[subprocess.run]
+    run --> popen[Popen]
+    popen --> creation[process creation]
+    popen --> stdio[stdin/stdout/stderr]
+    popen --> communicate[communicate]
+    popen --> returncode[return code]
 ```
 
 이처럼 일반 사용자에게는 자주 쓰는 시나리오를 고수준 함수 하나로 제공하고, 필요시 저수준 API(`Popen`)도 직접 쓸 수 있게 연 방식은 Facade의 개념과 유사합니다.
@@ -315,8 +284,9 @@ shutil.copytree("source", "backup")
 
 클라이언트는 디렉터리 생성, 하위 디렉터리 탐색, 파일 반복, 개별 파일 복사, 메타데이터 및 오류 처리 과정을 직접 구현하지 않아도 됩니다.
 
-```text
-복잡한 파일 시스템 연산 ──> shutil ──> 간단한 고수준 함수
+```mermaid
+flowchart LR
+    fs[복잡한 파일 시스템 연산] --> shutil[shutil] --> simple[간단한 고수준 함수]
 ```
 
 ### Django `django.shortcuts`
@@ -328,14 +298,16 @@ Django의 `django.shortcuts` 패키지는 웹 개발에서 자주 사용하는 �
 ```python
 from django.shortcuts import render
 
+
 def my_view(request):
     return render(request, "index.html", {"name": "Aragorn"})
 ```
 
 이를 직접 작성할 경우 다음과 같은 저수준 단계를 거쳐야 합니다.
 
-```text
-Template Loader ──> Template 조회 ──> Context 적용 ──> Template.render() ──> HttpResponse 생성
+```mermaid
+flowchart LR
+    loader[Template Loader] --> lookup[Template 조회] --> context[Context 적용] --> render[Template.render] --> response[HttpResponse 생성]
 ```
 
 `render()` 함수는 이를 목적 중심의 단일 API로 깔끔하게 단순화해 줍니다. 또한 `get_object_or_404()` 역시 ORM의 `get()` 호출과 `DoesNotExist` 예외 처리를 HTTP 404 응답과 매핑해 주는 전형적인 파사드 형태의 편의 함수입니다.
@@ -402,12 +374,14 @@ classDiagram
 
 ### 핵심 관계
 
-```text
-             ┌─ ConfigLoader
-             ├─ AssetManager
-Client ──> Facade ── AudioSystem
-             ├─ Renderer
-             └─ GameEngine
+```mermaid
+flowchart LR
+    client[Client] --> facade[Facade]
+    facade --> config[ConfigLoader]
+    facade --> asset[AssetManager]
+    facade --> audio[AudioSystem]
+    facade --> renderer[Renderer]
+    facade --> engine[GameEngine]
 ```
 
 클라이언트는 여러 서브시스템을 개별적으로 다룰 필요 없이, Facade를 통해 대표적인 시나리오를 간편하게 수행할 수 있습니다.
@@ -419,17 +393,20 @@ Client ──> Facade ── AudioSystem
 ```python
 from dataclasses import dataclass
 
+
 # 1. 설정 모델
 @dataclass(frozen=True)
 class GameConfig:
     resolution: str
     volume: int
 
+
 # 2. Subsystem - Config
 class ConfigLoader:
     def load(self, path: str) -> GameConfig:
         print(f"[Config] {path} 로딩")
         return GameConfig(resolution="1920x1080", volume=80)
+
 
 # 3. Subsystem - Asset
 class AssetManager:
@@ -442,6 +419,7 @@ class AssetManager:
     def release(self) -> None:
         print("[Asset] 해제")
 
+
 # 4. Subsystem - Audio
 class AudioSystem:
     def initialize(self, volume: int) -> None:
@@ -452,6 +430,7 @@ class AudioSystem:
 
     def shutdown(self) -> None:
         print("[Audio] 종료")
+
 
 # 5. Subsystem - Renderer
 class Renderer:
@@ -464,6 +443,7 @@ class Renderer:
     def shutdown(self) -> None:
         print("[Renderer] 종료")
 
+
 # 6. Subsystem - Game Engine
 class GameEngine:
     def initialize(self) -> None:
@@ -474,6 +454,7 @@ class GameEngine:
 
     def stop(self) -> None:
         print("[Engine] 게임 종료")
+
 
 # 7. Facade
 class GameFacade:
@@ -512,11 +493,13 @@ class GameFacade:
         self._asset_manager.release()
         print("=== 게임 종료 완료 ===")
 
+
 # 8. 클라이언트
 def run_game(facade: GameFacade) -> None:
     facade.start_game("game.json")
     # 게임 실행...
     facade.shutdown_game()
+
 
 # 9. 실행 (Usage)
 if __name__ == "__main__":
@@ -564,18 +547,17 @@ facade.shutdown_game()
 
 반면 Facade 내부에는 다음과 같은 복잡한 오케스트레이션이 숨겨져 있습니다.
 
-```text
-start_game()
-    │
-    ├─ load config
-    ├─ initialize assets
-    ├─ load assets
-    ├─ initialize renderer
-    ├─ create window
-    ├─ initialize audio
-    ├─ start BGM
-    ├─ initialize engine
-    └─ start engine
+```mermaid
+flowchart TD
+    start[start_game] --> load_config[load config]
+    load_config --> init_assets[initialize assets]
+    init_assets --> load_assets[load assets]
+    load_assets --> init_renderer[initialize renderer]
+    init_renderer --> create_window[create window]
+    create_window --> init_audio[initialize audio]
+    init_audio --> start_bgm[start BGM]
+    start_bgm --> init_engine[initialize engine]
+    init_engine --> start_engine[start engine]
 ```
 
 Facade는 복잡성 자체를 없앤 것이 아니라, 명확한 경계 뒤로 감추어 고수준 작업으로 재표현한 것입니다.
@@ -624,12 +606,10 @@ def make_runtime(system: GameSystem) -> GameRuntime:
 
 ```python
 facade: GameFacade = full_system
-
 # 가능
 facade.start("game.json")
-
 # 컴파일 에러: GameFacade에 선언되지 않은 기능
-facade.rebuild_shaders() 
+facade.rebuild_shaders()
 ```
 
 이 가상 언어에서는 공개된 타입 계약을 기준으로 호출을 검사합니다. Python의 `Protocol`도 정적 검사에 사용할 수 있지만, 타입을 좁혀 표시하는 것만으로 실제 객체의 다른 메서드가 사라지지는 않습니다. 따라서 좁은 타입은 API 사용 규약이며, 신뢰할 수 없는 코드에 대한 보안 경계로 간주해서는 안 됩니다.

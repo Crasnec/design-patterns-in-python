@@ -33,13 +33,7 @@ class PaymentResult:
 
 
 class LegacyPaymentClient:
-
-    def request_payment(
-        self,
-        amount: int,
-        currency_code: str,
-    ) -> dict[str, object]:
-
+    def request_payment(self, amount: int, currency_code: str) -> dict[str, object]:
         # 외부 레거시 SDK라고 가정
         return {
             "tx_id": "TX-10001",
@@ -50,24 +44,14 @@ class LegacyPaymentClient:
 
 
 class BadCheckoutService:
-
-    def __init__(
-        self,
-        client: LegacyPaymentClient,
-    ):
+    def __init__(self, client: LegacyPaymentClient):
         self.client = client
 
-    def checkout(
-        self,
-        money: Money,
-    ) -> PaymentResult:
-
+    def checkout(self, money: Money) -> PaymentResult:
         # 문제점 1: 클라이언트가 레거시 SDK 호출 규칙을 알아야 함
         response = self.client.request_payment(
-            amount=money.cents,
-            currency_code=money.currency,
+            amount=money.cents, currency_code=money.currency
         )
-
         # 문제점 2: 레거시 응답 구조까지 직접 해석
         return PaymentResult(
             transaction_id=str(response["tx_id"]),
@@ -86,17 +70,10 @@ class BadCheckoutService:
 
 ```python
 class SubscriptionService:
-
-    def renew(
-        self,
-        money: Money,
-    ) -> PaymentResult:
-
+    def renew(self, money: Money) -> PaymentResult:
         response = legacy_client.request_payment(
-            amount=money.cents,
-            currency_code=money.currency,
+            amount=money.cents, currency_code=money.currency
         )
-
         return PaymentResult(
             transaction_id=str(response["tx_id"]),
             approved=response["result_code"] == "00",
@@ -104,17 +81,10 @@ class SubscriptionService:
 
 
 class RefundService:
-
-    def retry_payment(
-        self,
-        money: Money,
-    ) -> PaymentResult:
-
+    def retry_payment(self, money: Money) -> PaymentResult:
         response = legacy_client.request_payment(
-            amount=money.cents,
-            currency_code=money.currency,
+            amount=money.cents, currency_code=money.currency
         )
-
         return PaymentResult(
             transaction_id=str(response["tx_id"]),
             approved=response["result_code"] == "00",
@@ -150,12 +120,8 @@ flowchart TD
 
 ```python
 class PaymentGateway(ABC):
-
     @abstractmethod
-    def pay(
-        self,
-        money: Money,
-    ) -> PaymentResult:
+    def pay(self, money: Money) -> PaymentResult:
         pass
 ```
 
@@ -163,36 +129,20 @@ class PaymentGateway(ABC):
 
 ```python
 class LegacyPaymentClient:
-
-    def request_payment(
-        self,
-        amount: int,
-        currency_code: str,
-    ) -> dict[str, object]:
-        ...
+    def request_payment(self, amount: int, currency_code: str) -> dict[str, object]: ...
 ```
 
 대신 두 인터페이스 사이에 Adapter를 둡니다.
 
 ```python
 class LegacyPaymentAdapter(PaymentGateway):
-
-    def __init__(
-        self,
-        client: LegacyPaymentClient,
-    ):
+    def __init__(self, client: LegacyPaymentClient):
         self._client = client
 
-    def pay(
-        self,
-        money: Money,
-    ) -> PaymentResult:
-
+    def pay(self, money: Money) -> PaymentResult:
         response = self._client.request_payment(
-            amount=money.cents,
-            currency_code=money.currency,
+            amount=money.cents, currency_code=money.currency
         )
-
         return PaymentResult(
             transaction_id=str(response["tx_id"]),
             approved=response["result_code"] == "00",
@@ -203,18 +153,10 @@ class LegacyPaymentAdapter(PaymentGateway):
 
 ```python
 class CheckoutService:
-
-    def __init__(
-        self,
-        gateway: PaymentGateway,
-    ):
+    def __init__(self, gateway: PaymentGateway):
         self.gateway = gateway
 
-    def checkout(
-        self,
-        money: Money,
-    ) -> PaymentResult:
-
+    def checkout(self, money: Money) -> PaymentResult:
         return self.gateway.pay(money)
 ```
 
@@ -228,16 +170,12 @@ flowchart LR
 
 Adapter 내부에서는 실제로 다음 변환이 수행됩니다.
 
-```text
-Money
-  ↓
-레거시 요청 형식
-  ↓
-LegacyPaymentClient.request_payment()
-  ↓
-레거시 응답 dict
-  ↓
-PaymentResult
+```mermaid
+flowchart TD
+    money[Money] --> req[레거시 요청 형식]
+    req --> call[LegacyPaymentClient.request_payment]
+    call --> resp[레거시 응답 dict]
+    resp --> result[PaymentResult]
 ```
 
 핵심은 단순히 메서드 이름을 바꾸는 래퍼를 만드는 데 있지 않습니다.
@@ -299,15 +237,8 @@ flowchart TD
 import requests
 
 session = requests.Session()
-
-adapter = requests.adapters.HTTPAdapter(
-    max_retries=3,
-)
-
-session.mount(
-    "https://",
-    adapter,
-)
+adapter = requests.adapters.HTTPAdapter(max_retries=3)
+session.mount("https://", adapter)
 ```
 
 즉 상위 `Session`은 HTTP 연결 구현의 세부 사항을 직접 다루지 않고 Adapter 인터페이스를 통해 통신합니다.
@@ -323,17 +254,8 @@ Python 표준 라이브러리의 `LoggerAdapter`는 기존 `Logger` 객체를 �
 import logging
 
 logger = logging.getLogger(__name__)
-
-adapter = logging.LoggerAdapter(
-    logger,
-    {
-        "user_id": 100,
-    },
-)
-
-adapter.info(
-    "로그인 성공"
-)
+adapter = logging.LoggerAdapter(logger, {"user_id": 100})
+adapter.info("로그인 성공")
 ```
 
 구조적으로 보면 다음과 같습니다.
@@ -359,13 +281,10 @@ Django 공식 문서에서는 `sync_to_async()`가 동기 함수를 받아 이�
 from asgiref.sync import sync_to_async
 
 
-def load_user():
-    ...
+def load_user(): ...
 
 
-async_load_user = sync_to_async(
-    load_user
-)
+async_load_user = sync_to_async(load_user)
 ```
 
 클라이언트는 결과 함수를 다음과 같이 사용할 수 있습니다.
@@ -433,42 +352,43 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
+
 # -------------------------------------------------------------------
 # 1. 도메인 모델
 # -------------------------------------------------------------------
-
 @dataclass(frozen=True)
 class Money:
     cents: int
     currency: str
+
 
 @dataclass(frozen=True)
 class PaymentResult:
     transaction_id: str
     approved: bool
 
+
 # -------------------------------------------------------------------
 # 2. Target
 # -------------------------------------------------------------------
-
 class PaymentGateway(ABC):
     @abstractmethod
     def pay(self, money: Money) -> PaymentResult:
         pass
 
+
 # -------------------------------------------------------------------
 # 3. Adaptee
 # -------------------------------------------------------------------
-
 class LegacyPaymentClient:
     def request_payment(self, amount: int, currency_code: str) -> dict[str, Any]:
-        print(f'[Legacy SDK] {amount} {currency_code} 결제 요청')
+        print(f"[Legacy SDK] {amount} {currency_code} 결제 요청")
         return {"tx_id": "TX-10001", "result_code": "00"}
+
 
 # -------------------------------------------------------------------
 # 4. Adapter
 # -------------------------------------------------------------------
-
 class LegacyPaymentAdapter(PaymentGateway):
     def __init__(self, client: LegacyPaymentClient):
         self._client = client
@@ -480,23 +400,23 @@ class LegacyPaymentAdapter(PaymentGateway):
         )
         # Adaptee 출력 → Target 출력
         return PaymentResult(
-            transaction_id=str(response['tx_id']),
+            transaction_id=str(response["tx_id"]),
             approved=(response["result_code"] == "00"),
         )
+
 
 # -------------------------------------------------------------------
 # 5. 또 다른 구현
 # -------------------------------------------------------------------
-
 class ModernPaymentGateway(PaymentGateway):
     def pay(self, money: Money) -> PaymentResult:
-        print(f'[Modern Gateway] {money.cents} {money.currency} 결제 요청')
-        return PaymentResult(transaction_id='TX-20001', approved=True)
+        print(f"[Modern Gateway] {money.cents} {money.currency} 결제 요청")
+        return PaymentResult(transaction_id="TX-20001", approved=True)
+
 
 # -------------------------------------------------------------------
 # 6. 클라이언트
 # -------------------------------------------------------------------
-
 class CheckoutService:
     def __init__(self, gateway: PaymentGateway):
         self._gateway = gateway
@@ -504,16 +424,16 @@ class CheckoutService:
     def checkout(self, money: Money) -> None:
         result = self._gateway.pay(money)
         if result.approved:
-            print(f'결제가 승인되었습니다. 거래 ID: {result.transaction_id}')
+            print(f"결제가 승인되었습니다. 거래 ID: {result.transaction_id}")
         else:
-            print('결제가 거절되었습니다.')
+            print("결제가 거절되었습니다.")
+
 
 # -------------------------------------------------------------------
 # 7. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
-    money = Money(cents=10000, currency='USD')
+    money = Money(cents=10000, currency="USD")
     # 기존 레거시 시스템 사용
     legacy_client = LegacyPaymentClient()
     legacy_adapter = LegacyPaymentAdapter(legacy_client)
@@ -537,35 +457,23 @@ if __name__ == "__main__":
 클라이언트인 `CheckoutService`는 두 구현의 차이를 알 필요가 없습니다.
 
 ```python
-CheckoutService(
-    LegacyPaymentAdapter(
-        LegacyPaymentClient()
-    )
-)
+CheckoutService(LegacyPaymentAdapter(LegacyPaymentClient()))
 ```
 
 와
 
 ```python
-CheckoutService(
-    ModernPaymentGateway()
-)
+CheckoutService(ModernPaymentGateway())
 ```
 
 모두 동일한 `PaymentGateway` 인터페이스를 통해 사용됩니다.
 
-```text
-CheckoutService
-       │
-       ↓
-PaymentGateway
-       │
-       ├─ ModernPaymentGateway
-       │
-       └─ LegacyPaymentAdapter
-                  │
-                  ↓
-          LegacyPaymentClient
+```mermaid
+flowchart TD
+    checkout[CheckoutService] --> gateway[PaymentGateway]
+    gateway --> modern[ModernPaymentGateway]
+    gateway --> adapter[LegacyPaymentAdapter]
+    adapter --> client[LegacyPaymentClient]
 ```
 
 외부 SDK의 호출 방식이나 반환 구조가 변경되더라도 해당 차이는 `LegacyPaymentAdapter` 내부에 격리할 수 있습니다.
@@ -578,32 +486,23 @@ PaymentGateway
 
 고전적인 Adapter는 다음과 같은 구조를 가집니다.
 
-```text
-Client
-   ↓
-Target
-   ↑
-Adapter
-   ↓
-Adaptee
+```mermaid
+flowchart TD
+    client[Client] --> target[Target]
+    adapter[Adapter] -->|implements| target
+    adapter --> adaptee[Adaptee]
 ```
 
 이를 더 추상적으로 바라보면 Adapter가 수행하는 작업은 다음과 같습니다.
 
-```text
-클라이언트가 사용하는 표현
-           ↓
-         변환
-           ↓
-기존 시스템이 이해하는 표현
-           ↓
-       기존 연산 수행
-           ↓
-기존 시스템의 결과 표현
-           ↓
-         변환
-           ↓
-클라이언트가 이해하는 결과
+```mermaid
+flowchart TD
+    a[클라이언트가 사용하는 표현] --> b[변환]
+    b --> c[기존 시스템이 이해하는 표현]
+    c --> d[기존 연산 수행]
+    d --> e[기존 시스템의 결과 표현]
+    e --> f[변환]
+    f --> g[클라이언트가 이해하는 결과]
 ```
 
 즉 핵심 문제는 다음과 같습니다.
@@ -635,11 +534,7 @@ interface PaymentGateway:
 
 ```python
 class ExternalGateway:
-
-    def pay(
-        money: Money,
-    ) -> PaymentResult:
-        ...
+    def pay(money: Money) -> PaymentResult: ...
 ```
 
 명목적 타입 시스템에서는 `PaymentGateway`를 구현한다고 명시하지 않았다면 직접 사용할 수 없는 경우가 있습니다.
@@ -693,27 +588,18 @@ type Adapter[A, B] =
 예를 들어 레거시 응답을 새로운 도메인 결과로 변환합니다.
 
 ```python
-def adapt_response(
-    response: LegacyPaymentResponse,
-) -> PaymentResult:
-
+def adapt_response(response: LegacyPaymentResponse) -> PaymentResult:
     return PaymentResult(
-        transaction_id=response.tx_id,
-        approved=(
-            response.result_code
-            == SuccessCode
-        ),
+        transaction_id=response.tx_id, approved=(response.result_code == SuccessCode)
     )
 ```
 
 타입은 다음과 같습니다.
 
-```text
-LegacyPaymentResponse
-        ↓
-    Adapter
-        ↓
-PaymentResult
+```mermaid
+flowchart TD
+    input[LegacyPaymentResponse] --> adapter[Adapter]
+    adapter --> output[PaymentResult]
 ```
 
 객체를 별도로 만들 필요가 없습니다.
@@ -748,16 +634,8 @@ PaymentRequest → PaymentResult
 두 개의 변환 함수를 정의합니다.
 
 ```python
-def to_legacy(
-    request: PaymentRequest,
-) -> LegacyRequest:
-    ...
-
-
-def from_legacy(
-    response: LegacyResponse,
-) -> PaymentResult:
-    ...
+def to_legacy(request: PaymentRequest) -> LegacyRequest: ...
+def from_legacy(response: LegacyResponse) -> PaymentResult: ...
 ```
 
 이제 일반적인 Adapter 고차 함수를 정의할 수 있습니다.
@@ -795,22 +673,18 @@ PaymentRequest → PaymentResult
 
 내부에서는 여전히 레거시 시스템을 사용합니다.
 
-```text
-PaymentRequest
-      ↓ to_legacy
-LegacyRequest
-      ↓ legacy_request_payment
-LegacyResponse
-      ↓ from_legacy
-PaymentResult
+```mermaid
+flowchart TD
+    request[PaymentRequest] -->|to_legacy| legacyReq[LegacyRequest]
+    legacyReq -->|legacy_request_payment| legacyResp[LegacyResponse]
+    legacyResp -->|from_legacy| result[PaymentResult]
 ```
 
 고전적인 Object Adapter의
 
-```text
-Adapter 객체
-    │
-    └─ Adaptee 객체 보관
+```mermaid
+flowchart TD
+    adapter[Adapter 객체] -->|보관| adaptee[Adaptee 객체]
 ```
 
 구조가 함수형 관점에서는 "입력 변환 함수 + 기존 함수 + 출력 변환 함수"의 합성으로 바뀝니다.
@@ -833,10 +707,9 @@ external class LegacyPaymentClient:
 
 고전적인 객체지향에서는 Wrapper Adapter를 만듭니다.
 
-```text
-LegacyPaymentAdapter
-        ↓
-LegacyPaymentClient
+```mermaid
+flowchart TD
+    adapter[LegacyPaymentAdapter] --> client[LegacyPaymentClient]
 ```
 
 하지만 Retroactive Conformance를 지원하는 타입클래스 시스템에서는 기존 타입에 새로운 인터페이스 구현을 외부에서 부여할 수 있습니다.
@@ -916,19 +789,13 @@ newtype Cent = Int
 환율 또는 변환 규칙을 가진 명시적인 Adapter를 정의합니다.
 
 ```python
-def won_to_cent(
-    value: Won,
-    rate: ExchangeRate,
-) -> Cent:
-    ...
+def won_to_cent(value: Won, rate: ExchangeRate) -> Cent: ...
 ```
 
 잘못된 호출은 정적으로 차단됩니다.
 
 ```python
-legacy_client.request_payment(
-    money.won
-)
+legacy_client.request_payment(money.won)
 ```
 
 ```text
@@ -940,12 +807,7 @@ found: Won
 반드시 변환을 거쳐야 합니다.
 
 ```python
-legacy_client.request_payment(
-    won_to_cent(
-        money.won,
-        exchange_rate,
-    )
-)
+legacy_client.request_payment(won_to_cent(money.won, exchange_rate))
 ```
 
 이 구조에서는 Adapter의 중요한 역할인 의미적 변환을 타입 시스템이 강제합니다.
@@ -993,18 +855,12 @@ data PaymentStatus =
 변환 과정에서 정보가 사라집니다.
 
 ```python
-def adapt_status(
-    status: LegacyStatus,
-) -> PaymentStatus:
-
+def adapt_status(status: LegacyStatus) -> PaymentStatus:
     match status:
-
         case Approved:
             return Success
-
         case Declined:
             return Failure
-
         case ManualReview:
             return Failure
 ```
@@ -1067,24 +923,12 @@ type Adapter[A, B, E] =
 실제 변환 함수:
 
 ```python
-def adapt_amount(
-    value: str,
-) -> Result[Money, InvalidAmount]:
-
+def adapt_amount(value: str) -> Result[Money, InvalidAmount]:
     match parse_int(value):
-
         case Some(amount):
-            return Ok(
-                Money(
-                    cents=amount,
-                    currency=USD,
-                )
-            )
-
+            return Ok(Money(cents=amount, currency=USD))
         case None:
-            return Err(
-                InvalidAmount(value)
-            )
+            return Err(InvalidAmount(value))
 ```
 
 Adapter 자체의 실패 가능성이 타입에 나타납니다.
@@ -1124,21 +968,14 @@ data PaymentError =
 Adapter가 오류를 변환합니다.
 
 ```python
-def adapt_error(
-    error: LegacyError,
-) -> PaymentError:
-
+def adapt_error(error: LegacyError) -> PaymentError:
     match error:
-
         case ConnectionLost:
             return NetworkFailure
-
         case Code(51):
             return PaymentDeclined
-
         case Code(_):
             return InvalidGatewayResponse
-
         case InvalidPayload:
             return InvalidGatewayResponse
 ```
@@ -1171,10 +1008,7 @@ def load_user(
 새로운 시스템은 비동기 인터페이스를 요구합니다.
 
 ```python
-def load_user(
-    id: UserId,
-) -> Async[User]:
-    ...
+def load_user(id: UserId) -> Async[User]: ...
 ```
 
 고전적인 방식에서는 `SyncToAsyncAdapter`와 같은 Wrapper를 만들 수 있습니다.
@@ -1209,22 +1043,18 @@ async_load_user =
 
 고전적인 Adapter는 보통 다음과 같은 객체 구조로 설명됩니다.
 
-```text
-Target
-  ↑
-Adapter
-  ↓
-Adaptee
+```mermaid
+flowchart TD
+    adapter[Adapter] -->|implements| target[Target]
+    adapter --> adaptee[Adaptee]
 ```
 
 하지만 더 추상적으로 보면 Adapter의 본질은 시스템 경계에서 서로 다른 표현을 변환하는 것입니다.
 
-```text
-External Representation
-          ↓
-       Adapter
-          ↓
-Internal Representation
+```mermaid
+flowchart TD
+    ext[External Representation] --> adapter[Adapter]
+    adapter --> int[Internal Representation]
 ```
 
 이 변환 대상은 여러 종류가 될 수 있습니다.

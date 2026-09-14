@@ -34,59 +34,21 @@ class Order:
 
 
 class BadShippingCalculator:
-
-    def calculate(
-        self,
-        order: Order,
-        shipping_type: str,
-    ) -> int:
-
+    def calculate(self, order: Order, shipping_type: str) -> int:
         if shipping_type == "standard":
-
             base = 3_000
-            weight_fee = int(
-                order.weight_kg * 500
-            )
-
-            return (
-                base
-                + weight_fee
-            )
-
+            weight_fee = int(order.weight_kg * 500)
+            return base + weight_fee
         elif shipping_type == "express":
-
             base = 7_000
-
-            weight_fee = int(
-                order.weight_kg * 900
-            )
-
-            distance_fee = (
-                order.distance_km * 10
-            )
-
-            return (
-                base
-                + weight_fee
-                + distance_fee
-            )
-
+            weight_fee = int(order.weight_kg * 900)
+            distance_fee = order.distance_km * 10
+            return base + weight_fee + distance_fee
         elif shipping_type == "international":
-
             base = 20_000
-
-            weight_fee = int(
-                order.weight_kg * 2_000
-            )
-
-            return (
-                base
-                + weight_fee
-            )
-
-        raise ValueError(
-            "지원하지 않는 배송 방식입니다."
-        )
+            weight_fee = int(order.weight_kg * 2_000)
+            return base + weight_fee
+        raise ValueError("지원하지 않는 배송 방식입니다.")
 ```
 
 현재는 알고리즘이 세 개뿐이지만 새로운 배송 정책이 추가된다고 가정합니다.
@@ -108,13 +70,10 @@ HolidayExpress
 ```python
 if shipping_type == "same_day":
     ...
-
 elif shipping_type == "drone":
     ...
-
 elif shipping_type == "economy":
     ...
-
 elif shipping_type == "holiday_express":
     ...
 ```
@@ -123,16 +82,12 @@ elif shipping_type == "holiday_express":
 
 ```python
 if shipping_type == "express":
-
     if order.distance_km > 100:
         ...
-
     if order.weight_kg > 20:
         ...
-
     if holiday:
         ...
-
     if premium_member:
         ...
 ```
@@ -140,15 +95,11 @@ if shipping_type == "express":
 또한 배송비 계산 외의 다른 코드에서도 배송 방식에 따라 다른 처리가 필요하다면 동일한 분기가 반복될 수 있습니다.
 
 ```python
-def estimate_arrival(
-    shipping_type: str,
-):
+def estimate_arrival(shipping_type: str):
     if shipping_type == "standard":
         ...
-
     elif shipping_type == "express":
         ...
-
     elif shipping_type == "international":
         ...
 ```
@@ -188,118 +139,62 @@ from abc import ABC, abstractmethod
 
 
 class ShippingStrategy(ABC):
-
     @abstractmethod
-    def calculate(
-        self,
-        order: Order,
-    ) -> int:
+    def calculate(self, order: Order) -> int:
         pass
 ```
 
 Standard 배송 알고리즘을 독립적인 Strategy로 분리합니다.
 
 ```python
-class StandardShipping(
-    ShippingStrategy
-):
-
-    def calculate(
-        self,
-        order: Order,
-    ) -> int:
-
+class StandardShipping(ShippingStrategy):
+    def calculate(self, order: Order) -> int:
         base = 3_000
-
-        weight_fee = int(
-            order.weight_kg * 500
-        )
-
-        return (
-            base
-            + weight_fee
-        )
+        weight_fee = int(order.weight_kg * 500)
+        return base + weight_fee
 ```
 
 Express 역시 별도의 Strategy입니다.
 
 ```python
-class ExpressShipping(
-    ShippingStrategy
-):
-
-    def calculate(
-        self,
-        order: Order,
-    ) -> int:
-
+class ExpressShipping(ShippingStrategy):
+    def calculate(self, order: Order) -> int:
         base = 7_000
-
-        weight_fee = int(
-            order.weight_kg * 900
-        )
-
-        distance_fee = (
-            order.distance_km * 10
-        )
-
-        return (
-            base
-            + weight_fee
-            + distance_fee
-        )
+        weight_fee = int(order.weight_kg * 900)
+        distance_fee = order.distance_km * 10
+        return base + weight_fee + distance_fee
 ```
 
 Context는 구체적인 계산 방법을 알 필요가 없습니다.
 
 ```python
 class ShippingCalculator:
-
-    def __init__(
-        self,
-        strategy: ShippingStrategy,
-    ):
+    def __init__(self, strategy: ShippingStrategy):
         self._strategy = strategy
 
-    def set_strategy(
-        self,
-        strategy: ShippingStrategy,
-    ) -> None:
-
+    def set_strategy(self, strategy: ShippingStrategy) -> None:
         self._strategy = strategy
 
-    def calculate(
-        self,
-        order: Order,
-    ) -> int:
-
-        return self._strategy.calculate(
-            order
-        )
+    def calculate(self, order: Order) -> int:
+        return self._strategy.calculate(order)
 ```
 
 클라이언트가 사용할 알고리즘을 선택합니다.
 
 ```python
-calculator = ShippingCalculator(
-    StandardShipping()
-)
+calculator = ShippingCalculator(StandardShipping())
 ```
 
 계산:
 
 ```python
-cost = calculator.calculate(
-    order
-)
+cost = calculator.calculate(order)
 ```
 
 실행 중 Strategy를 교체할 수도 있습니다.
 
 ```python
-calculator.set_strategy(
-    ExpressShipping()
-)
+calculator.set_strategy(ExpressShipping())
 ```
 
 Context의 코드는 변경되지 않습니다.
@@ -314,26 +209,18 @@ flowchart TD
 
 즉 기존의:
 
-```text
-Context
-
-    if strategy == A:
-        algorithm A
-
-    elif strategy == B:
-        algorithm B
-
-    elif strategy == C:
-        algorithm C
+```mermaid
+flowchart TD
+    context[Context] -->|strategy == A| algorithmA[algorithm A]
+    context -->|strategy == B| algorithmB[algorithm B]
+    context -->|strategy == C| algorithmC[algorithm C]
 ```
 
 가:
 
-```text
-Context
-   │
-   ↓ delegation
-Strategy
+```mermaid
+flowchart LR
+    context[Context] -->|delegation| strategy[Strategy]
 ```
 
 로 바뀝니다.
@@ -371,12 +258,9 @@ Strategy
 * **상태 없는 Strategy는 공유 가능:** Strategy가 내부 가변 상태를 가지지 않는다면 여러 Context에서 같은 Strategy 객체를 재사용할 수도 있습니다.
 * **클라이언트가 Strategy를 몰라도 되게 만들 수 있음:** 별도의 Factory나 구성 영역에서 Strategy를 선택하여 Context에 주입할 수 있습니다.
 
-```text
-Configuration
-     ↓
-Strategy Factory
-     ↓
-Context
+```mermaid
+flowchart TD
+    configuration[Configuration] --> strategyFactory[Strategy Factory] --> context[Context]
 ```
 
 * **Strategy 선택과 Strategy 실행은 서로 다른 책임:** Strategy 패턴은 주로 알고리즘 실행을 추상화합니다. 어떤 알고리즘을 선택할지는 별도의 정책이 될 수 있습니다.
@@ -389,20 +273,16 @@ State와 Strategy는 구조적으로 매우 유사합니다.
 
 Strategy:
 
-```text
-Context
-   │
-   ↓
-Strategy
+```mermaid
+flowchart LR
+    context[Context] --> strategy[Strategy]
 ```
 
 State:
 
-```text
-Context
-   │
-   ↓
-State
+```mermaid
+flowchart LR
+    context[Context] --> state[State]
 ```
 
 둘 다 Context가 다른 객체에 행동을 위임합니다.
@@ -450,17 +330,14 @@ Shipped
 또한 Strategy는 일반적으로 클라이언트나 구성 영역에서 선택됩니다.
 
 ```python
-calculator.set_strategy(
-    ExpressShipping()
-)
+calculator.set_strategy(ExpressShipping())
 ```
 
 State는 객체 내부 상태 전이에 의해 변경되는 경우가 많습니다.
 
-```text
-Pending
-   ↓ pay
-Paid
+```mermaid
+flowchart LR
+    pending[Pending] -->|pay| paid[Paid]
 ```
 
 단순화하면:
@@ -483,23 +360,19 @@ State:
 
 Template Method는 **상속**을 이용합니다.
 
-```text
-Base Algorithm
-     │
-     ├─ Step A
-     ├─ Step B
-     └─ Hook
-          ↑
-        override
+```mermaid
+flowchart TD
+    base[Base Algorithm] --> stepA[Step A]
+    base --> stepB[Step B]
+    base --> hook[Hook]
+    override[override] -->|overrides| hook
 ```
 
 Strategy는 **합성**을 이용합니다.
 
-```text
-Context
-   │
-   ↓
-Strategy
+```mermaid
+flowchart LR
+    context[Context] --> strategy[Strategy]
 ```
 
 Template Method에서는 알고리즘의 전체 골격은 부모 클래스에 고정되고 일부 단계만 하위 클래스가 변경합니다.
@@ -566,18 +439,16 @@ Strategy는 알고리즘의 교체와 선택에 초점을 둡니다.
 
 Bridge 역시 객체 합성을 통해 구현을 분리합니다.
 
-```text
-Abstraction
-     ↓
-Implementation
+```mermaid
+flowchart TD
+    abstraction[Abstraction] --> implementation[Implementation]
 ```
 
 Strategy는 Context가 사용하는 **하나의 행동이나 알고리즘을 교체**하는 것이 목적입니다.
 
-```text
-Context
-   ↓
-Strategy
+```mermaid
+flowchart TD
+    context[Context] --> strategy[Strategy]
 ```
 
 Bridge는 **서로 독립적으로 확장되는 두 클래스 계층을 분리**하는 것이 목적입니다.
@@ -607,9 +478,7 @@ Bridge:
 Strategy 객체는 흔히 생성자를 통해 주입됩니다.
 
 ```python
-ShippingCalculator(
-    ExpressShipping()
-)
+ShippingCalculator(ExpressShipping())
 ```
 
 따라서 Dependency Injection처럼 보입니다.
@@ -653,57 +522,34 @@ Python의 `concurrent.futures`는 비동기적으로 callable을 실행하기 �
 클라이언트는 공통 인터페이스를 사용할 수 있습니다.
 
 ```python
-future = executor.submit(
-    calculate,
-    value,
-)
+future = executor.submit(calculate, value)
 ```
 
 하지만 실제 실행 전략은 달라집니다.
 
-```text
-Executor
-   │
-   ├─ ThreadPoolExecutor
-   │      → Thread 기반
-   │
-   ├─ ProcessPoolExecutor
-   │      → Process 기반
-   │
-   └─ InterpreterPoolExecutor
-          → Interpreter 기반
+```mermaid
+flowchart TD
+    executor[Executor] --> thread[ThreadPoolExecutor<br/>Thread 기반]
+    executor --> process[ProcessPoolExecutor<br/>Process 기반]
+    executor --> interpreter[InterpreterPoolExecutor<br/>Interpreter 기반]
 ```
 
 예를 들어:
 
 ```python
-from concurrent.futures import (
-    ThreadPoolExecutor,
-)
-
+from concurrent.futures import ThreadPoolExecutor
 
 with ThreadPoolExecutor() as executor:
-
-    future = executor.submit(
-        calculate,
-        value,
-    )
+    future = executor.submit(calculate, value)
 ```
 
 를:
 
 ```python
-from concurrent.futures import (
-    ProcessPoolExecutor,
-)
-
+from concurrent.futures import ProcessPoolExecutor
 
 with ProcessPoolExecutor() as executor:
-
-    future = executor.submit(
-        calculate,
-        value,
-    )
+    future = executor.submit(calculate, value)
 ```
 
 로 교체해도 상위 사용 방식은 매우 유사합니다.
@@ -722,48 +568,29 @@ Requests는 HTTP 요청에 적용할 인증 정책을 `auth` 인자로 주입할
 
 ```python
 import requests
-from requests.auth import (
-    HTTPBasicAuth,
-)
+from requests.auth import HTTPBasicAuth
 
-
-auth = HTTPBasicAuth(
-    "user",
-    "password",
-)
-
-response = requests.get(
-    "https://example.com/",
-    auth=auth,
-)
+auth = HTTPBasicAuth("user", "password")
+response = requests.get("https://example.com/", auth=auth)
 ```
 
 커스텀 인증 정책도 만들 수 있습니다.
 
 ```python
-class MyAuth(
-    requests.auth.AuthBase
-):
-
-    def __call__(
-        self,
-        request,
-    ):
+class MyAuth(requests.auth.AuthBase):
+    def __call__(self, request):
         # 인증 정책
         return request
 ```
 
 상위 HTTP 요청 로직은 유지됩니다.
 
-```text
-Request
-   │
-   ↓
-Authentication Strategy
-   │
-   ├─ Basic Auth
-   ├─ Digest Auth
-   └─ Custom Auth
+```mermaid
+flowchart TD
+    request[Request] --> authStrategy[Authentication Strategy]
+    authStrategy --> basicAuth[Basic Auth]
+    authStrategy --> digestAuth[Digest Auth]
+    authStrategy --> customAuth[Custom Auth]
 ```
 
 인증 방식이라는 알고리즘/정책을 외부에서 교체할 수 있다는 점에서 Strategy와 매우 유사합니다.
@@ -778,16 +605,13 @@ Django는 비밀번호 저장과 검증에 사용할 여러 Hasher 구현을 지
 
 개념적으로:
 
-```text
-Password Operation
-       │
-       ↓
-Password Hasher
-       │
-       ├─ PBKDF2
-       ├─ Argon2
-       ├─ BCrypt
-       └─ Scrypt
+```mermaid
+flowchart TD
+    passwordOperation[Password Operation] --> passwordHasher[Password Hasher]
+    passwordHasher --> pbkdf2[PBKDF2]
+    passwordHasher --> argon2[Argon2]
+    passwordHasher --> bcrypt[BCrypt]
+    passwordHasher --> scrypt[Scrypt]
 ```
 
 와 같은 구조입니다.
@@ -796,11 +620,8 @@ Password Hasher
 
 ```python
 PASSWORD_HASHERS = [
-    "django.contrib.auth.hashers."
-    "Argon2PasswordHasher",
-
-    "django.contrib.auth.hashers."
-    "PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers." "Argon2PasswordHasher",
+    "django.contrib.auth.hashers." "PBKDF2PasswordHasher",
 ]
 ```
 
@@ -870,34 +691,28 @@ Input
 
 핵심 관계는 다음과 같습니다.
 
-```text
-ShippingCalculator
-        │
-        │ delegates
-        ↓
-ShippingStrategy
-        │
-        ├─ Standard
-        ├─ Express
-        └─ International
+```mermaid
+flowchart TD
+    calculator[ShippingCalculator] -->|delegates| strategy[ShippingStrategy]
+    strategy --> standard[Standard]
+    strategy --> express[Express]
+    strategy --> international[International]
 ```
 
 클라이언트가 Strategy를 선택합니다.
 
-```text
-Client
-   │
-   ├─ StandardShipping
-   │
-   └────> ShippingCalculator
+```mermaid
+flowchart LR
+    client[Client] --> standardShipping[StandardShipping]
+    client --> calculator[ShippingCalculator]
+    standardShipping --> calculator
 ```
 
 필요하다면 실행 중 교체할 수도 있습니다.
 
-```text
-Standard
-   ↓ set_strategy()
-Express
+```mermaid
+flowchart LR
+    standard[Standard] -->|set_strategy| express[Express]
 ```
 
 ---
@@ -908,39 +723,39 @@ Express
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+
 # -------------------------------------------------------------------
 # 1. Domain Model
 # -------------------------------------------------------------------
-
 @dataclass(frozen=True)
 class Order:
     weight_kg: float
     distance_km: int
     country: str
 
+
 # -------------------------------------------------------------------
 # 2. Strategy
 # -------------------------------------------------------------------
-
 class ShippingStrategy(ABC):
     @abstractmethod
     def calculate(self, order: Order) -> int:
         pass
 
+
 # -------------------------------------------------------------------
 # 3. Concrete Strategy - Standard
 # -------------------------------------------------------------------
-
 class StandardShipping(ShippingStrategy):
     def calculate(self, order: Order) -> int:
         base = 3_000
         weight_fee = int(order.weight_kg * 500)
         return base + weight_fee
 
+
 # -------------------------------------------------------------------
 # 4. Concrete Strategy - Express
 # -------------------------------------------------------------------
-
 class ExpressShipping(ShippingStrategy):
     def calculate(self, order: Order) -> int:
         base = 7_000
@@ -948,10 +763,10 @@ class ExpressShipping(ShippingStrategy):
         distance_fee = order.distance_km * 10
         return base + weight_fee + distance_fee
 
+
 # -------------------------------------------------------------------
 # 5. Concrete Strategy - International
 # -------------------------------------------------------------------
-
 class InternationalShipping(ShippingStrategy):
     def calculate(self, order: Order) -> int:
         base = 20_000
@@ -959,10 +774,10 @@ class InternationalShipping(ShippingStrategy):
         distance_fee = int(order.distance_km * 5)
         return base + weight_fee + distance_fee
 
+
 # -------------------------------------------------------------------
 # 6. Context
 # -------------------------------------------------------------------
-
 class ShippingCalculator:
     def __init__(self, strategy: ShippingStrategy):
         self._strategy = strategy
@@ -973,18 +788,18 @@ class ShippingCalculator:
     def calculate(self, order: Order) -> int:
         return self._strategy.calculate(order)
 
+
 # -------------------------------------------------------------------
 # 7. Client
 # -------------------------------------------------------------------
-
 def print_shipping_cost(calculator: ShippingCalculator, order: Order) -> None:
     cost = calculator.calculate(order)
     print(f"배송비: {cost:,}원")
 
+
 # -------------------------------------------------------------------
 # 8. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     order = Order(weight_kg=4.5, distance_km=120, country="KR")
     calculator = ShippingCalculator(StandardShipping())
@@ -1001,9 +816,7 @@ if __name__ == "__main__":
 클라이언트가 호출하는 방식은 항상 동일합니다.
 
 ```python
-calculator.calculate(
-    order
-)
+calculator.calculate(order)
 ```
 
 실제로 사용되는 알고리즘만 달라집니다.
@@ -1021,10 +834,8 @@ Context에는 다음과 같은 분기문이 없습니다.
 ```python
 if shipping_type == "standard":
     ...
-
 elif shipping_type == "express":
     ...
-
 elif shipping_type == "international":
     ...
 ```
@@ -1032,27 +843,15 @@ elif shipping_type == "international":
 새로운 당일 배송 Strategy를 추가하더라도:
 
 ```python
-class SameDayShipping(
-    ShippingStrategy
-):
-
-    def calculate(
-        self,
-        order: Order,
-    ) -> int:
-
-        return (
-            15_000
-            + order.distance_km * 20
-        )
+class SameDayShipping(ShippingStrategy):
+    def calculate(self, order: Order) -> int:
+        return 15_000 + order.distance_km * 20
 ```
 
 기존 `ShippingCalculator`는 수정하지 않습니다.
 
 ```python
-calculator.set_strategy(
-    SameDayShipping()
-)
+calculator.set_strategy(SameDayShipping())
 ```
 
 ---
@@ -1066,81 +865,44 @@ Python에서는 함수가 일급 객체이므로 알고리즘에 별도 상태�
 ```python
 from collections.abc import Callable
 
-
-ShippingStrategy = Callable[
-    [Order],
-    int,
-]
+ShippingStrategy = Callable[[Order], int]
 ```
 
 Standard Strategy:
 
 ```python
-def standard_shipping(
-    order: Order,
-) -> int:
-
-    return (
-        3_000
-        + int(
-            order.weight_kg
-            * 500
-        )
-    )
+def standard_shipping(order: Order) -> int:
+    return 3_000 + int(order.weight_kg * 500)
 ```
 
 Express Strategy:
 
 ```python
-def express_shipping(
-    order: Order,
-) -> int:
-
-    return (
-        7_000
-        + int(
-            order.weight_kg
-            * 900
-        )
-        + order.distance_km * 10
-    )
+def express_shipping(order: Order) -> int:
+    return 7_000 + int(order.weight_kg * 900) + order.distance_km * 10
 ```
 
 Context:
 
 ```python
 class ShippingCalculator:
-
-    def __init__(
-        self,
-        strategy: ShippingStrategy,
-    ):
+    def __init__(self, strategy: ShippingStrategy):
         self._strategy = strategy
 
-    def calculate(
-        self,
-        order: Order,
-    ) -> int:
-
-        return self._strategy(
-            order
-        )
+    def calculate(self, order: Order) -> int:
+        return self._strategy(order)
 ```
 
 사용:
 
 ```python
-calculator = ShippingCalculator(
-    standard_shipping
-)
+calculator = ShippingCalculator(standard_shipping)
 ```
 
 교체:
 
 ```python
-calculator.set_strategy(
-    express_shipping
-)
+calculator.set_strategy(express_shipping)
 ```
 
 Python에서는 이런 함수 기반 Strategy가 클래스 기반 구현보다 더 자연스러운 경우가 많습니다.
@@ -1153,15 +915,12 @@ Python에서는 이런 함수 기반 Strategy가 클래스 기반 구현보다 �
 
 고전적인 Strategy 구조는 다음과 같습니다.
 
-```text
-Context
-   │
-   ↓
-Strategy Interface
-   │
-   ├─ Algorithm A
-   ├─ Algorithm B
-   └─ Algorithm C
+```mermaid
+flowchart TD
+    context[Context] --> strategyInterface[Strategy Interface]
+    strategyInterface --> algorithmA[Algorithm A]
+    strategyInterface --> algorithmB[Algorithm B]
+    strategyInterface --> algorithmC[Algorithm C]
 ```
 
 이를 더 추상적으로 바라보면 Strategy는 결국 다음과 같은 값입니다.
@@ -1196,44 +955,26 @@ type ShippingStrategy =
 Standard:
 
 ```python
-def standard(
-    order: Order,
-) -> Money:
-
-    ...
+def standard(order: Order) -> Money: ...
 ```
 
 Express:
 
 ```python
-def express(
-    order: Order,
-) -> Money:
-
-    ...
+def express(order: Order) -> Money: ...
 ```
 
 International:
 
 ```python
-def international(
-    order: Order,
-) -> Money:
-
-    ...
+def international(order: Order) -> Money: ...
 ```
 
 상위 함수는 Strategy를 전달받습니다.
 
 ```python
-def calculate_shipping(
-    order: Order,
-    strategy: ShippingStrategy,
-) -> Money:
-
-    return strategy(
-        order
-    )
+def calculate_shipping(order: Order, strategy: ShippingStrategy) -> Money:
+    return strategy(order)
 ```
 
 사용:
@@ -1268,10 +1009,9 @@ Strategy가 내부 상태를 가지지 않는다면 객체를 만들 이유가 �
 
 객체지향 Strategy에서는 Context가 Strategy를 필드에 저장합니다.
 
-```text
-ShippingCalculator
-    │
-    └─ strategy
+```mermaid
+flowchart LR
+    calculator[ShippingCalculator] --> strategy[strategy]
 ```
 
 하지만 Context의 역할이 단순히 Strategy를 호출하는 것뿐이라면 별도의 객체가 필요하지 않을 수도 있습니다.
@@ -1386,12 +1126,7 @@ Closure
 다음 일반 함수가 있다고 가정합니다.
 
 ```python
-def shipping_cost(
-    policy: Policy,
-    order: Order,
-) -> Money:
-
-    ...
+def shipping_cost(policy: Policy, order: Order) -> Money: ...
 ```
 
 `policy`를 먼저 고정합니다.
@@ -1468,22 +1203,8 @@ Strategy[
 Context도 일반화할 수 있습니다.
 
 ```python
-def execute[
-    A,
-    B,
-](
-    strategy:
-        Strategy[
-            A,
-            B,
-        ],
-
-    input: A,
-) -> B:
-
-    return strategy(
-        input
-    )
+def execute[A, B](strategy: Strategy[A, B], input: A) -> B:
+    return strategy(input)
 ```
 
 Strategy의 객체지향 패턴을 **함수 타입의 parametric abstraction**으로 일반화한 것입니다.
@@ -1640,11 +1361,9 @@ where Shipping[S]:
 
 고전적인 Strategy는 일반적으로 런타임 다형성을 사용합니다.
 
-```text
-Context
-    │
-    ↓ interface
-Unknown Strategy
+```mermaid
+flowchart LR
+    context[Context] -->|interface| strategy[Unknown Strategy]
 ```
 
 예:
@@ -1699,10 +1418,9 @@ Static Strategy:
 
 런타임 인터페이스 호출은 실제 구현이 실행 시점에 결정됩니다.
 
-```text
-Strategy Interface
-      ↓ virtual dispatch
-Concrete Strategy
+```mermaid
+flowchart LR
+    strategyInterface[Strategy Interface] -->|virtual dispatch| concreteStrategy[Concrete Strategy]
 ```
 
 정적 Generic Strategy에서는 컴파일러가 실제 구현을 알고 있습니다.
@@ -1746,19 +1464,12 @@ data ShippingMode =
 함수:
 
 ```python
-def calculate(
-    mode: ShippingMode,
-    order: Order,
-) -> Money:
-
+def calculate(mode: ShippingMode, order: Order) -> Money:
     match mode:
-
         case Standard:
             ...
-
         case Express:
             ...
-
         case International:
             ...
 ```
@@ -1838,15 +1549,11 @@ Pattern Matching
 
 어떤 Strategy를 사용할지 조건에 따라 선택한다고 가정합니다.
 
-```text
-거리 < 20km
-    → Standard
-
-거리가 길고 긴급
-    → Express
-
-해외 주소
-    → International
+```mermaid
+flowchart LR
+    cond1[거리 < 20km] --> standard[Standard]
+    cond2[거리가 길고 긴급] --> express[Express]
+    cond3[해외 주소] --> international[International]
 ```
 
 Strategy Selector를 별도로 정의할 수 있습니다.
@@ -1862,19 +1569,11 @@ type StrategySelector[
 예:
 
 ```python
-def select_shipping(
-    request:
-        ShippingRequest,
-) -> ShippingStrategy:
-
+def select_shipping(request: ShippingRequest) -> ShippingStrategy:
     if request.international:
-
         return international
-
     if request.urgent:
-
         return express
-
     return standard
 ```
 
@@ -1928,24 +1627,16 @@ data ShippingPolicy =
 Interpreter:
 
 ```python
-def calculate(
-    policy: ShippingPolicy,
-    order: Order,
-) -> Money:
-
-    ...
+def calculate(policy: ShippingPolicy, order: Order) -> Money: ...
 ```
 
 이 경우 Strategy를 객체가 아니라 **정책 데이터 + Interpreter**로 표현합니다.
 
 장점은 Policy를 직렬화하거나 설정 파일에서 생성하기 쉽다는 것입니다.
 
-```text
-JSON Config
-    ↓
-ShippingPolicy
-    ↓
-Interpreter
+```mermaid
+flowchart TD
+    jsonConfig[JSON Config] --> shippingPolicy[ShippingPolicy] --> interpreter[Interpreter]
 ```
 
 ---
@@ -2020,27 +1711,15 @@ type PricingRule =
 Rule:
 
 ```python
-def weight_fee(
-    order: Order,
-    cost: Money,
-) -> Money:
-    ...
+def weight_fee(order: Order, cost: Money) -> Money: ...
 ```
 
 ```python
-def holiday_fee(
-    order: Order,
-    cost: Money,
-) -> Money:
-    ...
+def holiday_fee(order: Order, cost: Money) -> Money: ...
 ```
 
 ```python
-def premium_discount(
-    order: Order,
-    cost: Money,
-) -> Money:
-    ...
+def premium_discount(order: Order, cost: Money) -> Money: ...
 ```
 
 Strategy를 조합합니다.
@@ -2082,19 +1761,13 @@ $$A \circ B \neq B \circ A$$
 따라서 Strategy Composition에서는 순서 역시 정책의 일부가 됩니다.
 
 ```python
-policy = [
-    percentage_discount,
-    fixed_coupon,
-]
+policy = [percentage_discount, fixed_coupon]
 ```
 
 와:
 
 ```python
-policy = [
-    fixed_coupon,
-    percentage_discount,
-]
+policy = [fixed_coupon, percentage_discount]
 ```
 
 는 서로 다른 Strategy가 될 수 있습니다.
@@ -2141,10 +1814,8 @@ type ShippingStrategy =
 
 ```python
 match strategy(order):
-
     case Ok(cost):
         ...
-
     case Err(error):
         ...
 ```
@@ -2203,12 +1874,9 @@ Order -> Money
 
 과 외부 API를 사용하는 배송 계산은 의미가 다릅니다.
 
-```text
-Order
-   ↓
-Carrier API
-   ↓
-Money
+```mermaid
+flowchart TD
+    order[Order] --> carrierApi[Carrier API] --> money[Money]
 ```
 
 가상의 효과 타입:
@@ -2251,10 +1919,7 @@ type Strategy[
 어떤 알고리즘은 DB가 필요하고 다른 알고리즘은 순수 계산만 필요할 수 있습니다.
 
 ```python
-def local_shipping(
-    order: Order,
-) -> Money:
-    ...
+def local_shipping(order: Order) -> Money: ...
 ```
 
 ```text
@@ -2287,10 +1952,7 @@ Drone 배송은 5kg 이하만 지원한다고 가정합니다.
 일반적인 Strategy:
 
 ```python
-def drone_shipping(
-    order: Order,
-) -> Money:
-
+def drone_shipping(order: Order) -> Money:
     if order.weight > 5:
         raise ...
 ```
@@ -2307,11 +1969,7 @@ type DroneOrder =
 Strategy:
 
 ```python
-def drone_shipping(
-    order: DroneOrder,
-) -> Money:
-
-    ...
+def drone_shipping(order: DroneOrder) -> Money: ...
 ```
 
 잘못된 입력은 호출 전에 거부됩니다.
@@ -2359,14 +2017,8 @@ record ShippingOps:
 Context:
 
 ```python
-def checkout(
-    ops: ShippingOps,
-    order: Order,
-) -> Money:
-
-    return ops.calculate(
-        order
-    )
+def checkout(ops: ShippingOps, order: Order) -> Money:
+    return ops.calculate(order)
 ```
 
 여러 연산이 필요한 Strategy라면 함수 하나보다 함수 레코드(Dictionary of Operations)가 자연스러울 수 있습니다.
@@ -2410,25 +2062,16 @@ record ShippingStrategy:
 
 전략 선택 함수가 단순한 조건문이 아닐 수도 있습니다.
 
-```text
-Order Feature
-   ↓
-Selector
-   ↓
-Best Strategy
+```mermaid
+flowchart TD
+    orderFeature[Order Feature] --> selector[Selector] --> bestStrategy[Best Strategy]
 ```
 
 예를 들어:
 
 ```python
-def choose_strategy(
-    context:
-        ShippingContext,
-) -> StrategyId:
-
-    return optimizer.best(
-        context
-    )
+def choose_strategy(context: ShippingContext) -> StrategyId:
+    return optimizer.best(context)
 ```
 
 Strategy 패턴에서 중요한 것은 **어떻게 선택하는가가 아니라 선택된 알고리즘을 사용하는 코드와 구체 알고리즘을 분리한다는 것**입니다.
@@ -2441,14 +2084,9 @@ Strategy 패턴에서 중요한 것은 **어떻게 선택하는가가 아니라 
 
 고전적인 Strategy는 다음과 같습니다.
 
-```text
-Context
-   │
-   ↓
-Strategy Object
-   │
-   ↓
-Algorithm
+```mermaid
+flowchart TD
+    context[Context] --> strategyObject[Strategy Object] --> algorithm[Algorithm]
 ```
 
 하지만 더 추상적으로 보면 다음 구조입니다.
@@ -2547,23 +2185,18 @@ Effect-polymorphic Strategy
 
 객체지향에서는 다음과 같이 표현합니다.
 
-```text
-Context
-   │
-   ↓
-Strategy
-   │
-   ├─ Strategy A
-   ├─ Strategy B
-   └─ Strategy C
+```mermaid
+flowchart TD
+    context[Context] --> strategy[Strategy]
+    strategy --> strategyA[Strategy A]
+    strategy --> strategyB[Strategy B]
+    strategy --> strategyC[Strategy C]
 ```
 
 Context의 호출 방식은 동일합니다.
 
 ```python
-calculator.calculate(
-    order
-)
+calculator.calculate(order)
 ```
 
 실제로 사용되는 계산 방법만 변경됩니다.

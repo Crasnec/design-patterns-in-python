@@ -21,51 +21,22 @@ class Hero:
 
 
 class Party:
-
     def __init__(self):
         self.members: list[Hero] = []
 
-    def add(
-        self,
-        hero: Hero,
-    ) -> None:
-
-        self.members.append(
-            hero
-        )
+    def add(self, hero: Hero) -> None:
+        self.members.append(hero)
 ```
 
 클라이언트는 다음과 같이 내부 리스트에 직접 접근하여 탐색합니다.
 
 ```python
 party = Party()
-
-party.add(
-    Hero(
-        name="아라곤",
-        level=20,
-    )
-)
-
-party.add(
-    Hero(
-        name="레골라스",
-        level=18,
-    )
-)
-
-party.add(
-    Hero(
-        name="김리",
-        level=19,
-    )
-)
-
-
+party.add(Hero(name="아라곤", level=20))
+party.add(Hero(name="레골라스", level=18))
+party.add(Hero(name="김리", level=19))
 for hero in party.members:
-    print(
-        hero.name
-    )
+    print(hero.name)
 ```
 
 지금은 별문제가 없어 보이지만, Party의 내부 자료구조를 변경해야 하는 상황을 가정해 봅니다.
@@ -73,22 +44,15 @@ for hero in party.members:
 
 ```python
 class Party:
-
     def __init__(self):
-
-        self.members: dict[
-            str,
-            Hero,
-        ] = {}
+        self.members: dict[str, Hero] = {}
 ```
 
 기존 클라이언트는 리스트라는 내부 구조에 직접 의존하고 있었으므로, 아래와 같이 코드를 수정해야 합니다.
 
 ```python
 for hero in party.members.values():
-    print(
-        hero.name
-    )
+    print(hero.name)
 ```
 
 만약 파티를 트리 구조로 관리하게 된다면 문제는 더 커집니다.
@@ -107,18 +71,10 @@ flowchart TD
 클라이언트가 모든 구성원을 탐색하려면 트리 탐색 알고리즘을 직접 작성해야 합니다.
 
 ```python
-def traverse(
-    node,
-) -> None:
-
-    print(
-        node.value
-    )
-
+def traverse(node) -> None:
+    print(node.value)
     for child in node.children:
-        traverse(
-            child
-        )
+        traverse(child)
 ```
 
 또한 탐색 순서를 바꾸고 싶다면 그에 맞는 알고리즘을 매번 새로 구현해야 합니다.
@@ -174,22 +130,16 @@ flowchart TD
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
-
 T = TypeVar("T")
 
 
 class Iterator(ABC, Generic[T]):
-
     @abstractmethod
-    def has_next(
-        self,
-    ) -> bool:
+    def has_next(self) -> bool:
         pass
 
     @abstractmethod
-    def next(
-        self,
-    ) -> T:
+    def next(self) -> T:
         pass
 ```
 
@@ -197,85 +147,42 @@ Party 클래스는 내부 자료구조를 외부에 직접 공개하지 않는 �
 
 ```python
 class Party:
+    def __init__(self):
+        self._members: list[Hero] = []
 
-    def __init__(
-        self,
-    ):
-        self._members: list[
-            Hero
-        ] = []
+    def add(self, hero: Hero) -> None:
+        self._members.append(hero)
 
-    def add(
-        self,
-        hero: Hero,
-    ) -> None:
-
-        self._members.append(
-            hero
-        )
-
-    def create_iterator(
-        self,
-    ) -> "PartyIterator":
-
-        return PartyIterator(
-            self._members
-        )
+    def create_iterator(self) -> "PartyIterator":
+        return PartyIterator(self._members)
 ```
 
 Iterator 객체는 현재 탐색 위치를 독립적으로 관리합니다.
 
 ```python
-class PartyIterator(
-    Iterator[Hero]
-):
-
-    def __init__(
-        self,
-        members: list[Hero],
-    ):
+class PartyIterator(Iterator[Hero]):
+    def __init__(self, members: list[Hero]):
         self._members = members
         self._index = 0
 
-    def has_next(
-        self,
-    ) -> bool:
+    def has_next(self) -> bool:
+        return self._index < len(self._members)
 
-        return (
-            self._index
-            < len(self._members)
-        )
-
-    def next(
-        self,
-    ) -> Hero:
-
+    def next(self) -> Hero:
         if not self.has_next():
             raise StopIteration
-
-        hero = self._members[
-            self._index
-        ]
-
+        hero = self._members[self._index]
         self._index += 1
-
         return hero
 ```
 
 이제 클라이언트는 컬렉션의 내부 구조를 몰라도 요소를 순회할 수 있습니다.
 
 ```python
-iterator = (
-    party.create_iterator()
-)
-
+iterator = party.create_iterator()
 while iterator.has_next():
-
     hero = iterator.next()
-
-    print(
-        hero.name
-    )
+    print(hero.name)
 ```
 
 클라이언트가 의존하는 요소는 오직 다음 메서드뿐입니다.
@@ -286,14 +193,11 @@ while iterator.has_next():
 따라서 Party가 내부적으로 list, dict, tree 중 무엇을 사용하더라도 클라이언트의 탐색 인터페이스는 동일하게 유지됩니다.
 또한 하나의 컬렉션에 대해 여러 목적의 Iterator를 제공할 수도 있습니다.
 
-```text
-Party
-  │
-  ├─ create_forward_iterator()
-  │
-  ├─ create_reverse_iterator()
-  │
-  └─ create_level_iterator()
+```mermaid
+flowchart TD
+    party[Party] --> forward[create_forward_iterator]
+    party --> reverse[create_reverse_iterator]
+    party --> level[create_level_iterator]
 ```
 
 이터레이터 패턴의 본질은 단순히 순회 로직을 다른 클래스로 옮기는 것이 아닙니다.
@@ -344,19 +248,15 @@ Iterator는 제어권을 지닌 주체에 따라 크게 두 가지로 나뉩니�
 
 ```python
 iterator = iter(collection)
-
 item = next(iterator)
 item = next(iterator)
 ```
 
 제어 흐름:
 
-```text
-Client
-   ↓
-next()
-   ↓
-Iterator
+```mermaid
+flowchart TD
+    client[Client] -->|next| iterator[Iterator]
 ```
 
 클라이언트가 다음 값을 요청하는 시점을 직접 결정합니다.
@@ -366,20 +266,14 @@ Iterator
 컬렉션이나 순회 함수가 탐색을 제어하며, 클라이언트는 요소별로 실행할 콜백 함수만 전달하는 방식입니다.
 
 ```python
-collection.for_each(
-    lambda item:
-        print(item)
-)
+collection.for_each(lambda item: print(item))
 ```
 
 제어 흐름:
 
-```text
-Collection
-   ↓
-Iteration
-   ↓
-Callback
+```mermaid
+flowchart TD
+    collection[Collection] --> iteration[Iteration] --> callback[Callback]
 ```
 
 함수형 프로그래밍 언어의 map, fold, for_each 등이 Internal Iterator의 대표적인 예시입니다.
@@ -388,19 +282,18 @@ Callback
 
 Composite 패턴은 트리 형태의 부분-전체 구조를 표현하는 데 목적이 있습니다.
 
-```text
-Composite
-   ├─ Leaf
-   └─ Composite
+```mermaid
+flowchart TD
+    composite[Composite] --> leaf[Leaf]
+    composite --> composite2[Composite]
 ```
 
 반면 Iterator 패턴은 이러한 구조를 어떤 순서와 방식으로 탐색할 것인지를 분리하여 다룹니다.
 
-```text
-Composite Tree
-       │
-       ├─ DFS Iterator
-       └─ BFS Iterator
+```mermaid
+flowchart TD
+    tree[Composite Tree] --> dfs[DFS Iterator]
+    tree --> bfs[BFS Iterator]
 ```
 
 따라서 두 패턴은 서로 대립하지 않고 함께 조합하여 자주 사용됩니다.
@@ -425,31 +318,19 @@ Python의 `for` 문 구문은 다음과 같습니다.
 
 ```python
 for item in collection:
-    print(
-        item
-    )
+    print(item)
 ```
 
 이 코드는 내부적으로 다음과 같은 이터레이터 프로토콜 동작을 수행합니다.
 
 ```python
-iterator = iter(
-    collection
-)
-
+iterator = iter(collection)
 while True:
-
     try:
-        item = next(
-            iterator
-        )
-
+        item = next(iterator)
     except StopIteration:
         break
-
-    print(
-        item
-    )
+    print(item)
 ```
 
 Python 튜토리얼에서도 `for` 문이 컨테이너에 `iter()`를 호출한 뒤, 반환된 Iterator의 `__next__()`를 순차적으로 호출하다가 `StopIteration`이 발생하면 반복을 종료한다고 설명합니다.
@@ -466,16 +347,10 @@ Python의 Generator는 Iterator Protocol을 훨씬 간결하게 구현할 수 �
 `__iter__()`를 generator로 구현하면 Python이 Iterator 객체와 `__iter__()`, `__next__()` 프로토콜을 자동으로 구성합니다.
 
 ```python
-def countdown(
-    start: int,
-):
-
+def countdown(start: int):
     current = start
-
     while current > 0:
-
         yield current
-
         current -= 1
 ```
 
@@ -483,10 +358,7 @@ def countdown(
 
 ```python
 for value in countdown(3):
-
-    print(
-        value
-    )
+    print(value)
 ```
 
 Generator 내부의 현재 실행 위치, 지역 변수, 재개 위치 정보가 Iterator의 탐색 상태 역할을 대신합니다.
@@ -497,17 +369,8 @@ Generator 내부의 현재 실행 위치, 지역 변수, 재개 위치 정보가
 Django의 `QuerySet.iterator()`는 평가 결과를 순차적으로 반환합니다. 일반적인 QuerySet과 달리 QuerySet 수준의 결과 캐시를 만들지 않으므로, 한 번만 소비할 대량 조회에서는 메모리 사용을 줄일 수 있습니다. 데이터베이스 드라이버의 버퍼링과 가져오기 단위는 백엔드와 `chunk_size` 설정에 따라 달라집니다.
 
 ```python
-for user in (
-    User.objects
-    .filter(
-        is_active=True
-    )
-    .iterator()
-):
-
-    process(
-        user
-    )
+for user in User.objects.filter(is_active=True).iterator():
+    process(user)
 ```
 
 동작 메커니즘은 다음과 같습니다.
@@ -529,10 +392,7 @@ Python은 동기식 Iterator 외에 비동기 Iterator Protocol도 제공합니�
 
 ```python
 async for message in stream:
-
-    process(
-        message
-    )
+    process(message)
 ```
 
 동작 흐름:
@@ -606,16 +466,10 @@ classDiagram
 
 핵심 관계 구조:
 
-```text
-Party
-  │
-  ├─ create_iterator()
-  │       ↓
-  │   PartyIterator
-  │
-  └─ create_reverse_iterator()
-          ↓
-      ReversePartyIterator
+```mermaid
+flowchart TD
+    party[Party] -->|create_iterator| partyIterator[PartyIterator]
+    party -->|create_reverse_iterator| reverseIterator[ReversePartyIterator]
 ```
 
 ---
@@ -628,19 +482,19 @@ Python 환경에서는 `has_next()` 구문보다 언어 표준 프로토콜인 `
 from dataclasses import dataclass
 from typing import Iterator
 
+
 # -------------------------------------------------------------------
 # 1. Element
 # -------------------------------------------------------------------
-
 @dataclass(frozen=True)
 class Hero:
     name: str
     level: int
 
+
 # -------------------------------------------------------------------
 # 2. Aggregate
 # -------------------------------------------------------------------
-
 class Party:
     def __init__(self):
         self._members: list[Hero] = []
@@ -654,10 +508,10 @@ class Party:
     def reverse(self) -> Iterator[Hero]:
         return ReversePartyIterator(self._members)
 
+
 # -------------------------------------------------------------------
 # 3. Concrete Iterator - Forward
 # -------------------------------------------------------------------
-
 class PartyIterator(Iterator[Hero]):
     def __init__(self, members: list[Hero]):
         self._members = members
@@ -673,10 +527,10 @@ class PartyIterator(Iterator[Hero]):
         self._index += 1
         return hero
 
+
 # -------------------------------------------------------------------
 # 4. Concrete Iterator - Reverse
 # -------------------------------------------------------------------
-
 class ReversePartyIterator(Iterator[Hero]):
     def __init__(self, members: list[Hero]):
         self._members = members
@@ -692,10 +546,10 @@ class ReversePartyIterator(Iterator[Hero]):
         self._index -= 1
         return hero
 
+
 # -------------------------------------------------------------------
 # 5. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     party = Party()
     party.add(Hero(name="아라곤", level=20))
@@ -735,26 +589,18 @@ for hero in party:
 
 내부적으로는 다음과 같이 동작합니다.
 
-```text
-Party.__iter__()
-      ↓
-PartyIterator
-      ↓
-__next__()
-      ↓
-Hero
+```mermaid
+flowchart TD
+    partyIter["Party.__iter__()"] --> partyIterator[PartyIterator]
+    partyIterator -->|"__next__()"| hero[Hero]
 ```
 
 역방향 순회 시에는 다음 흐름을 거칩니다.
 
-```text
-Party.reverse()
-      ↓
-ReversePartyIterator
-      ↓
-__next__()
-      ↓
-Hero
+```mermaid
+flowchart TD
+    partyReverse["Party.reverse()"] --> reverseIterator[ReversePartyIterator]
+    reverseIterator -->|"__next__()"| hero[Hero]
 ```
 
 이처럼 클라이언트는 Party의 내부 저장 구조가 어떻게 변경되는지 전혀 신경 쓸 필요가 없습니다.
@@ -765,37 +611,18 @@ Python에서는 별도의 Iterator 클래스를 정의하지 않고 Generator를
 
 ```python
 class Party:
+    def __init__(self):
+        self._members: list[Hero] = []
 
-    def __init__(
-        self,
-    ):
-        self._members: list[
-            Hero
-        ] = []
+    def add(self, hero: Hero) -> None:
+        self._members.append(hero)
 
-    def add(
-        self,
-        hero: Hero,
-    ) -> None:
-
-        self._members.append(
-            hero
-        )
-
-    def __iter__(
-        self,
-    ):
-
+    def __iter__(self):
         for member in self._members:
             yield member
 
-    def reverse(
-        self,
-    ):
-
-        for member in reversed(
-            self._members
-        ):
+    def reverse(self):
+        for member in reversed(self._members):
             yield member
 ```
 
@@ -808,18 +635,12 @@ class Party:
 현대 타입 시스템과 함수형 프로그래밍 관점에서 이터레이터 패턴을 재해석해 봅니다. 이 관점에서의 Iterator는 단순히 "컬렉션 옆에서 인덱스를 관리하는 객체"에 그치지 않고 더욱 일반화된 개념으로 확장됩니다.
 고전적 Iterator는 아래와 같은 상태 머신으로 볼 수 있습니다.
 
-```text
-Iterator
-   │
-   ├─ 현재 탐색 상태
-   │
-   └─ next()
-         │
-         ↓
-      반환 값
-         │
-         ↓
-      다음 상태
+```mermaid
+flowchart TD
+    iterator[Iterator] --> state[현재 탐색 상태]
+    iterator --> next[next]
+    next --> value[반환 값]
+    next --> nextState[다음 상태]
 ```
 
 즉, Iterator는 "현재 순회 상태"와 "다음 값을 구하는 연산"을 하나의 값으로 캡슐화한 것입니다.
@@ -918,10 +739,7 @@ def next[
 앞선 예시의 Iterator 타입은 내부 상태(`ListState[T]`)를 외부에 노출하고 있습니다.
 
 ```python
-Iterator[
-    ListState[T],
-    T
-]
+Iterator[ListState[T], T]
 ```
 
 하지만 클라이언트는 Iterator 내부에서 인덱스를 사용하는지, 스택을 사용하는지 알 필요가 없습니다. 실존 타입(Existential Type)을 활용해 이러한 상태 타입을 숨길 수 있습니다.
@@ -966,14 +784,9 @@ data Stream[T] =
 
 구조 예시:
 
-```text
-1
- ↓
-2
- ↓
-3
- ↓
-Lazy Tail
+```mermaid
+flowchart TD
+    n1[1] --> n2[2] --> n3[3] --> lazyTail[Lazy Tail]
 ```
 
 첫 번째 값은 즉시 평가되어 존재하지만, 나머지 연산은 필요한 시점까지 미루어집니다.
@@ -1016,8 +829,9 @@ def naturals(
 
 구조:
 
-```text
-0 → 1 → 2 → 3 → 4 → ...
+```mermaid
+flowchart LR
+    n0[0] --> n1[1] --> n2[2] --> n3[3] --> n4[4] --> more[...]
 ```
 
 전체 데이터를 메모리에 올리는 것은 불가능하지만, 필요한 개수만큼만 가져와 소비할 수 있습니다.
@@ -1066,9 +880,7 @@ data Yield[
 
 ```python
 while iterator.has_next():
-
     item = iterator.next()
-
     ...
 ```
 
@@ -1098,18 +910,16 @@ total =
 두 방식의 구조적 차이:
 
 * **External Iterator (Pull):**
-```text
-Client
-  ↓ next
-Iterator
+```mermaid
+flowchart TD
+    client[Client] -->|next| iterator[Iterator]
 ```
 
 
 * **Fold (Push/Internal):**
-```text
-Collection
-  ↓
-Consumer Function
+```mermaid
+flowchart TD
+    collection[Collection] --> consumer[Consumer Function]
 ```
 
 
@@ -1157,9 +967,7 @@ impl Foldable[
 클라이언트는 구체적인 자료구조를 몰라도 다음과 같이 범용적인 연산을 작성할 수 있습니다.
 
 ```python
-sum(
-    values
-)
+sum(values)
 ```
 
 기존 이터레이터의 공통 `next()` 프로토콜이 공통 `fold` 프로토콜로 확장·일반화된 형태입니다.
@@ -1168,16 +976,9 @@ sum(
 
 Iterator의 주요 장점 중 하나는 데이터 전체를 생성하지 않고 연속적인 변환 체인을 구성할 수 있다는 점입니다.
 
-```text
-Source
-  ↓
-filter
-  ↓
-map
-  ↓
-take
-  ↓
-Consumer
+```mermaid
+flowchart TD
+    source[Source] --> filter[filter] --> map[map] --> take[take] --> consumer[Consumer]
 ```
 
 Iterator 조합기 타입 예시:
@@ -1223,14 +1024,9 @@ result =
 
 Lazy 파이프라인 방식을 그대로 구현하면 단계마다 중간 Iterator 객체가 생성됩니다.
 
-```text
-SourceIterator
-      ↓
-FilterIterator
-      ↓
-MapIterator
-      ↓
-TakeIterator
+```mermaid
+flowchart TD
+    sourceIter[SourceIterator] --> filterIter[FilterIterator] --> mapIter[MapIterator] --> takeIter[TakeIterator]
 ```
 
 개념적으로는 훌륭하지만, 성능이 중요한 시스템에서는 이러한 단계를 거칠 때 생기는 간접 호출 비용이 부담될 수 있습니다.
@@ -1246,9 +1042,7 @@ source
 
 ```python
 for x in source:
-
     if p(x):
-
         yield f(x)
 ```
 
@@ -1258,24 +1052,18 @@ for x in source:
 
 일반적인 Iterator 방식은 소비자가 데이터를 직접 요청합니다.
 
-```text
-Consumer
-   │
-   │ next?
-   ↓
-Producer
+```mermaid
+flowchart TD
+    consumer[Consumer] -->|next?| producer[Producer]
 ```
 
 * **Pull 기반:** 소비자가 생산 속도를 주도합니다.
 
 반면 이벤트 스트림 방식에서는 생산자가 데이터를 능동적으로 밀어넣습니다.
 
-```text
-Producer
-   │
-   │ value!
-   ↓
-Consumer
+```mermaid
+flowchart TD
+    producer[Producer] -->|value!| consumer[Consumer]
 ```
 
 * **Push 기반:** 생산자가 데이터 제공 시점을 주도합니다.
@@ -1297,10 +1085,8 @@ type Pull[
 
 ```python
 match next_value():
-
     case Some(value):
         ...
-
     case None:
         ...
 ```
@@ -1350,24 +1136,14 @@ def produce_numbers(
 Pull $\rightarrow$ Push 변환 예시:
 
 ```python
-def to_push[
-    T
-](
-    iterator:
-        Iterator[T],
-) -> Producer[T]:
-
-    ...
+def to_push[T](iterator: Iterator[T]) -> Producer[T]: ...
 ```
 
 반대로 Push 방식을 Pull 방식으로 바꿀 때에는 중간에 버퍼링 처리가 필요할 수 있습니다.
 
-```text
-Push Producer
-      ↓
-Buffer / Queue
-      ↓
-Pull Iterator
+```mermaid
+flowchart TD
+    pushProducer[Push Producer] --> buffer["Buffer / Queue"] --> pullIterator[Pull Iterator]
 ```
 
 이러한 특성 차이는 비동기 스트림 처리 및 배후 압력(Backpressure) 조절을 다룰 때 매우 중요한 개념이 됩니다.
@@ -1405,12 +1181,9 @@ type AsyncIterator[
 
 네트워크 패킷을 다루는 경우처럼 다음 데이터를 받아오기까지 대기 시간이 발생하는 상황에 적용됩니다.
 
-```text
-next()
-   ↓
-await
-   ↓
-message
+```mermaid
+flowchart TD
+    next["next()"] --> await[await] --> message[message]
 ```
 
 기존의 순수한 값 생산 연산이 Side-effect를 동반하는 비동기 연산으로 확장된 형태입니다.
@@ -1444,7 +1217,6 @@ Iterator는 탐색 진행에 따라 내부 상태가 변경되는 특성을 지�
 
 ```python
 iterator = iter(values)
-
 next(iterator)
 next(iterator)
 ```
@@ -1453,7 +1225,6 @@ next(iterator)
 
 ```python
 consumer_a(iterator)
-
 consumer_b(iterator)
 ```
 
@@ -1466,17 +1237,13 @@ linear type Iterator[T]
 Iterator를 특정 함수에 전달하는 순간 소유권이 이동하므로:
 
 ```python
-consume(
-    iterator
-)
+consume(iterator)
 ```
 
 이후 다시 동일한 객체에 접근하려 할 때 컴파일 오류를 발생시킵니다.
 
 ```python
-next(
-    iterator
-)
+next(iterator)
 ```
 
 ```text
@@ -1566,7 +1333,6 @@ resource Cursor[
 
 ```python
 with cursor(query) as rows:
-
     for row in rows:
         ...
 ```
@@ -1577,13 +1343,11 @@ with cursor(query) as rows:
 
 고전적인 Iterator 구조:
 
-```text
-Aggregate
-   ↓
-Iterator
-   │
-   ├─ 현재 상태
-   └─ next()
+```mermaid
+flowchart TD
+    aggregate[Aggregate] --> iterator[Iterator]
+    iterator --> state[현재 상태]
+    iterator --> next[next]
 ```
 
 이를 더욱 넓은 시각으로 바라보면 다음과 같습니다.
@@ -1599,10 +1363,9 @@ Iterator
 
 초기의 Iterator는 메모리상에 존재하는 컬렉션을 탐색하기 위한 용도로 주로 사용되었습니다.
 
-```text
-List
-  ↓
-Iterator
+```mermaid
+flowchart TD
+    list[List] --> iterator[Iterator]
 ```
 
 그러나 오늘날 Iterator의 데이터 원본은 훨씬 다양합니다.
@@ -1616,11 +1379,9 @@ Iterator
 
 이러한 대상들은 전통적인 의미의 컬렉션으로 보기 어렵습니다.
 
-```text
-Source
-   ↓
-시간 흐름에 따른
-순차적 값 생산
+```mermaid
+flowchart TD
+    source[Source] --> production["시간 흐름에 따른<br/>순차적 값 생산"]
 ```
 
 결국 현대적 관점에서의 Iterator는 단순한 컬렉션 순회 패턴을 넘어, '시간의 흐름에 따라 점진적으로 스트림 데이터를 소비하는 추상화 기법'으로 정의할 수 있습니다.

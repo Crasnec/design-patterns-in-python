@@ -34,132 +34,40 @@ JSON:
 
 ```python
 class CsvDataProcessor:
+    def process(self, path: str) -> None:
+        print("[CSV] 파일을 읽습니다.")
+        raw_data = self._read_csv(path)
+        print("[CSV] 데이터를 파싱합니다.")
+        data = self._parse_csv(raw_data)
+        print("[Common] 데이터를 정제합니다.")
+        cleaned = self._clean(data)
+        print("[Common] 데이터를 분석합니다.")
+        result = self._analyze(cleaned)
+        print("[Common] 결과를 저장합니다.")
+        self._save(result)
 
-    def process(
-        self,
-        path: str,
-    ) -> None:
-
-        print(
-            "[CSV] 파일을 읽습니다."
-        )
-
-        raw_data = self._read_csv(
-            path
-        )
-
-        print(
-            "[CSV] 데이터를 파싱합니다."
-        )
-
-        data = self._parse_csv(
-            raw_data
-        )
-
-        print(
-            "[Common] 데이터를 정제합니다."
-        )
-
-        cleaned = self._clean(
-            data
-        )
-
-        print(
-            "[Common] 데이터를 분석합니다."
-        )
-
-        result = self._analyze(
-            cleaned
-        )
-
-        print(
-            "[Common] 결과를 저장합니다."
-        )
-
-        self._save(
-            result
-        )
-
-    def _read_csv(
-        self,
-        path: str,
-    ) -> str:
-        ...
-
-    def _parse_csv(
-        self,
-        raw_data: str,
-    ) -> list[dict[str, object]]:
-        ...
-
-    def _clean(
-        self,
-        data: list[dict[str, object]],
-    ) -> list[dict[str, object]]:
-        ...
-
-    def _analyze(
-        self,
-        data: list[dict[str, object]],
-    ) -> dict[str, object]:
-        ...
-
-    def _save(
-        self,
-        result: dict[str, object],
-    ) -> None:
-        ...
+    def _read_csv(self, path: str) -> str: ...
+    def _parse_csv(self, raw_data: str) -> list[dict[str, object]]: ...
+    def _clean(self, data: list[dict[str, object]]) -> list[dict[str, object]]: ...
+    def _analyze(self, data: list[dict[str, object]]) -> dict[str, object]: ...
+    def _save(self, result: dict[str, object]) -> None: ...
 ```
 
 JSON Processor 또한 유사한 구조를 가집니다.
 
 ```python
 class JsonDataProcessor:
-
-    def process(
-        self,
-        path: str,
-    ) -> None:
-
-        print(
-            "[JSON] 파일을 읽습니다."
-        )
-
-        raw_data = self._read_json(
-            path
-        )
-
-        print(
-            "[JSON] 데이터를 파싱합니다."
-        )
-
-        data = self._parse_json(
-            raw_data
-        )
-
-        print(
-            "[Common] 데이터를 정제합니다."
-        )
-
-        cleaned = self._clean(
-            data
-        )
-
-        print(
-            "[Common] 데이터를 분석합니다."
-        )
-
-        result = self._analyze(
-            cleaned
-        )
-
-        print(
-            "[Common] 결과를 저장합니다."
-        )
-
-        self._save(
-            result
-        )
+    def process(self, path: str) -> None:
+        print("[JSON] 파일을 읽습니다.")
+        raw_data = self._read_json(path)
+        print("[JSON] 데이터를 파싱합니다.")
+        data = self._parse_json(raw_data)
+        print("[Common] 데이터를 정제합니다.")
+        cleaned = self._clean(data)
+        print("[Common] 데이터를 분석합니다.")
+        result = self._analyze(cleaned)
+        print("[Common] 결과를 저장합니다.")
+        self._save(result)
 ```
 
 두 클래스의 실질적인 차이는 일부 단계에 국한됩니다.
@@ -190,17 +98,9 @@ flowchart TD
 이 경우 CSV 및 JSON 클래스를 모두 일일이 수정해야 합니다.
 
 ```python
-cleaned = self._clean(
-    data
-)
-
-validated = self._validate(
-    cleaned
-)
-
-result = self._analyze(
-    validated
-)
+cleaned = self._clean(data)
+validated = self._validate(cleaned)
+result = self._analyze(validated)
 ```
 
 만약 XML, Excel, YAML Processor 등이 추가되어 있다면 동일한 수정 작업을 반복해야 합니다.
@@ -249,205 +149,101 @@ from abc import ABC, abstractmethod
 
 
 class DataProcessor(ABC):
-
-    def process(
-        self,
-        path: str,
-    ) -> None:
-
-        raw_data = self.read(
-            path
-        )
-
-        data = self.parse(
-            raw_data
-        )
-
-        cleaned = self.clean(
-            data
-        )
-
-        self.before_analyze(
-            cleaned
-        )
-
-        result = self.analyze(
-            cleaned
-        )
-
-        self.save(
-            result
-        )
+    def process(self, path: str) -> None:
+        raw_data = self.read(path)
+        data = self.parse(raw_data)
+        cleaned = self.clean(data)
+        self.before_analyze(cleaned)
+        result = self.analyze(cleaned)
+        self.save(result)
 ```
 
 여기서 `process()` 메서드가 바로 **Template Method** 역할을 수행하며, 전체 실행 순서는 이 메서드 내부에서 단일하게 고정됩니다.
 
-```text
-read
- ↓
-parse
- ↓
-clean
- ↓
-before_analyze
- ↓
-analyze
- ↓
-save
+```mermaid
+flowchart TD
+    read[read] --> parse[parse]
+    parse --> clean[clean]
+    clean --> before_analyze[before_analyze]
+    before_analyze --> analyze[analyze]
+    analyze --> save[save]
 ```
 
 파일 형식별로 다르게 동작해야 하는 단계는 추상 메서드로 선언합니다.
 
 ```python
 @abstractmethod
-def read(
-    self,
-    path: str,
-) -> str:
+def read(self, path: str) -> str:
     pass
 
 
 @abstractmethod
-def parse(
-    self,
-    raw_data: str,
-) -> list[
-    dict[str, object]
-]:
+def parse(self, raw_data: str) -> list[dict[str, object]]:
     pass
 ```
 
 공통 로직 단계는 상위 클래스에서 직접 구체 구현을 작성할 수 있습니다.
 
 ```python
-def clean(
-    self,
-    data: list[
-        dict[str, object]
-    ],
-) -> list[
-    dict[str, object]
-]:
-
-    return [
-        row
-        for row in data
-        if row
-    ]
+def clean(self, data: list[dict[str, object]]) -> list[dict[str, object]]:
+    return [row for row in data if row]
 ```
 
 필요에 따라 하위 클래스에서 선택적으로 재정의할 수 있는 Hook 메서드도 제공할 수 있습니다.
 
 ```python
-def before_analyze(
-    self,
-    data: list[
-        dict[str, object]
-    ],
-) -> None:
-
+def before_analyze(self, data: list[dict[str, object]]) -> None:
     pass
 ```
 
 CSV Processor는 고유한 세부 단계만 구현합니다.
 
 ```python
-class CsvDataProcessor(
-    DataProcessor
-):
-
-    def read(
-        self,
-        path: str,
-    ) -> str:
-
-        print(
-            "[CSV] 파일 읽기"
-        )
-
+class CsvDataProcessor(DataProcessor):
+    def read(self, path: str) -> str:
+        print("[CSV] 파일 읽기")
         ...
 
-    def parse(
-        self,
-        raw_data: str,
-    ) -> list[
-        dict[str, object]
-    ]:
-
-        print(
-            "[CSV] 파싱"
-        )
-
+    def parse(self, raw_data: str) -> list[dict[str, object]]:
+        print("[CSV] 파싱")
         ...
 ```
 
 JSON Processor도 마찬가지로 가변적인 단계만 재정의합니다.
 
 ```python
-class JsonDataProcessor(
-    DataProcessor
-):
-
-    def read(
-        self,
-        path: str,
-    ) -> str:
-
-        print(
-            "[JSON] 파일 읽기"
-        )
-
+class JsonDataProcessor(DataProcessor):
+    def read(self, path: str) -> str:
+        print("[JSON] 파일 읽기")
         ...
 
-    def parse(
-        self,
-        raw_data: str,
-    ) -> list[
-        dict[str, object]
-    ]:
-
-        print(
-            "[JSON] 파싱"
-        )
-
+    def parse(self, raw_data: str) -> list[dict[str, object]]:
+        print("[JSON] 파싱")
         ...
 ```
 
 클라이언트에서는 동일한 인터페이스로 메서드를 호출합니다.
 
 ```python
-processor.process(
-    "data.csv"
-)
+processor.process("data.csv")
 ```
 
 어떠한 하위 클래스를 사용하더라도 전체 알고리즘은 상위 클래스에서 지정한 일관된 순서에 따라 수행됩니다.
 
-```text
-CsvDataProcessor
-
-    read CSV
-        ↓
-    parse CSV
-        ↓
-    clean
-        ↓
-    analyze
-        ↓
-    save
-
-
-JsonDataProcessor
-
-    read JSON
-        ↓
-    parse JSON
-        ↓
-    clean
-        ↓
-    analyze
-        ↓
-    save
+```mermaid
+flowchart TD
+    subgraph CsvDataProcessor
+        c_read[read CSV] --> c_parse[parse CSV]
+        c_parse --> c_clean[clean]
+        c_clean --> c_analyze[analyze]
+        c_analyze --> c_save[save]
+    end
+    subgraph JsonDataProcessor
+        j_read[read JSON] --> j_parse[parse JSON]
+        j_parse --> j_clean[clean]
+        j_clean --> j_analyze[analyze]
+        j_analyze --> j_save[save]
+    end
 ```
 
 상위 클래스는 알고리즘의 불변 영역(Invariant Part)을 관할합니다.
@@ -489,14 +285,14 @@ optional hooks
 
 구조적 관점의 비교:
 
-```text
-Subclass
-    → framework flow를 직접 제어 (기존)
+```mermaid
+flowchart LR
+    subclass[Subclass] --> control["framework flow를 직접 제어 (기존)"]
 ```
 
-```text
-Framework / Base Class
-    → Subclass Hook 호출 (할리우드 원칙 적용)
+```mermaid
+flowchart LR
+    framework["Framework / Base Class"] --> hook["Subclass Hook 호출 (할리우드 원칙 적용)"]
 ```
 
 * **공통 알고리즘 수정의 용이성:** 전체 과정에 새로운 공통 단계를 추가할 경우 Template Method만 수정하면 되므로 변경 여파가 최소화됩니다.
@@ -529,21 +325,15 @@ Template Method에서 하위 클래스가 확장할 수 있는 단계는 크게 
 
 ```python
 @abstractmethod
-def parse(
-    self,
-    raw_data: str,
-):
-    ...
+def parse(self, raw_data: str): ...
 ```
 
 해당 메서드를 구현하지 않으면 알고리즘이 성립되지 않습니다.
 
-```text
-Template Method
-    ↓
-Required Step
-    ↓
-Subclass must implement
+```mermaid
+flowchart TD
+    template[Template Method] --> required[Required Step]
+    required --> subclass[Subclass must implement]
 ```
 
 #### Hook (훅)
@@ -551,29 +341,16 @@ Subclass must implement
 상위 클래스에 기본 동작(또는 빈 동작)이 정의되어 있으며, 하위 클래스에서 필요에 따라 선택적으로 재정의하는 확장 지점입니다.
 
 ```python
-def before_analyze(
-    self,
-    data,
-) -> None:
-
+def before_analyze(self, data) -> None:
     pass
 ```
 
 특정 처리가 필요한 하위 클래스에서만 이를 재정의하여 사용합니다.
 
 ```python
-class AuditedProcessor(
-    DataProcessor
-):
-
-    def before_analyze(
-        self,
-        data,
-    ) -> None:
-
-        audit(
-            data
-        )
+class AuditedProcessor(DataProcessor):
+    def before_analyze(self, data) -> None:
+        audit(data)
 ```
 
 요약하면 다음과 같습니다.
@@ -594,23 +371,20 @@ Hook:
 
 Template Method는 **상속**을 활용합니다.
 
-```text
-Base Algorithm
-      │
-      ├─ common step
-      ├─ abstract step
-      └─ hook
-             ↑
-          subclass
+```mermaid
+flowchart TD
+    base[Base Algorithm] --> common[common step]
+    base --> abstract[abstract step]
+    base --> hook[hook]
+    subclass[subclass] -.구현.-> abstract
+    subclass -.구현.-> hook
 ```
 
 Strategy는 **합성**을 활용합니다.
 
-```text
-Context
-   │
-   ↓
-Strategy
+```mermaid
+flowchart TD
+    Context --> Strategy
 ```
 
 Template Method가 다루는 문제:
@@ -662,15 +436,11 @@ def process(self):
 
 위 구조에서 `create_parser()`가 Factory Method 역할을 담당합니다.
 
-```text
-Template Method
-    │
-    ├─ create_parser()
-    │       ↑
-    │   Factory Method
-    │
-    ├─ parse()
-    └─ save()
+```mermaid
+flowchart TD
+    template[Template Method] --> create["create_parser() (Factory Method)"]
+    template --> parse[parse]
+    template --> save[save]
 ```
 
 즉, Factory Method는 **객체 생성 단계에 특화된 확장 지점**이며, Template Method는 **전체 알고리즘 실행 골격에 대한 확장 구조**입니다.
@@ -681,22 +451,18 @@ Template Method
 
 Template Method는 알고리즘의 execution order(실행 순서)를 상위 클래스가 결정합니다.
 
-```text
-Step A
- ↓
-Step B
- ↓
-Step C
+```mermaid
+flowchart TD
+    stepA[Step A] --> stepB[Step B]
+    stepB --> stepC[Step C]
 ```
 
 State 패턴은 객체의 현재 상태(State)에 따라 수행할 행동을 결정합니다.
 
-```text
-Pending
-   ↓
-Paid
-   ↓
-Shipped
+```mermaid
+flowchart TD
+    pending[Pending] --> paid[Paid]
+    paid --> shipped[Shipped]
 ```
 
 차이점 비교:
@@ -722,14 +488,11 @@ Command
 
 Template Method는 단일 알고리즘 내부에서의 **단계와 실행 순서**를 규정합니다.
 
-```text
-Template
-   ↓
-Step A
-   ↓
-Step B
-   ↓
-Step C
+```mermaid
+flowchart TD
+    template[Template] --> stepA[Step A]
+    stepA --> stepB[Step B]
+    stepB --> stepC[Step C]
 ```
 
 Command 객체의 `execute()` 내부에서 Template Method를 호출하는 방식으로 연계하여 사용할 수 있습니다.
@@ -752,35 +515,22 @@ Python의 `unittest.TestCase` 라이프사이클 관리는 템플릿 메서드 �
 import unittest
 
 
-class UserServiceTest(
-    unittest.TestCase
-):
-
+class UserServiceTest(unittest.TestCase):
     def setUp(self):
-        self.service = (
-            create_service()
-        )
+        self.service = create_service()
 
-    def test_create_user(self):
-        ...
-
+    def test_create_user(self): ...
     def tearDown(self):
         self.service.close()
 ```
 
 프레임워크 내부에서는 다음과 같은 단계를 거쳐 실행을 통제합니다.
 
-```text
-TestCase.run()
-      │
-      ↓
-   setUp()
-      │
-      ↓
- test method
-      │
-      ↓
-  tearDown()
+```mermaid
+flowchart TD
+    run["TestCase.run()"] --> setup["setUp()"]
+    setup --> test["test method"]
+    test --> teardown["tearDown()"]
 ```
 
 `setUp()`은 테스트 메서드 수행 직전에 실행되며, `setUp()`이 성공하면 테스트의 성공/실패 여부와 관계없이 `tearDown()`이 호출되도록 흐름이 관리됩니다. `TestCase.run()` 메서드가 전체 실행 및 결과 수집 흐름을 관장하므로, 개발자는 전체 테스트 라이프사이클을 직접 제어할 필요 없이 필요한 단계만 작성합니다.
@@ -806,40 +556,24 @@ Python 표준 라이브러리의 `BaseHTTPRequestHandler` 역시 프레임워크
 `handle()` 및 `handle_one_request()`가 요청을 수신하여 파싱한 후, 요청된 HTTP Method에 따라 대응하는 `do_*()` 메서드로 디스패치합니다. 사용자는 `handle()`을 직접 오버라이드하기보다 `do_GET()`, `do_POST()` 등의 메서드를 구현합니다.
 
 ```python
-from http.server import (
-    BaseHTTPRequestHandler,
-)
+from http.server import BaseHTTPRequestHandler
 
 
-class MyHandler(
-    BaseHTTPRequestHandler
-):
-
+class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-
-        self.send_response(
-            200
-        )
-
+        self.send_response(200)
         self.end_headers()
-
-        self.wfile.write(
-            b"Hello"
-        )
+        self.wfile.write(b"Hello")
 ```
 
 내부 실행 처리 흐름:
 
-```text
-handle()
-   ↓
-handle_one_request()
-   ↓
-request parsing
-   ↓
-HTTP Method dispatch
-   ↓
-do_GET() / do_POST()
+```mermaid
+flowchart TD
+    handle["handle()"] --> handle_one["handle_one_request()"]
+    handle_one --> parsing[request parsing]
+    parsing --> dispatch[HTTP Method dispatch]
+    dispatch --> do["do_GET() / do_POST()"]
 ```
 
 사용자는 공통 HTTP 파싱 및 분기 알고리즘을 새로 작성하지 않고, 개별 HTTP 요청 처리 단계만 구현하면 됩니다. 이는 **상위 클래스가 제어하는 알고리즘 골격과 하위 클래스의 Hook 연동**이라는 템플릿 메서드의 특성을 잘 보여줍니다.
@@ -853,36 +587,22 @@ Django의 클래스 기반 뷰(CBV) 또한 상위 클래스가 요청 처리 라
 `View` 클래스의 요청 흐름은 `setup()`을 거쳐 `dispatch()`로 이어집니다. `dispatch()`는 HTTP 메서드를 검증한 뒤 `get()`, `post()` 등 해당하는 메서드로 처리를 위임합니다. (`setup()` 재정의 시에는 `super()` 호출이 필수적입니다.)
 
 ```python
-from django.http import (
-    HttpResponse,
-)
+from django.http import HttpResponse
 from django.views import View
 
 
 class HelloView(View):
-
-    def get(
-        self,
-        request,
-        *args,
-        **kwargs,
-    ):
-
-        return HttpResponse(
-            "Hello"
-        )
+    def get(self, request, *args, **kwargs):
+        return HttpResponse("Hello")
 ```
 
 개념적 처리 순서:
 
-```text
-as_view()
-   ↓
-setup()
-   ↓
-dispatch()
-   ↓
-get() / post() / ...
+```mermaid
+flowchart TD
+    as_view["as_view()"] --> setup["setup()"]
+    setup --> dispatch["dispatch()"]
+    dispatch --> handler["get() / post() / ..."]
 ```
 
 아울러 `TemplateView` 등 Generic CBV는 기본적인 라이프사이클 구조를 상속받은 상태에서 `get_context_data()`와 같은 특정 확장 지점만 오버라이드하여 동작을 커스터마이징할 수 있습니다.
@@ -953,22 +673,17 @@ Concrete Classes:
 
 호출 및 오버라이딩 관계:
 
-```text
-DataProcessor.process()
-        │
-        ├─ read() ----------┐
-        │                   │
-        ├─ parse() ---------┤ override
-        │                   │
-        ├─ clean()          │
-        │                   │
-        ├─ before_analyze() ┤ optional hook
-        │                   │
-        ├─ analyze()        │
-        │                   │
-        └─ save()           │
-                            │
-               Csv / Json ──┘
+```mermaid
+flowchart TD
+    process["DataProcessor.process()"] --> read["read()"]
+    process --> parse["parse()"]
+    process --> clean["clean()"]
+    process --> before_analyze["before_analyze()"]
+    process --> analyze["analyze()"]
+    process --> save["save()"]
+    concrete["Csv / Json"] -->|override| read
+    concrete -->|override| parse
+    concrete -.optional hook.-> before_analyze
 ```
 
 하위 클래스는 실행 순서 결정에 관여하지 않습니다.
@@ -989,14 +704,15 @@ import csv
 import io
 import json
 
+
 # -------------------------------------------------------------------
 # 1. Domain Model
 # -------------------------------------------------------------------
-
 @dataclass(frozen=True)
 class Record:
     name: str
     value: int
+
 
 @dataclass(frozen=True)
 class AnalysisResult:
@@ -1004,15 +720,14 @@ class AnalysisResult:
     total: int
     average: float
 
+
 # -------------------------------------------------------------------
 # 2. Abstract Class
 # -------------------------------------------------------------------
-
 class DataProcessor(ABC):
     # ---------------------------------------------------------------
     # Template Method
     # ---------------------------------------------------------------
-
     def process(self, source: str) -> AnalysisResult:
         print("1. 데이터를 읽습니다.")
         raw_data = self.read(source)
@@ -1029,10 +744,10 @@ class DataProcessor(ABC):
         # Optional Hook
         self.after_process(result)
         return result
+
     # -------------------------------------------------------------------
     # 3. Primitive Operations
     # -------------------------------------------------------------------
-
     @abstractmethod
     def read(self, source: str) -> str:
         pass
@@ -1040,10 +755,10 @@ class DataProcessor(ABC):
     @abstractmethod
     def parse(self, raw_data: str) -> list[Record]:
         pass
+
     # -------------------------------------------------------------------
     # 4. Concrete Operations
     # -------------------------------------------------------------------
-
     def clean(self, records: list[Record]) -> list[Record]:
         return [record for record in records if record.value >= 0]
 
@@ -1060,10 +775,10 @@ class DataProcessor(ABC):
             f"total={result.total}, "
             f"average={result.average:.2f}"
         )
+
     # -------------------------------------------------------------------
     # 5. Hooks
     # -------------------------------------------------------------------
-
     def before_analyze(self, records: list[Record]) -> None:
         # 기본 동작 없음 (선택적 재정의용)
         pass
@@ -1072,10 +787,10 @@ class DataProcessor(ABC):
         # 기본 동작 없음 (선택적 재정의용)
         pass
 
+
 # -------------------------------------------------------------------
 # 6. Concrete Class - CSV
 # -------------------------------------------------------------------
-
 class CsvDataProcessor(DataProcessor):
     def read(self, source: str) -> str:
         print("[CSV] 소스를 읽습니다.")
@@ -1085,10 +800,10 @@ class CsvDataProcessor(DataProcessor):
         reader = csv.DictReader(io.StringIO(raw_data))
         return [Record(name=row["name"], value=int(row["value"])) for row in reader]
 
+
 # -------------------------------------------------------------------
 # 7. Concrete Class - JSON
 # -------------------------------------------------------------------
-
 class JsonDataProcessor(DataProcessor):
     def read(self, source: str) -> str:
         print("[JSON] 소스를 읽습니다.")
@@ -1101,25 +816,24 @@ class JsonDataProcessor(DataProcessor):
     def before_analyze(self, records: list[Record]) -> None:
         print("[JSON Hook] " f"{len(records)}개의 " "레코드를 분석합니다.")
 
+
 # -------------------------------------------------------------------
 # 8. Client
 # -------------------------------------------------------------------
-
 def run_processor(processor: DataProcessor, source: str) -> None:
     result = processor.process(source)
     print("결과:", result)
 
+
 # -------------------------------------------------------------------
 # 9. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     csv_source = """name,value
 sword,100
 shield,80
 invalid,-10
 """
-
     json_source = """
 [
     {
@@ -1136,7 +850,6 @@ invalid,-10
     }
 ]
 """
-
     print("=== CSV ===")
     run_processor(CsvDataProcessor(), csv_source)
     print("\n=== JSON ===")
@@ -1146,57 +859,31 @@ invalid,-10
 클라이언트에서는 구현체 종류와 상관없이 템플릿 메서드만을 동일하게 호출합니다.
 
 ```python
-processor.process(
-    source
-)
+processor.process(source)
 ```
 
 CSV 실행 시 호출되는 단계 순서:
 
-```text
-DataProcessor.process()
-       │
-       ↓
-CsvDataProcessor.read()
-       │
-       ↓
-CsvDataProcessor.parse()
-       │
-       ↓
-DataProcessor.clean()
-       │
-       ↓
-DataProcessor.before_analyze()
-       │
-       ↓
-DataProcessor.analyze()
-       │
-       ↓
-DataProcessor.save()
+```mermaid
+flowchart TD
+    process["DataProcessor.process()"] --> read["CsvDataProcessor.read()"]
+    read --> parse["CsvDataProcessor.parse()"]
+    parse --> clean["DataProcessor.clean()"]
+    clean --> before["DataProcessor.before_analyze()"]
+    before --> analyze["DataProcessor.analyze()"]
+    analyze --> save["DataProcessor.save()"]
 ```
 
 JSON 실행 시 호출되는 단계 순서 (Hook 재정의 포함):
 
-```text
-DataProcessor.process()
-       │
-       ↓
-JsonDataProcessor.read()
-       │
-       ↓
-JsonDataProcessor.parse()
-       │
-       ↓
-DataProcessor.clean()
-       │
-       ↓
-JsonDataProcessor.before_analyze()
-       │
-       ↓
-DataProcessor.analyze()
-       │
-       ↓
-DataProcessor.save()
+```mermaid
+flowchart TD
+    process["DataProcessor.process()"] --> read["JsonDataProcessor.read()"]
+    read --> parse["JsonDataProcessor.parse()"]
+    parse --> clean["DataProcessor.clean()"]
+    clean --> before["JsonDataProcessor.before_analyze()"]
+    before --> analyze["DataProcessor.analyze()"]
+    analyze --> save["DataProcessor.save()"]
 ```
 
 모든 하위 클래스는 알고리즘 전체를 제어하는 다음과 같은 코드를 직접 보유하지 않습니다.
@@ -1220,11 +907,7 @@ Template Method의 본래 목적은 전체 알고리즘의 실행 순서를 고�
 만약 하위 클래스에서 다음과 같이 Template Method를 임의로 재정의(Override)할 경우,
 
 ```python
-def process(
-    self,
-    source: str,
-):
-    ...
+def process(self, source: str): ...
 ```
 
 상위 클래스가 보장해야 하는 전체 알고리즘의 제어 규약과 순서가 깨지게 됩니다.
@@ -1238,13 +921,8 @@ from typing import final
 
 
 class DataProcessor(ABC):
-
     @final
-    def process(
-        self,
-        source: str,
-    ) -> AnalysisResult:
-        ...
+    def process(self, source: str) -> AnalysisResult: ...
 ```
 
 이 방식을 통해 Template Method가 고정된 알고리즘 골격임을 코드상에 명확히 나타낼 수 있습니다.
@@ -1257,19 +935,14 @@ class DataProcessor(ABC):
 
 전통적인 객체지향 프로그래밍(OOP)에서는 상속을 활용하여 이 문제를 다룹니다.
 
-```text
-Base Class
-
-    Template Method
-        │
-        ├─ Fixed Step
-        ├─ Abstract Step
-        ├─ Hook
-        └─ Fixed Step
-
-            ↑
-
-        Subclass
+```mermaid
+flowchart TD
+    template[Template Method] --> fixed1[Fixed Step]
+    template --> abstract[Abstract Step]
+    template --> hook[Hook]
+    template --> fixed2[Fixed Step]
+    subclass[Subclass] -.구현.-> abstract
+    subclass -.구현.-> hook
 ```
 
 즉, 고정된 제어 흐름(Control Flow)과 재정의 가능한 연산(Operation)의 결합 방식입니다.
@@ -1359,16 +1032,12 @@ def process[
 
 전체 실행 제어 순서는 `process()` 고차 함수가 통제합니다.
 
-```text
-read
- ↓
-parse
- ↓
-clean
- ↓
-analyze
- ↓
-save
+```mermaid
+flowchart TD
+    read[read] --> parse[parse]
+    parse --> clean[clean]
+    clean --> analyze[analyze]
+    analyze --> save[save]
 ```
 
 가변적인 세부 단계는 함수 타입의 인자로 외부에서 제공받습니다.
@@ -1381,11 +1050,10 @@ save
 
 객체지향 방식에서는 상속 계층을 형성합니다.
 
-```text
-DataProcessor
-     ↑
-     ├─ CsvProcessor
-     └─ JsonProcessor
+```mermaid
+flowchart TD
+    csv[CsvProcessor] --> base[DataProcessor]
+    json[JsonProcessor] --> base
 ```
 
 함수형 관점에서는 필요한 함수 조합을 전달하는 방식으로 표현합니다.
@@ -1410,10 +1078,9 @@ json_processor =
 
 변환 관계:
 
-```text
-Inheritance (상속)
-    ↓
-Parameterization (매개변수화)
+```mermaid
+flowchart TD
+    inheritance["Inheritance (상속)"] --> parameterization["Parameterization (매개변수화)"]
 ```
 
 이를 통해 상속을 사용하지 않고도 **변화하는 단계를 확장 지점으로 분리한다**는 템플릿 메서드의 목적을 달성할 수 있습니다.
@@ -1425,15 +1092,7 @@ Parameterization (매개변수화)
 전달할 단계별 함수 개수가 많아지면 인자 목록이 복잡해질 수 있습니다.
 
 ```python
-process(
-    source,
-    read,
-    parse,
-    clean,
-    analyze,
-    save,
-    ...
-)
+process(source, read, parse, clean, analyze, save, ...)
 ```
 
 관련된 단계들을 하나의 연산 레코드(Operations Record) 구조체로 그룹화합니다.
@@ -1504,10 +1163,7 @@ def process(
 전통적인 Hook 메서드는 상위 클래스에서 빈 상태로 정의됩니다.
 
 ```python
-def before_analyze(
-    self,
-    data,
-):
+def before_analyze(self, data):
     pass
 ```
 
@@ -1524,22 +1180,17 @@ Template 처리 로직:
 
 ```python
 match before_analyze:
-
     case Some(hook):
-        hook(
-            data
-        )
-
+        hook(data)
     case None:
         pass
 ```
 
 개념적 변화:
 
-```text
-Empty virtual method (가상 메서드)
-    ↓
-Optional Function (선택적 함수 인자)
+```mermaid
+flowchart TD
+    empty["Empty virtual method (가상 메서드)"] --> optional["Optional Function (선택적 함수 인자)"]
 ```
 
 선택적 확장 지점이라는 성격이 타입 정의 자체에 명시적으로 드러나게 됩니다.
@@ -1695,31 +1346,22 @@ type CleanData =
 단계별 함수 규약:
 
 ```python
-def clean(
-    data: ParsedData,
-) -> CleanData:
-    ...
+def clean(data: ParsedData) -> CleanData: ...
 ```
 
 분석 단계 함수:
 
 ```python
-def analyze(
-    data: CleanData,
-) -> Result:
-    ...
+def analyze(data: CleanData) -> Result: ...
 ```
 
 `analyze()`에 정제되지 않은 `ParsedData`를 전달할 경우 타입 오류가 발생합니다.
 
-```text
-RawData
-    ↓ parse
-ParsedData
-    ↓ clean
-CleanData
-    ↓ analyze
-Result
+```mermaid
+flowchart TD
+    RawData -->|parse| ParsedData
+    ParsedData -->|clean| CleanData
+    CleanData -->|analyze| Result
 ```
 
 단계 간 전제 조건을 정적 타입 시스템으로 검증할 수 있습니다.
@@ -1730,8 +1372,9 @@ Result
 
 전체 처리 과정의 상태 변화를 다음과 같이 정의합니다.
 
-```text
-Unloaded → Loaded → Parsed → Cleaned → Analyzed → Saved
+```mermaid
+flowchart LR
+    Unloaded --> Loaded --> Parsed --> Cleaned --> Analyzed --> Saved
 ```
 
 각 상태를 독립된 타입으로 선언합니다.
@@ -1758,53 +1401,21 @@ record Process[
 단계별 상태 전이 함수:
 
 ```python
-def read(
-    process:
-        Process[
-            Unloaded,
-            Source,
-        ],
-) -> Process[
-    Loaded,
-    RawData,
-]:
-    ...
+def read(process: Process[Unloaded, Source]) -> Process[Loaded, RawData]: ...
 ```
 
 ```python
-def parse(
-    process:
-        Process[
-            Loaded,
-            RawData,
-        ],
-) -> Process[
-    Parsed,
-    ParsedData,
-]:
-    ...
+def parse(process: Process[Loaded, RawData]) -> Process[Parsed, ParsedData]: ...
 ```
 
 ```python
-def analyze(
-    process:
-        Process[
-            Cleaned,
-            CleanData,
-        ],
-) -> Process[
-    Analyzed,
-    Result,
-]:
-    ...
+def analyze(process: Process[Cleaned, CleanData]) -> Process[Analyzed, Result]: ...
 ```
 
 올바르지 않은 순서로 단계를 호출하면 정적 타입 에러가 발생합니다.
 
 ```python
-analyze(
-    loaded_data
-)
+analyze(loaded_data)
 ```
 
 ```text
@@ -1832,18 +1443,13 @@ pipeline =
 
 파이프라인의 입출력 타입 흐름:
 
-```text
-Source
-  ↓ read
-Raw
-  ↓ parse
-Data
-  ↓ clean
-CleanData
-  ↓ analyze
-Result
-  ↓ save
-Unit
+```mermaid
+flowchart TD
+    Source -->|read| Raw
+    Raw -->|parse| Data
+    Data -->|clean| CleanData
+    CleanData -->|analyze| Result
+    Result -->|save| Unit
 ```
 
 상위 클래스 제어 메서드 기반의 순서 고정이 **함수 합성 파이프라인 구조**로 전환됩니다.
@@ -1863,13 +1469,7 @@ data Step[
 ```
 
 ```python
-pipeline = [
-    ReadStep,
-    ParseStep,
-    CleanStep,
-    AnalyzeStep,
-    SaveStep,
-]
+pipeline = [ReadStep, ParseStep, CleanStep, AnalyzeStep, SaveStep]
 ```
 
 타입 검사기를 통해 각 연결 단계의 입출력 일치 여부를 검증합니다.
@@ -1926,14 +1526,11 @@ Template Method:
 
 두 패턴은 상호 배타적이지 않으며 결합하여 사용 가능합니다.
 
-```text
-Read
- ↓
-Parse
- ↓
-Analyze  (가변 전략 적용)
- ↓
-Save
+```mermaid
+flowchart TD
+    Read --> Parse
+    Parse --> Analyze["Analyze (가변 전략 적용)"]
+    Analyze --> Save
 ```
 
 분석(Analyze) 단계에만 다양한 전략 구현체를 주입받도록 구성할 수 있습니다.
@@ -1958,13 +1555,12 @@ def process(
 
 구조적 합성:
 
-```text
-Template Method
-    │
-    ├─ fixed read
-    ├─ fixed parse
-    ├─ Strategy analyze
-    └─ fixed save
+```mermaid
+flowchart TD
+    template[Template Method] --> read[fixed read]
+    template --> parse[fixed parse]
+    template --> analyze[Strategy analyze]
+    template --> save[fixed save]
 ```
 
 ---
@@ -1992,10 +1588,7 @@ def read(
 ```
 
 ```python
-def parse(
-    raw: Raw,
-) -> Data:
-    ...
+def parse(raw: Raw) -> Data: ...
 ```
 
 ```text
@@ -2181,8 +1774,9 @@ Template Method
 
 자원 처리 알고리즘의 고정된 실행 순서:
 
-```text
-Open Resource → Use Resource → Close Resource
+```mermaid
+flowchart LR
+    open[Open Resource] --> use[Use Resource] --> close[Close Resource]
 ```
 
 실패 여부와 관계없이 자원을 해제해야 하는 구조를 고차 함수로 정의할 수 있습니다 (`bracket`).
@@ -2206,12 +1800,9 @@ def bracket[
 
 기본 자원 관리 골격:
 
-```text
-acquire
-   ↓
-use
-   ↓
-release
+```mermaid
+flowchart TD
+    acquire --> use --> release
 ```
 
 사용자는 자원의 **획득, 사용, 해제 방식**에 관한 구체 로직만 인자로 제공합니다.
@@ -2240,18 +1831,14 @@ trait Resource[
 
 ```python
 with resource():
-
     perform_work()
 ```
 
 내부 라이프사이클 통제:
 
-```text
-Acquire
-   ↓
-Body (작업 수행)
-   ↓
-Release
+```mermaid
+flowchart TD
+    Acquire --> Body["Body (작업 수행)"] --> Release
 ```
 
 호출자는 본문(Body) 로직만 제공하고 라이프사이클 관리는 프레임워크/문법이 담당하므로, 템플릿 메서드의 일반화된 적용례로 볼 수 있습니다.
@@ -2289,10 +1876,9 @@ after_analyze:
 
 전통적 템플릿 메서드에서는 하위 클래스가 상위 클래스의 `protected` 멤버에 직접 접근함으로써 결합도가 높아지는 문제가 존재했습니다.
 
-```text
-Subclass
-    ↓ (직접 접근)
-BaseClass protected fields
+```mermaid
+flowchart TD
+    Subclass -->|직접 접근| BaseClass["BaseClass protected fields"]
 ```
 
 필요한 권한/기능만을 Capability 객체 형태로 전달합니다.
@@ -2415,12 +2001,11 @@ Save: 저장 여부 기록
 
 구조적 관계:
 
-```text
-Fixed Algorithm Program
-        │
-        ├─ Production Interpreter
-        ├─ Test Interpreter
-        └─ Trace Interpreter
+```mermaid
+flowchart TD
+    program[Fixed Algorithm Program] --> prod[Production Interpreter]
+    program --> test[Test Interpreter]
+    program --> trace[Trace Interpreter]
 ```
 
 템플릿 메서드의 **"고정 골격과 가변 구현의 분리"** 개념이 Algebra와 Interpreter 패턴 구조로 상위 추상화된 형태입니다.
@@ -2433,24 +2018,22 @@ Fixed Algorithm Program
 
 일반적인 라이브러리 호출 방식:
 
-```text
-Application Code
-    │
-    ├─ Library A 호출
-    ├─ Library B 호출
-    └─ Library C 호출
+```mermaid
+flowchart TD
+    app[Application Code] --> libA[Library A 호출]
+    app --> libB[Library B 호출]
+    app --> libC[Library C 호출]
 ```
 
 애플리케이션 코드가 전체 실행 흐름을 통제합니다.
 
 Template Method / Framework 방식:
 
-```text
-Framework
-    │
-    ├─ Hook A 호출
-    ├─ User Code 호출
-    └─ Hook B 호출
+```mermaid
+flowchart TD
+    framework[Framework] --> hookA[Hook A 호출]
+    framework --> userCode[User Code 호출]
+    framework --> hookB[Hook B 호출]
 ```
 
 프레임워크가 실행 흐름 통제권을 소유하며, 필요 시점에 사용자 정의 코드를 호출합니다.

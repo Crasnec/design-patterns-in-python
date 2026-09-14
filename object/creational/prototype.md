@@ -40,30 +40,17 @@ goblin = Monster(
     attack=20,
     defense=10,
     skills=["Slash", "Dodge"],
-    resistances={
-        "fire": 0,
-        "ice": 10,
-    },
-    loot_table={
-        "gold": 0.8,
-        "dagger": 0.1,
-    },
+    resistances={"fire": 0, "ice": 10},
+    loot_table={"gold": 0.8, "dagger": 0.1},
 )
-
 elite_goblin = Monster(
     name="엘리트 고블린",
     hp=200,
     attack=40,
     defense=20,
     skills=["Slash", "Dodge"],
-    resistances={
-        "fire": 0,
-        "ice": 10,
-    },
-    loot_table={
-        "gold": 0.8,
-        "dagger": 0.1,
-    },
+    resistances={"fire": 0, "ice": 10},
+    loot_table={"gold": 0.8, "dagger": 0.1},
 )
 ```
 
@@ -73,10 +60,8 @@ elite_goblin = Monster(
 
 ```python
 elite_goblin = goblin
-
 elite_goblin.name = "엘리트 고블린"
 elite_goblin.hp = 200
-
 print(goblin.name)
 # 엘리트 고블린
 ```
@@ -91,10 +76,8 @@ elite_goblin = Monster(
     hp=200,
     attack=goblin.attack,
     defense=goblin.defense,
-
     # 같은 list 객체를 공유
     skills=goblin.skills,
-
     # 같은 dict 객체를 공유
     resistances=goblin.resistances,
     loot_table=goblin.loot_table,
@@ -136,15 +119,9 @@ print(goblin.skills)
 
 ```python
 goblin = Monster(
-    name="고블린",
-    hp=100,
-    attack=20,
-    defense=10,
-    skills=["Slash", "Dodge"],
+    name="고블린", hp=100, attack=20, defense=10, skills=["Slash", "Dodge"]
 )
-
 elite_goblin = goblin.clone()
-
 elite_goblin.name = "엘리트 고블린"
 elite_goblin.hp = 200
 ```
@@ -154,11 +131,7 @@ elite_goblin.hp = 200
 또한 여러 Prototype을 Registry에 등록하여 관리하는 구조도 가능합니다.
 
 ```python
-registry.register(
-    "goblin",
-    goblin_prototype,
-)
-
+registry.register("goblin", goblin_prototype)
 monster = registry.create("goblin")
 ```
 
@@ -223,9 +196,7 @@ monster3 = deepcopy(monster)
 
 ```python
 class Monster:
-
-    def __deepcopy__(self, memo):
-        ...
+    def __deepcopy__(self, memo): ...
 ```
 
 이는 **복제 정책을 객체 내부에 캡슐화할 수 있다**는 점에서 Prototype 패턴의 메커니즘과 직접 연결됩니다.
@@ -239,11 +210,7 @@ Python 3.13에 추가된 `copy` 모듈의 `copy.replace()`는 기존 객체를 �
 ```python
 from copy import replace
 
-elite = replace(
-    goblin,
-    name="엘리트 고블린",
-    hp=200,
-)
+elite = replace(goblin, name="엘리트 고블린", hp=200)
 ```
 
 이는 기존에 **`clone()` 호출 후 필드를 수정하던 단계별 흐름**을, **`replace(changes)`를 통해 변경 사항이 적용된 새로운 변형 객체를 직접 얻는 방식**으로 단순화한 접근 방식입니다.
@@ -267,17 +234,8 @@ class Monster:
     attack: int
 
 
-goblin = Monster(
-    name="고블린",
-    hp=100,
-    attack=20,
-)
-
-elite = replace(
-    goblin,
-    name="엘리트 고블린",
-    hp=200,
-)
+goblin = Monster(name="고블린", hp=100, attack=20)
+elite = replace(goblin, name="엘리트 고블린", hp=200)
 ```
 
 ---
@@ -289,11 +247,7 @@ elite = replace(
 `evolve()`는 기존 값을 기반으로 새 인스턴스를 생성하고 변경값을 적용하며, 이 과정에서 `__init__()` 및 기존 validator들을 그대로 활용합니다.
 
 ```python
-elite = attrs.evolve(
-    goblin,
-    name="엘리트 고블린",
-    hp=200,
-)
+elite = attrs.evolve(goblin, name="엘리트 고블린", hp=200)
 ```
 
 이 기법은 전통적인 Prototype의 `clone()` 방식보다 **copy-with-update** 형태에 가까운 현대적 변형 구조라고 볼 수 있습니다.
@@ -342,19 +296,19 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Self
 
+
 # -------------------------------------------------------------------
 # 1. Prototype 인터페이스
 # -------------------------------------------------------------------
-
 class Prototype(ABC):
     @abstractmethod
     def clone(self) -> Self:
         pass
 
+
 # -------------------------------------------------------------------
 # 2. 구체 Prototype
 # -------------------------------------------------------------------
-
 @dataclass
 class Monster(Prototype):
     name: str
@@ -379,10 +333,10 @@ class Monster(Prototype):
         print(f"저항: {self.resistances}")
         print(f"드롭 테이블: {self.loot_table}")
 
+
 # -------------------------------------------------------------------
 # 3. Prototype Registry
 # -------------------------------------------------------------------
-
 class PrototypeRegistry:
     def __init__(self):
         self._prototypes: dict[str, Monster] = {}
@@ -396,10 +350,10 @@ class PrototypeRegistry:
             raise KeyError(f"등록되지 않은 Prototype입니다: {name}")
         return prototype.clone()
 
+
 # -------------------------------------------------------------------
 # 4. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     registry = PrototypeRegistry()
     goblin_prototype = Monster(
@@ -487,14 +441,7 @@ immutable record Monster:
 이 상태에서 객체를 생성합니다.
 
 ```python
-goblin = Monster(
-    name="고블린",
-    hp=100,
-    skills=[
-        Slash,
-        Dodge,
-    ],
-)
+goblin = Monster(name="고블린", hp=100, skills=[Slash, Dodge])
 ```
 
 그리고 다른 변수에 동일한 값을 바인딩합니다.
@@ -515,10 +462,9 @@ another = goblin
 
 전통적인 Prototype 패턴에서는 이를 다음과 같이 처리합니다.
 
-```text
-clone()
-    ↓
-필드 변경
+```mermaid
+flowchart TD
+    clone["clone()"] --> mutate[필드 변경]
 ```
 
 반면 불변 레코드를 지원하는 언어에서는 **기존 값을 기반으로 새로운 값을 직접 정의하여 생성**할 수 있습니다.
@@ -562,12 +508,7 @@ elite_goblin : Monster
 다음과 같은 스킬 목록이 정의되어 있다고 가정해 보겠습니다.
 
 ```python
-skills = Vector[
-    Slash,
-    Dodge,
-    Hide,
-    Steal,
-]
+skills = Vector[Slash, Dodge, Hide, Steal]
 ```
 
 엘리트 고블린 객체에 새로운 스킬을 추가합니다.
@@ -581,20 +522,14 @@ elite = goblin with {
 
 개념상 전체 리스트를 새로 복사하는 대신, 변경되지 않은 기존 데이터 구조를 안전하게 재사용합니다.
 
-```text
-goblin.skills
-     │
-     ├── Slash
-     ├── Dodge
-     ├── Hide
-     └── Steal
-          ↑
-          │
-     shared structure
-          │
-elite.skills
-     │
-     └── PowerSlash 추가
+```mermaid
+flowchart TD
+    goblinSkills[goblin.skills] --> slash[Slash]
+    goblinSkills --> dodge[Dodge]
+    goblinSkills --> hide[Hide]
+    goblinSkills --> steal[Steal]
+    eliteSkills[elite.skills] -->|shared structure| goblinSkills
+    eliteSkills --> powerslash[PowerSlash 추가]
 ```
 
 따라서 전통적인 깊은 복사처럼 **전체 객체 그래프를 통째로 복제하는 대신, 변경이 일어난 경로만 새로 생성하고 나머지 구조는 안전하게 공유**하는 방식으로 처리할 수 있습니다.
@@ -647,20 +582,13 @@ damage_lens =
 이를 사용하여 새로운 값을 설정할 수 있습니다.
 
 ```python
-upgraded = damage_lens.set(
-    hero,
-    100,
-)
+upgraded = damage_lens.set(hero, 100)
 ```
 
 또는 기존 값에 함수를 적용하여 변경할 수도 있습니다.
 
 ```python
-upgraded = damage_lens.modify(
-    hero,
-    lambda damage:
-        damage * 2,
-)
+upgraded = damage_lens.modify(hero, lambda damage: damage * 2)
 ```
 
 이처럼 Lens 개념은 기존의 **"객체 깊은 복사, 중첩 필드 탐색, 대상 위치 값 변경"으로 이어지던 단계를 "특정 데이터 경로에 대한 합성 가능한 불변 업데이트"라는 형태**로 추상화해 줍니다.
@@ -673,8 +601,7 @@ upgraded = damage_lens.modify(
 
 ```python
 class Prototype:
-    def clone(self):
-        ...
+    def clone(self): ...
 ```
 
 현대적인 타입 시스템에서는 복제 가능성(Capability)이라는 개념 자체를 별도의 타입 제약으로 선언할 수 있습니다.
@@ -830,14 +757,8 @@ record Monster:
 이러한 타입 명시를 기반으로 복제 함수는 다음과 같이 명확하게 작성될 수 있습니다.
 
 ```python
-def clone(
-    monster: Monster,
-) -> Monster:
-
-    return Monster(
-        stats=clone(monster.stats),
-        metadata=monster.metadata,
-    )
+def clone(monster: Monster) -> Monster:
+    return Monster(stats=clone(monster.stats), metadata=monster.metadata)
 ```
 
 이 접근법은 기존의 모호했던 **"얕은 복사인가 깊은 복사인가"라는 이분법적 논의**에서 벗어나, "각 필드가 가지는 소유권과 공유 가능성"을 타입 자체로 명확하게 표현할 수 있게 해줍니다.

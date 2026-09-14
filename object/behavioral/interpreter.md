@@ -28,26 +28,21 @@
 ```python
 def evaluate(expression, context: dict[str, int]) -> int:
     kind = expression[0]
-
     if kind == "number":
         return expression[1]
-
     elif kind == "variable":
         name = expression[1]
         if name not in context:
             raise ValueError(f"정의되지 않은 변수입니다: {name}")
         return context[name]
-
     elif kind == "add":
         left = evaluate(expression[1], context)
         right = evaluate(expression[2], context)
         return left + right
-
     elif kind == "multiply":
         left = evaluate(expression[1], context)
         right = evaluate(expression[2], context)
         return left * right
-
     raise ValueError(f"알 수 없는 표현식입니다: {kind}")
 ```
 
@@ -119,11 +114,7 @@ elif kind == "if":
 이로 인해 다음과 같이 구조적으로 잘못된 표현식도 쉽게 생성될 수 있습니다.
 
 ```python
-bad_expression = (
-    "add",
-    "hello",
-    123,
-)
+bad_expression = ("add", "hello", 123)
 ```
 
 이러한 형태는 해석 함수가 실제로 실행되기 전까지 구조적 오류를 발견하기 어렵습니다.
@@ -178,7 +169,6 @@ flowchart TD
 
 ```python
 class Expression(ABC):
-
     @abstractmethod
     def interpret(self, context: dict[str, int]) -> int:
         pass
@@ -188,7 +178,6 @@ class Expression(ABC):
 
 ```python
 class NumberExpression(Expression):
-
     def __init__(self, value: int):
         self._value = value
 
@@ -200,7 +189,6 @@ class NumberExpression(Expression):
 
 ```python
 class VariableExpression(Expression):
-
     def __init__(self, name: str):
         self._name = name
 
@@ -212,7 +200,6 @@ class VariableExpression(Expression):
 
 ```python
 class AddExpression(Expression):
-
     def __init__(self, left: Expression, right: Expression):
         self._left = left
         self._right = right
@@ -225,7 +212,6 @@ class AddExpression(Expression):
 
 ```python
 class MultiplyExpression(Expression):
-
     def __init__(self, left: Expression, right: Expression):
         self._left = left
         self._right = right
@@ -239,21 +225,18 @@ class MultiplyExpression(Expression):
 ```python
 expression = AddExpression(
     NumberExpression(10),
-    MultiplyExpression(
-        VariableExpression("x"),
-        NumberExpression(2),
-    ),
+    MultiplyExpression(VariableExpression("x"), NumberExpression(2)),
 )
 ```
 
 생성된 객체 트리의 구조는 다음과 같습니다.
 
-```text
-        Add
-       /   \
-     10   Multiply
-           /    \
-          x      2
+```mermaid
+flowchart TD
+    add[Add] --> num1[10]
+    add --> multiply[Multiply]
+    multiply --> var1[x]
+    multiply --> num2[2]
 ```
 
 해석할 때 Context(문맥 정보)를 함께 전달합니다.
@@ -274,15 +257,12 @@ flowchart LR
 
 클라이언트가 전체 트리를 직접 순회하지 않아도 재귀적으로 해석이 진행됩니다.
 
-```text
-Add.interpret()
-     │
-     ├─ Number.interpret()
-     │
-     └─ Multiply.interpret()
-             │
-             ├─ Variable.interpret()
-             └─ Number.interpret()
+```mermaid
+flowchart TD
+    add["Add.interpret()"] --> num1["Number.interpret()"]
+    add --> multiply["Multiply.interpret()"]
+    multiply --> var1["Variable.interpret()"]
+    multiply --> num2["Number.interpret()"]
 ```
 
 인터프리터 패턴의 핵심은 단순히 `if-elif` 문을 여러 클래스로 분산시키는 것에 그치지 않습니다.
@@ -316,16 +296,12 @@ Add.interpret()
 * **문법 확장에는 유리, 연산 확장에는 불리:** 새로운 표현식 단위를 추가하기는 쉽지만, 기존 표현식들에 새로운 행위(기능)를 일괄 추가하는 작업은 까다롭습니다.
 * **Parser와 Interpreter의 역할 분리:** Parser는 텍스트를 문법 구조(Tree)로 변환하고, Interpreter는 해당 구조에 의미를 부여하여 실행합니다.
 
-```text
-Source Text
-    ↓
-  Parser
-    ↓
-Expression Tree
-    ↓
- Interpreter
-    ↓
-  Result
+```mermaid
+flowchart TD
+    source[Source Text] --> parser[Parser]
+    parser --> tree[Expression Tree]
+    tree --> interpreter[Interpreter]
+    interpreter --> result[Result]
 ```
 
 * **반복 실행 환경의 최적화:** 표현식 트리를 매번 해석하는 대신, 실행 성능이 중요한 경우 중간 표현식이나 바이트코드로 미리 컴파일하여 재사용하는 전략을 취할 수 있습니다.
@@ -376,14 +352,11 @@ MultiplyExpression
 
 구조적인 측면에서 보면 컴포지트 패턴(Composite Pattern)과 유사합니다.
 
-```text
-Expression
-   │
-   ├─ Leaf-like Terminal
-   │
-   └─ Composite-like Nonterminal
-            │
-            └─ Expression*
+```mermaid
+flowchart TD
+    expression[Expression] --> terminal[Leaf-like Terminal]
+    expression --> nonterminal[Composite-like Nonterminal]
+    nonterminal --> children["Expression*"]
 ```
 
 차이점은 컴포지트 패턴이 **'부분과 전체의 관계를 동일시하는 구조'** 자체에 집중한다면, 인터프리터 패턴은 '각 노드가 갖는 문법적 의미의 해석(Behavior)'에 초점을 맞춘다는 점입니다.
@@ -394,25 +367,20 @@ Expression
 
 인터프리터 패턴에서는 비즈니스 연산이 각 Expression 클래스 내부(`interpret()`)에 분산되어 위치합니다.
 
-```text
-NumberExpression
-    interpret()
-
-AddExpression
-    interpret()
-
-MultiplyExpression
-    interpret()
+```mermaid
+flowchart TD
+    number[NumberExpression] --> number_interpret["interpret()"]
+    add[AddExpression] --> add_interpret["interpret()"]
+    multiply[MultiplyExpression] --> multiply_interpret["interpret()"]
 ```
 
 방문자 패턴(Visitor Pattern)은 연산을 별도 Visitor로 옮깁니다. 다만 Visitor는 지원하는 노드 종류와 필드를 알아야 하므로 두 구조의 의존성이 사라지는 것은 아닙니다.
 
-```text
-Expression Tree
-    ↓
-EvaluationVisitor
-PrettyPrintVisitor
-TypeCheckVisitor
+```mermaid
+flowchart TD
+    tree[Expression Tree] --> eval[EvaluationVisitor]
+    tree --> pretty[PrettyPrintVisitor]
+    tree --> typecheck[TypeCheckVisitor]
 ```
 
 따라서 다음과 같은 설계 선택의 기준이 적용됩니다.
@@ -478,25 +446,21 @@ print(ast.dump(tree, indent=4))
 
 개념적 구조:
 
-```text
-Expression
-   ↓
-BinOp(+)
-   │
-   ├─ Constant(10)
-   │
-   └─ BinOp(*)
-         │
-         ├─ Name(x)
-         └─ Constant(2)
+```mermaid
+flowchart TD
+    expression[Expression] --> binop_add["BinOp(+)"]
+    binop_add --> const1["Constant(10)"]
+    binop_add --> binop_mul["BinOp(*)"]
+    binop_mul --> name1["Name(x)"]
+    binop_mul --> const2["Constant(2)"]
 ```
 
 이는 우리가 앞서 구현한 구조와 매우 유사한 **재귀적 문법 트리 구조**입니다.
 
-```text
-AddExpression
-    ├─ NumberExpression
-    └─ MultiplyExpression
+```mermaid
+flowchart TD
+    add[AddExpression] --> number[NumberExpression]
+    add --> multiply[MultiplyExpression]
 ```
 
 파이썬 내부 엔진은 단순 GoF `interpret()` 메서드 호출보다 훨씬 고도화된 컴파일러 및 가상 머신 구조를 이용하지만, 문법을 타입화된 객체 트리를 통해 다룬다는 점에서 인터프리터 개념을 가장 잘 보여주는 사례입니다.
@@ -532,16 +496,12 @@ result = pattern.fullmatch("Player100")
 
 개념적 평가 흐름:
 
-```text
-Regular Expression Source
-        ↓
-     compile
-        ↓
-Compiled Pattern Object
-        ↓
-      match
-        ↓
-     Result
+```mermaid
+flowchart TD
+    source[Regular Expression Source] --> compile[compile]
+    compile --> pattern[Compiled Pattern Object]
+    pattern --> match[match]
+    match --> result[Result]
 ```
 
 실제 내부 구현은 성능에 최적화된 바이트코드 엔진으로 작동하지만, **특정 언어 규칙을 해석 가능한 객체 표현으로 변환한 후 입력 데이터에 대해 의미를 평가한다는 본질**은 구문과 실행을 분리한다는 점에서 인터프리터와 비교할 수 있습니다. 각 노드가 `interpret()`를 갖는 GoF 구현과 같은 구조는 아닙니다.
@@ -579,16 +539,12 @@ Context 전달 및 평가:
 
 개념적 프로세스:
 
-```text
-Template Source
-      ↓
-    Parse
-      ↓
-Template Representation (Tree)
-      ↓
- Render(Context)
-      ↓
- Output Text
+```mermaid
+flowchart TD
+    source[Template Source] --> parse[Parse]
+    parse --> tree["Template Representation (Tree)"]
+    tree --> render["Render(Context)"]
+    render --> output[Output Text]
 ```
 
 Jinja는 실제 구문 해석 시 컴파일 단계를 거치는 고도화된 템플릿 엔진이지만, **도메인 전용 언어 구문과 실행 Context를 분리하여 평가한다**는 측면에서 구문과 실행 환경을 분리하는 유사 설계로 볼 수 있습니다.
@@ -649,36 +605,25 @@ classDiagram
 
 역할별 분류:
 
-```text
-Abstract Expression
-    Expression
-
-Terminal Expressions
-    NumberExpression
-    VariableExpression
-
-Nonterminal Expressions
-    AddExpression
-    MultiplyExpression
-
-Context
-    변수 bindings 및 외부 실행 환경 데이터
-
-Client
-    Expression Tree를 조립하고 interpret()를 최초 호출하는 주체
+```mermaid
+flowchart TD
+    abstract[Abstract Expression] --> expression[Expression]
+    terminal[Terminal Expressions] --> number[NumberExpression]
+    terminal --> variable[VariableExpression]
+    nonterminal[Nonterminal Expressions] --> add[AddExpression]
+    nonterminal --> multiply[MultiplyExpression]
+    context[Context] --> context_desc["변수 bindings 및 외부 실행 환경 데이터"]
+    client[Client] --> client_desc["Expression Tree를 조립하고 interpret()를 최초 호출하는 주체"]
 ```
 
 핵심 재귀 구조:
 
-```text
-Expression
-   │
-   ├─ Terminal
-   │
-   └─ Nonterminal
-          │
-          ├─ Expression
-          └─ Expression
+```mermaid
+flowchart TD
+    expression[Expression] --> terminal[Terminal]
+    expression --> nonterminal[Nonterminal]
+    nonterminal --> child1[Expression]
+    nonterminal --> child2[Expression]
 ```
 
 ---
@@ -693,10 +638,10 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Mapping
 
+
 # -------------------------------------------------------------------
 # 1. Context (문맥 정보)
 # -------------------------------------------------------------------
-
 @dataclass(frozen=True)
 class Context:
     variables: Mapping[str, int]
@@ -712,19 +657,19 @@ class Context:
             raise ValueError(f"정의되지 않은 변수입니다: {name}")
         return self.variables[name]
 
+
 # -------------------------------------------------------------------
 # 2. Abstract Expression (추상 표현식 인터페이스)
 # -------------------------------------------------------------------
-
 class Expression(ABC):
     @abstractmethod
     def interpret(self, context: Context) -> int:
         pass
 
+
 # -------------------------------------------------------------------
 # 3. Terminal Expression - Number (숫자)
 # -------------------------------------------------------------------
-
 @dataclass(frozen=True)
 class NumberExpression(Expression):
     value: int
@@ -736,10 +681,10 @@ class NumberExpression(Expression):
     def interpret(self, context: Context) -> int:
         return self.value
 
+
 # -------------------------------------------------------------------
 # 4. Terminal Expression - Variable (변수)
 # -------------------------------------------------------------------
-
 @dataclass(frozen=True)
 class VariableExpression(Expression):
     name: str
@@ -747,10 +692,10 @@ class VariableExpression(Expression):
     def interpret(self, context: Context) -> int:
         return context.get(self.name)
 
+
 # -------------------------------------------------------------------
 # 5. Nonterminal Expression - Add (덧셈)
 # -------------------------------------------------------------------
-
 @dataclass(frozen=True)
 class AddExpression(Expression):
     left: Expression
@@ -761,10 +706,10 @@ class AddExpression(Expression):
         right_value = self.right.interpret(context)
         return left_value + right_value
 
+
 # -------------------------------------------------------------------
 # 6. Nonterminal Expression - Multiply (곱셈)
 # -------------------------------------------------------------------
-
 @dataclass(frozen=True)
 class MultiplyExpression(Expression):
     left: Expression
@@ -775,10 +720,10 @@ class MultiplyExpression(Expression):
         right_value = self.right.interpret(context)
         return left_value * right_value
 
+
 # -------------------------------------------------------------------
 # 7. Client (클라이언트 및 트리를 빌드하는 함수)
 # -------------------------------------------------------------------
-
 def build_expression() -> Expression:
     # 10 + x * 2 표현식 생성
     return AddExpression(
@@ -786,10 +731,10 @@ def build_expression() -> Expression:
         MultiplyExpression(VariableExpression("x"), NumberExpression(2)),
     )
 
+
 # -------------------------------------------------------------------
 # 8. 실행 예시
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     expression = build_expression()
     context = Context(variables={"x": 5})
@@ -820,42 +765,29 @@ if __name__ == "__main__":
 
 생성된 객체 트리 구조:
 
-```text
-AddExpression
-    │
-    ├─ NumberExpression(10)
-    │
-    └─ MultiplyExpression
-            │
-            ├─ VariableExpression("x")
-            │
-            └─ NumberExpression(2)
+```mermaid
+flowchart TD
+    add[AddExpression] --> num1["NumberExpression(10)"]
+    add --> multiply[MultiplyExpression]
+    multiply --> var1["VariableExpression(\"x\")"]
+    multiply --> num2["NumberExpression(2)"]
 ```
 
 해석 진행 단계(재귀 평가 과정):
 
-```text
-Add
- │
- ├─ Number(10)
- │      ↓
- │      10
- │
- └─ Multiply
-        │
-        ├─ Variable("x")
-        │      ↓ (Context 조회)
-        │      5
-        │
-        └─ Number(2)
-               ↓
-               2
-
-Multiply 연산:
-    5 × 2 = 10
-
-Add 연산:
-    10 + 10 = 20
+```mermaid
+flowchart TD
+    add[Add] --> num1["Number(10)"]
+    num1 --> num1_val[10]
+    add --> multiply[Multiply]
+    multiply --> var1["Variable(\"x\")"]
+    var1 -->|"Context 조회"| var1_val[5]
+    multiply --> num2["Number(2)"]
+    num2 --> num2_val[2]
+    var1_val --> multiply_result["Multiply 연산: 5 × 2 = 10"]
+    num2_val --> multiply_result
+    num1_val --> add_result["Add 연산: 10 + 10 = 20"]
+    multiply_result --> add_result
 ```
 
 만약 새로운 **뺄셈(Subtract)** 문법을 추가하려면 기존 클래스를 수정할 필요 없이 새 클래스를 정의하면 됩니다.
@@ -873,10 +805,7 @@ class SubtractExpression(Expression):
 사용 예시:
 
 ```python
-expression = SubtractExpression(
-    NumberExpression(100),
-    VariableExpression("x"),
-)
+expression = SubtractExpression(NumberExpression(100), VariableExpression("x"))
 print(expression.interpret(Context(variables={"x": 5})))
 ```
 
@@ -913,11 +842,11 @@ CallExpression
 
 이제 같은 식을 화면에 표시하거나, 변수 이름을 수집하거나, 반복 실행에 적합한 형태로 바꾸어야 한다고 가정합니다. 이때 핵심 질문은 **문법의 구조를 유지하면서 여러 해석을 어떻게 추가할 것인가**입니다.
 
-```text
-같은 산술식
-    ├─ 변수 환경을 받아 값 계산
-    ├─ 괄호를 포함한 문자열 생성
-    └─ 다른 실행 표현으로 변환
+```mermaid
+flowchart TD
+    expr[같은 산술식] --> eval[변수 환경을 받아 값 계산]
+    expr --> print[괄호를 포함한 문자열 생성]
+    expr --> convert[다른 실행 표현으로 변환]
 ```
 
 이 부록에서는 재귀적 ADT, GADT, 고차 함수, 타입클래스와 효과 처리를 지원하는 **가상의 Python 스타일 문법**을 사용합니다. `eval_expr`는 설명용 평가 함수이며 Python 내장 `eval()`과는 관계없습니다.
@@ -1016,10 +945,9 @@ def eval_expr(expr: Expr, env: Environment) -> Result[Int, EvalError]:
 
 가상 연산자 `?`는 `Ok`에서 값을 꺼내고 `Err`이면 현재 함수에서 즉시 그 오류를 반환합니다. 위 코드는 왼쪽을 먼저 평가하므로 왼쪽에서 실패하면 오른쪽은 실행하지 않습니다.
 
-```text
-Add(Number(10), Variable("x")) + 빈 환경
-                     ↓
-          Err(UndefinedVariable("x"))
+```mermaid
+flowchart TD
+    input["Add(Number(10), Variable(\"x\")) + 빈 환경"] --> output["Err(UndefinedVariable(\"x\"))"]
 ```
 
 나눗셈을 추가한다면 `DivisionByZero` 같은 오류 대안을 함께 정의할 수 있습니다. 결과형은 예상한 실패를 표현하는 계약이며, 계산의 종료나 메모리 사용량까지 보장하지는 않습니다.
@@ -1060,7 +988,6 @@ value = fold_expr(
     add=lambda a, b: a + b,
     multiply=lambda a, b: a * b,
 )
-
 # 같은 구조를 문자열로 표현
 text = fold_expr(
     expression,
@@ -1137,8 +1064,13 @@ def eval_typed[T](expr: TypedExpr[T]) -> T:
 
 본문은 트리를 직접 조립했습니다. 문자열 입력을 지원하려면 다음 단계를 추가합니다.
 
-```text
-문자열 → 토큰 → RawExpr → 타입 검사 → TypedExpr[T] → 평가 결과
+```mermaid
+flowchart LR
+    str[문자열] --> token[토큰]
+    token --> raw[RawExpr]
+    raw --> typecheck[타입 검사]
+    typecheck --> typed["TypedExpr[T]"]
+    typed --> result[평가 결과]
 ```
 
 Parser는 괄호와 연산자 우선순위에 따라 트리를 만듭니다. 타입 검사기는 그 트리의 피연산자 조합이 언어 규칙에 맞는지 확인합니다.
@@ -1251,21 +1183,19 @@ data ScriptOp[Next] =
 
 같은 식을 여러 환경에서 평가할 때 노드 순회가 측정된 병목이라면, 식을 다른 실행 표현으로 바꾸어 재사용할 수 있습니다.
 
-```text
-10 + x * 2
-    ↓ 컴파일
-PUSH 10
-LOAD x
-PUSH 2
-MUL
-ADD
+```mermaid
+flowchart TD
+    expr["10 + x * 2"] -->|컴파일| i1["PUSH 10"]
+    i1 --> i2["LOAD x"]
+    i2 --> i3["PUSH 2"]
+    i3 --> i4[MUL]
+    i4 --> i5[ADD]
 ```
 
 인터프리터가 주어진 환경에서 값을 계산한다면 컴파일러는 이후 실행할 코드를 만듭니다.
 
 ```python
 executable = compile_expr(expression)
-
 for env in environments:
     result = executable.run(env)
 ```
@@ -1274,8 +1204,9 @@ for env in environments:
 
 환경과 무관한 부분은 먼저 계산할 수도 있습니다.
 
-```text
-(10 + 20) * x → 30 * x
+```mermaid
+flowchart LR
+    before["(10 + 20) * x"] --> after["30 * x"]
 ```
 
 이는 상수 접기(Constant Folding)의 예입니다. 부분 평가(Partial Evaluation)는 더 일반적으로 미리 알려진 입력에 대해 프로그램을 특수화합니다. 미리 계산할 부분이 순수해야 하고, 오류 발생 시점이나 단락 평가를 바꾸지 않도록 해야 합니다. 최적화는 새로운 의미를 만드는 작업이 아니라 기존 의미를 보존하는 변환입니다.

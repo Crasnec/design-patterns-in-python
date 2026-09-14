@@ -19,30 +19,18 @@
 
 ```python
 class FileDataSource:
-
-    def write(
-        self,
-        data: bytes,
-    ) -> None:
+    def write(self, data: bytes) -> None:
         print("파일에 데이터를 저장합니다.")
 
 
 class CompressedFileDataSource(FileDataSource):
-
-    def write(
-        self,
-        data: bytes,
-    ) -> None:
+    def write(self, data: bytes) -> None:
         compressed = compress(data)
         super().write(compressed)
 
 
 class EncodedFileDataSource(FileDataSource):
-
-    def write(
-        self,
-        data: bytes,
-    ) -> None:
+    def write(self, data: bytes) -> None:
         encoded = encode(data)
         super().write(encoded)
 ```
@@ -51,11 +39,7 @@ class EncodedFileDataSource(FileDataSource):
 
 ```python
 class CompressedEncodedFileDataSource(FileDataSource):
-
-    def write(
-        self,
-        data: bytes,
-    ) -> None:
+    def write(self, data: bytes) -> None:
         compressed = compress(data)
         encoded = encode(compressed)
         super().write(encoded)
@@ -78,7 +62,6 @@ class CompressedEncodedFileDataSource(FileDataSource):
 
 ```python
 class BadFileDataSource:
-
     def __init__(
         self,
         path: str,
@@ -91,23 +74,14 @@ class BadFileDataSource:
         self.encode = encode
         self.encrypt = encrypt
 
-    def write(
-        self,
-        data: bytes,
-    ) -> None:
+    def write(self, data: bytes) -> None:
         if self.compress:
             data = compress(data)
-
         if self.encode:
             data = encode(data)
-
         if self.encrypt:
             data = encrypt(data)
-
-        with open(
-            self.path,
-            "wb",
-        ) as file:
+        with open(self.path, "wb") as file:
             file.write(data)
 ```
 
@@ -137,12 +111,8 @@ class BadFileDataSource:
 
 ```python
 class DataSource(ABC):
-
     @abstractmethod
-    def write(
-        self,
-        data: bytes,
-    ) -> None:
+    def write(self, data: bytes) -> None:
         pass
 
     @abstractmethod
@@ -154,32 +124,18 @@ class DataSource(ABC):
 
 ```python
 class FileDataSource(DataSource):
-
-    def write(
-        self,
-        data: bytes,
-    ) -> None:
-        ...
-
-    def read(self) -> bytes:
-        ...
+    def write(self, data: bytes) -> None: ...
+    def read(self) -> bytes: ...
 ```
 
 Decorator 역시 동일한 `DataSource` 인터페이스를 구현합니다.
 
 ```python
 class DataSourceDecorator(DataSource):
-
-    def __init__(
-        self,
-        wrapped: DataSource,
-    ):
+    def __init__(self, wrapped: DataSource):
         self._wrapped = wrapped
 
-    def write(
-        self,
-        data: bytes,
-    ) -> None:
+    def write(self, data: bytes) -> None:
         self._wrapped.write(data)
 
     def read(self) -> bytes:
@@ -190,11 +146,7 @@ class DataSourceDecorator(DataSource):
 
 ```python
 class CompressionDecorator(DataSourceDecorator):
-
-    def write(
-        self,
-        data: bytes,
-    ) -> None:
+    def write(self, data: bytes) -> None:
         compressed = compress(data)
         self._wrapped.write(compressed)
 
@@ -207,11 +159,7 @@ class CompressionDecorator(DataSourceDecorator):
 
 ```python
 class Base64Decorator(DataSourceDecorator):
-
-    def write(
-        self,
-        data: bytes,
-    ) -> None:
+    def write(self, data: bytes) -> None:
         encoded = encode(data)
         self._wrapped.write(encoded)
 
@@ -223,11 +171,7 @@ class Base64Decorator(DataSourceDecorator):
 이제 필요한 기능을 객체 조합으로 구성할 수 있습니다.
 
 ```python
-source = CompressionDecorator(
-    Base64Decorator(
-        FileDataSource("data.bin")
-    )
-)
+source = CompressionDecorator(Base64Decorator(FileDataSource("data.bin")))
 ```
 
 구조는 다음과 같습니다.
@@ -255,19 +199,10 @@ data = source.read()
 
 ```python
 plain = FileDataSource("plain.bin")
-
-compressed = CompressionDecorator(
-    FileDataSource("compressed.bin")
-)
-
-encoded = Base64Decorator(
-    FileDataSource("encoded.bin")
-)
-
+compressed = CompressionDecorator(FileDataSource("compressed.bin"))
+encoded = Base64Decorator(FileDataSource("encoded.bin"))
 compressed_and_encoded = CompressionDecorator(
-    Base64Decorator(
-        FileDataSource("data.bin")
-    )
+    Base64Decorator(FileDataSource("data.bin"))
 )
 ```
 
@@ -323,15 +258,14 @@ Python에서 "Decorator"라는 용어는 언어 기능으로도 사용됩니다.
 
 ```python
 @some_decorator
-def function():
-    ...
+def function(): ...
 ```
 
 이 문법은 본질적으로 다음과 같습니다.
 
 ```python
-def function():
-    ...
+def function(): ...
+
 
 function = some_decorator(function)
 ```
@@ -373,39 +307,22 @@ Starlette 공식 문서에서는 ASGI middleware가 다른 ASGI application을 �
 
 ```python
 class Middleware:
-
-    def __init__(
-        self,
-        app,
-    ):
+    def __init__(self, app):
         self.app = app
 
-    async def __call__(
-        self,
-        scope,
-        receive,
-        send,
-    ):
+    async def __call__(self, scope, receive, send):
         # 추가 동작
-        await self.app(
-            scope,
-            receive,
-            send,
-        )
+        await self.app(scope, receive, send)
 ```
 
 여러 Middleware를 겹겹이 적용할 수 있습니다.
 
-```text
-ServerErrorMiddleware
-        ↓
-TrustedHostMiddleware
-        ↓
-HTTPSRedirectMiddleware
-        ↓
-ExceptionMiddleware
-        ↓
-Application
+```mermaid
+flowchart TD
+    serverError[ServerErrorMiddleware] --> trustedHost[TrustedHostMiddleware]
+    trustedHost --> httpsRedirect[HTTPSRedirectMiddleware]
+    httpsRedirect --> exception[ExceptionMiddleware]
+    exception --> application[Application]
 ```
 
 Starlette 공식 문서 역시 middleware가 계층적으로 적용되며 ASGI middleware가 다음 ASGI application을 감싸는 형태임을 설명합니다.
@@ -422,7 +339,6 @@ Django 공식 문서에서 middleware factory는 `get_response` callable을 받�
 
 ```python
 def middleware(get_response):
-
     def wrapped(request):
         # 요청 전 추가 동작
         response = get_response(request)
@@ -434,14 +350,11 @@ def middleware(get_response):
 
 Django 공식 문서는 이 구조를 양파(onion)에 비유하며, 요청이 바깥 Middleware에서 안쪽으로 이동하고 응답은 역순으로 다시 통과한다고 설명합니다.
 
-```text
-Middleware A
-    ↓
-Middleware B
-    ↓
-Middleware C
-    ↓
-View
+```mermaid
+flowchart TD
+    middlewareA[Middleware A] --> middlewareB[Middleware B]
+    middlewareB --> middlewareC[Middleware C]
+    middlewareC --> view[View]
 ```
 
 호출 타입은 계속 동일합니다.
@@ -461,18 +374,15 @@ from functools import lru_cache
 
 
 @lru_cache(maxsize=128)
-def load_user(user_id: int):
-    ...
+def load_user(user_id: int): ...
 ```
 
 개념적으로는 다음과 같습니다.
 
-```text
-Client
-   ↓
-Caching Wrapper
-   ↓
-Original Function
+```mermaid
+flowchart TD
+    client[Client] --> caching[Caching Wrapper]
+    caching --> original[Original Function]
 ```
 
 함수의 본래 책임을 수정하지 않고 캐싱이라는 새로운 책임을 호출 주변에 추가한다는 점에서 함수형 Decorator의 대표적인 사례입니다.
@@ -531,24 +441,19 @@ classDiagram
 
 핵심 관계는 다음과 같습니다.
 
-```text
-DataSourceDecorator
-       │
-       └── contains ──> DataSource
+```mermaid
+flowchart LR
+    decorator[DataSourceDecorator] -->|contains| dataSource[DataSource]
 ```
 
 Decorator 자신도 DataSource이므로 다시 다른 Decorator로 감쌀 수 있습니다.
 
-```text
-DataSource
-   ↑
-Decorator
-   │
-   └── DataSource
-          ↑
-       Decorator
-          │
-          └── DataSource
+```mermaid
+flowchart TD
+    decorator1[Decorator] -->|implements| dataSource1[DataSource]
+    decorator1 -->|wraps| decorator2[Decorator]
+    decorator2 -->|implements| dataSource2[DataSource]
+    decorator2 -->|wraps| dataSource3[DataSource]
 ```
 
 ---
@@ -561,10 +466,10 @@ from base64 import b64decode, b64encode
 from pathlib import Path
 from zlib import compress, decompress
 
+
 # -------------------------------------------------------------------
 # 1. Component
 # -------------------------------------------------------------------
-
 class DataSource(ABC):
     @abstractmethod
     def write(self, data: bytes) -> None:
@@ -574,10 +479,10 @@ class DataSource(ABC):
     def read(self) -> bytes:
         pass
 
+
 # -------------------------------------------------------------------
 # 2. Concrete Component
 # -------------------------------------------------------------------
-
 class FileDataSource(DataSource):
     def __init__(self, path: str):
         self._path = Path(path)
@@ -588,10 +493,10 @@ class FileDataSource(DataSource):
     def read(self) -> bytes:
         return self._path.read_bytes()
 
+
 # -------------------------------------------------------------------
 # 3. Base Decorator
 # -------------------------------------------------------------------
-
 class DataSourceDecorator(DataSource):
     def __init__(self, wrapped: DataSource):
         self._wrapped = wrapped
@@ -602,10 +507,10 @@ class DataSourceDecorator(DataSource):
     def read(self) -> bytes:
         return self._wrapped.read()
 
+
 # -------------------------------------------------------------------
 # 4. Concrete Decorator - Compression
 # -------------------------------------------------------------------
-
 class CompressionDecorator(DataSourceDecorator):
     def write(self, data: bytes) -> None:
         compressed = compress(data)
@@ -615,10 +520,10 @@ class CompressionDecorator(DataSourceDecorator):
         compressed = self._wrapped.read()
         return decompress(compressed)
 
+
 # -------------------------------------------------------------------
 # 5. Concrete Decorator - Base64
 # -------------------------------------------------------------------
-
 class Base64Decorator(DataSourceDecorator):
     def write(self, data: bytes) -> None:
         encoded = b64encode(data)
@@ -628,23 +533,24 @@ class Base64Decorator(DataSourceDecorator):
         encoded = self._wrapped.read()
         return b64decode(encoded)
 
+
 # -------------------------------------------------------------------
 # 6. 클라이언트
 # -------------------------------------------------------------------
-
 def save_message(source: DataSource, message: str) -> None:
     source.write(message.encode("utf-8"))
+
 
 def load_message(source: DataSource) -> str:
     return source.read().decode("utf-8")
 
+
 # -------------------------------------------------------------------
 # 7. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     source: DataSource = CompressionDecorator(
-        Base64Decorator(FileDataSource('message.dat'))
+        Base64Decorator(FileDataSource("message.dat"))
     )
     save_message(source, "Decorator Pattern")
     message = load_message(source)
@@ -659,32 +565,20 @@ Decorator Pattern
 
 저장 과정은 바깥 Decorator에서 안쪽으로 진행됩니다.
 
-```text
-원본 bytes
-    │
-    ↓ CompressionDecorator
-압축 bytes
-    │
-    ↓ Base64Decorator
-Base64 bytes
-    │
-    ↓ FileDataSource
-파일 저장
+```mermaid
+flowchart TD
+    original[원본 bytes] -->|CompressionDecorator| compressed[압축 bytes]
+    compressed -->|Base64Decorator| base64[Base64 bytes]
+    base64 -->|FileDataSource| stored[파일 저장]
 ```
 
 읽기 과정에서는 반대 방향의 변환이 수행됩니다.
 
-```text
-파일 bytes
-    │
-    ↓ Base64Decorator
-Base64 decode
-    │
-    ↓ CompressionDecorator
-압축 해제
-    │
-    ↓
-원본 bytes
+```mermaid
+flowchart TD
+    file[파일 bytes] -->|Base64Decorator| decoded[Base64 decode]
+    decoded -->|CompressionDecorator| decompressed[압축 해제]
+    decompressed --> original[원본 bytes]
 ```
 
 Decorator 조합을 바꾸는 것도 쉽습니다.
@@ -710,12 +604,10 @@ save_message(source, "Decorator Pattern")
 
 고전적인 Decorator 구조는 다음과 같습니다.
 
-```text
-Component
-    ↑
-Decorator
-    │
-    └── Component
+```mermaid
+flowchart TD
+    decorator[Decorator] -->|implements| component1[Component]
+    decorator -->|wraps| component2[Component]
 ```
 
 Decorator는 Component를 입력으로 받아 사실상 새로운 Component를 만듭니다.
@@ -726,12 +618,10 @@ $$\text{Component} \rightarrow \text{Component}$$
 
 함수 자체를 Component라고 생각하면 더 일반적인 형태는 다음과 같습니다.
 
-```text
-Handler
-   ↓
-Decorator
-   ↓
-Handler
+```mermaid
+flowchart TD
+    handler1[Handler] --> decorator[Decorator]
+    decorator --> handler2[Handler]
 ```
 
 즉, $\text{Handler} \rightarrow \text{Handler}$ 입니다.
@@ -768,9 +658,8 @@ type Decorator[Request, Response] = (
 
 ```python
 def with_logging[Request, Response](
-    next: Handler[Request, Response]
+    next: Handler[Request, Response],
 ) -> Handler[Request, Response]:
-
     def wrapped(request: Request) -> Response:
         log("request received")
         response = next(request)
@@ -784,9 +673,8 @@ def with_logging[Request, Response](
 
 ```python
 def with_cache[Request: Hashable, Response](
-    next: Handler[Request, Response]
+    next: Handler[Request, Response],
 ) -> Handler[Request, Response]:
-
     cache = Map[Request, Response]()
 
     def wrapped(request: Request) -> Response:
@@ -837,8 +725,7 @@ def trace[*Args, R](
 다음 함수에 적용합니다.
 
 ```python
-def load_user(id: UserId, active_only: Bool) -> User:
-    ...
+def load_user(id: UserId, active_only: Bool) -> User: ...
 ```
 
 Decorator 이후에도 타입은 유지됩니다.
@@ -871,10 +758,7 @@ Decorator 역시 `type Decorator[C] = Endo[C]` 입니다.
 따라서 Decorator 자체를 합성할 수 있습니다.
 
 ```python
-def compose[T](
-    first: Endo[T],
-    second: Endo[T]
-) -> Endo[T]:
+def compose[T](first: Endo[T], second: Endo[T]) -> Endo[T]:
     return lambda value: second(first(value))
 ```
 
@@ -926,33 +810,23 @@ type Pipeline = Vector[Layer]
 설정값으로 구성합니다.
 
 ```python
-pipeline = [
-    Logging,
-    Retry(attempts=3),
-    Cache(capacity=1000),
-]
+pipeline = [Logging, Retry(attempts=3), Cache(capacity=1000)]
 ```
 
 Interpreter가 실제 Handler를 구성합니다.
 
 ```python
 def apply_pipeline[Req, Res](
-    base: Handler[Req, Res],
-    layers: Pipeline,
-) -> Handler[Req, Res]:
-    ...
+    base: Handler[Req, Res], layers: Pipeline
+) -> Handler[Req, Res]: ...
 ```
 
 구조는 다음과 같습니다.
 
-```text
-Pipeline Data
-     │
-     ↓
-Interpreter
-     │
-     ↓
-Decorated Handler
+```mermaid
+flowchart TD
+    pipeline[Pipeline Data] --> interpreter[Interpreter]
+    interpreter --> decorated[Decorated Handler]
 ```
 
 이렇게 하면 Decorator 구성을 설정 파일이나 정책 데이터로 관리할 수도 있습니다.
@@ -975,19 +849,13 @@ record Source[Features]:
 압축 함수:
 
 ```python
-def compress_source[F](
-    source: Source[F]
-) -> Source[F + Compressed]:
-    ...
+def compress_source[F](source: Source[F]) -> Source[F + Compressed]: ...
 ```
 
 인코딩:
 
 ```python
-def encode_source[F](
-    source: Source[F]
-) -> Source[F + Encoded]:
-    ...
+def encode_source[F](source: Source[F]) -> Source[F + Encoded]: ...
 ```
 
 사용:
@@ -1035,11 +903,7 @@ storage_codec = compression >> base64
 저장소 자체는 변환 기능을 알 필요가 없습니다.
 
 ```python
-def store[A, B](
-    source: Storage[B],
-    codec: Codec[A, B],
-    value: A,
-) -> Unit:
+def store[A, B](source: Storage[B], codec: Codec[A, B], value: A) -> Unit:
     source.write(codec.encode(value))
 ```
 
@@ -1050,19 +914,14 @@ def store[A, B](
 Decorator는 로깅, tracing, metrics, retry와 같은 횡단 관심사(Cross-Cutting Concern)에 자주 사용됩니다.
 
 ```python
-service = MetricsDecorator(
-    LoggingDecorator(
-        RetryDecorator(
-            UserService()
-        )
-    )
-)
+service = MetricsDecorator(LoggingDecorator(RetryDecorator(UserService())))
 ```
 
 Decorator가 늘어날수록 핵심 서비스 주변에 Wrapper 계층이 계속 쌓입니다.
 
-```text
-Metrics → Logging → Retry → Tracing → Authorization → Service
+```mermaid
+flowchart LR
+    metrics[Metrics] --> logging[Logging] --> retry[Retry] --> tracing[Tracing] --> authorization[Authorization] --> service[Service]
 ```
 
 효과 시스템(Effect System)을 지원하는 언어에서는 핵심 로직이 필요한 효과만 선언할 수 있습니다.
@@ -1121,12 +980,10 @@ handler timeout_network(duration: Duration):
 
 둘을 겹쳐 적용합니다.
 
-```text
-Retry Handler
-      ↓
-Timeout Handler
-      ↓
-Network Implementation
+```mermaid
+flowchart TD
+    retry[Retry Handler] --> timeout[Timeout Handler]
+    timeout --> network[Network Implementation]
 ```
 
 구조적으로는 Decorator와 유사하지만, 핵심 객체 자체를 여러 Wrapper 객체로 변경하지 않습니다. 어떤 효과를 어떻게 해석할 것인가를 별도의 계층으로 이동시킵니다.
@@ -1151,7 +1008,7 @@ trait Compressed[T]:
 타입이 여러 Capability를 제공할 수 있습니다.
 
 ```python
-Source : Readable + Writable + Compressed
+Source: Readable + Writable + Compressed
 ```
 
 함수는 필요한 기능만 요구합니다.
@@ -1187,14 +1044,16 @@ Proxy 역시 일반적으로 `A -> A` 형태를 가지므로 타입 모양만으
 
 고전적인 Decorator는 객체 그래프로 표현됩니다.
 
-```text
-Decorator A → Decorator B → Decorator C → Component
+```mermaid
+flowchart LR
+    decoratorA[Decorator A] --> decoratorB[Decorator B] --> decoratorC[Decorator C] --> component[Component]
 ```
 
 하지만 더 추상적으로 보면 다음과 같습니다.
 
-```text
-기본 행동 → 행동 변환 A → 행동 변환 B → 행동 변환 C
+```mermaid
+flowchart LR
+    base[기본 행동] --> transformA[행동 변환 A] --> transformB[행동 변환 B] --> transformC[행동 변환 C]
 ```
 
 즉, Decorator의 본질은 객체의 계층보다 행동의 단계적인 변환과 합성에 있습니다.

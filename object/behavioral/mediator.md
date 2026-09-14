@@ -22,74 +22,46 @@ StatusLabel
 
 ```python
 class UsernameField:
-
     def __init__(self):
         self.value = ""
         self.password_field = None
         self.login_button = None
 
-    def set_value(
-        self,
-        value: str,
-    ) -> None:
-
+    def set_value(self, value: str) -> None:
         self.value = value
-
         # 다른 컴포넌트를 직접 알고 있음
-        self.login_button.enabled = bool(
-            self.value
-            and self.password_field.value
-        )
+        self.login_button.enabled = bool(self.value and self.password_field.value)
 
 
 class PasswordField:
-
     def __init__(self):
         self.value = ""
         self.username_field = None
         self.login_button = None
 
-    def set_value(
-        self,
-        value: str,
-    ) -> None:
-
+    def set_value(self, value: str) -> None:
         self.value = value
-
-        self.login_button.enabled = bool(
-            self.username_field.value
-            and self.value
-        )
+        self.login_button.enabled = bool(self.username_field.value and self.value)
 
 
 class LoginButton:
-
     def __init__(self):
         self.enabled = False
-
         self.username_field = None
         self.password_field = None
         self.status_label = None
         self.auth_service = None
 
     def click(self) -> None:
-
         if not self.enabled:
             return
-
         success = self.auth_service.login(
-            self.username_field.value,
-            self.password_field.value,
+            self.username_field.value, self.password_field.value
         )
-
         if success:
-            self.status_label.text = (
-                "로그인 성공"
-            )
+            self.status_label.text = "로그인 성공"
         else:
-            self.status_label.text = (
-                "로그인 실패"
-            )
+            self.status_label.text = "로그인 실패"
 ```
 
 각 객체가 서로 필요한 객체를 직접 참조하게 됩니다.
@@ -126,9 +98,7 @@ LoginHistoryPanel
 
 ```python
 self.login_button.enabled = bool(
-    self.username_field.value
-    and self.password_field.value
-    and self.captcha_field.valid
+    self.username_field.value and self.password_field.value and self.captcha_field.valid
 )
 ```
 
@@ -167,100 +137,50 @@ flowchart LR
 
 ```python
 class Component:
-
-    def __init__(
-        self,
-        mediator: Mediator,
-    ):
+    def __init__(self, mediator: Mediator):
         self._mediator = mediator
 ```
 
 예를 들어 사용자 이름이 변경되면:
 
 ```python
-def set_value(
-    self,
-    value: str,
-) -> None:
-
+def set_value(self, value: str) -> None:
     self.value = value
-
-    self._mediator.notify(
-        self,
-        "changed",
-    )
+    self._mediator.notify(self, "changed")
 ```
 
 비밀번호 역시 같은 방식입니다.
 
 ```python
-def set_value(
-    self,
-    value: str,
-) -> None:
-
+def set_value(self, value: str) -> None:
     self.value = value
-
-    self._mediator.notify(
-        self,
-        "changed",
-    )
+    self._mediator.notify(self, "changed")
 ```
 
 Mediator가 전체 협력 규칙을 알고 있습니다.
 
 ```python
-class LoginDialogMediator(
-    Mediator
-):
-
-    def notify(
-        self,
-        sender: Component,
-        event: str,
-    ) -> None:
-
-        if (
-            sender is self.username
-            or sender is self.password
-        ):
+class LoginDialogMediator(Mediator):
+    def notify(self, sender: Component, event: str) -> None:
+        if sender is self.username or sender is self.password:
             self._update_login_button()
-
-        elif (
-            sender is self.login_button
-            and event == "click"
-        ):
+        elif sender is self.login_button and event == "click":
             self._login()
 ```
 
 로그인 버튼 활성화 규칙도 한곳에 모입니다.
 
 ```python
-def _update_login_button(
-    self,
-) -> None:
-
-    self.login_button.enabled = bool(
-        self.username.value
-        and self.password.value
-    )
+def _update_login_button(self) -> None:
+    self.login_button.enabled = bool(self.username.value and self.password.value)
 ```
 
 로그인 처리 역시 Mediator가 Component들을 조정합니다.
 
 ```python
 def _login(self) -> None:
-
-    success = self.auth_service.login(
-        self.username.value,
-        self.password.value,
-    )
-
-    self.status.text = (
-        "로그인 성공"
-        if success
-        else "로그인 실패"
-    )
+    success = self.auth_service.login(self.username.value, self.password.value)
+    self.status.text = "로그인 성공" if success else "로그인 실패"
 ```
 
 구조가 다음과 같이 바뀝니다.
@@ -547,13 +467,7 @@ flowchart LR
 메시지는 Group을 통해 전달할 수 있습니다.
 
 ```python
-await channel_layer.group_send(
-    "chat",
-    {
-        "type": "chat.message",
-        "text": "Hello",
-    },
-)
+await channel_layer.group_send("chat", {"type": "chat.message", "text": "Hello"})
 ```
 
 Channel Layer가 Group에 속한 Channel들로 메시지를 전달합니다. (Channels documentation)
@@ -690,22 +604,21 @@ Colleague들은 서로 직접 참조하지 않습니다.
 
 ```python
 from __future__ import annotations
-
 from abc import ABC, abstractmethod
+
 
 # -------------------------------------------------------------------
 # 1. Mediator
 # -------------------------------------------------------------------
-
 class Mediator(ABC):
     @abstractmethod
     def notify(self, sender: Component, event: str) -> None:
         pass
 
+
 # -------------------------------------------------------------------
 # 2. Base Component
 # -------------------------------------------------------------------
-
 class Component:
     def __init__(self, mediator: Mediator | None = None):
         self._mediator = mediator
@@ -717,10 +630,10 @@ class Component:
         if self._mediator is not None:
             self._mediator.notify(self, event)
 
+
 # -------------------------------------------------------------------
 # 3. Colleague - Username
 # -------------------------------------------------------------------
-
 class UsernameField(Component):
     def __init__(self):
         super().__init__()
@@ -731,10 +644,10 @@ class UsernameField(Component):
         print(f"[Username] {value}")
         self._notify("changed")
 
+
 # -------------------------------------------------------------------
 # 4. Colleague - Password
 # -------------------------------------------------------------------
-
 class PasswordField(Component):
     def __init__(self):
         super().__init__()
@@ -745,10 +658,10 @@ class PasswordField(Component):
         print("[Password] 변경됨")
         self._notify("changed")
 
+
 # -------------------------------------------------------------------
 # 5. Colleague - Remember Me
 # -------------------------------------------------------------------
-
 class RememberMeCheckbox(Component):
     def __init__(self):
         super().__init__()
@@ -758,10 +671,10 @@ class RememberMeCheckbox(Component):
         self.checked = checked
         self._notify("changed")
 
+
 # -------------------------------------------------------------------
 # 6. Colleague - Login Button
 # -------------------------------------------------------------------
-
 class LoginButton(Component):
     def __init__(self):
         super().__init__()
@@ -773,10 +686,10 @@ class LoginButton(Component):
             return
         self._notify("click")
 
+
 # -------------------------------------------------------------------
 # 7. Colleague - Status
 # -------------------------------------------------------------------
-
 class StatusLabel(Component):
     def __init__(self):
         super().__init__()
@@ -786,18 +699,18 @@ class StatusLabel(Component):
         self.text = text
         print(f"[Status] {text}")
 
+
 # -------------------------------------------------------------------
 # 8. Service
 # -------------------------------------------------------------------
-
 class AuthService:
     def login(self, username: str, password: str) -> bool:
         return username == "aragorn" and password == "anduril"
 
+
 # -------------------------------------------------------------------
 # 9. Concrete Mediator
 # -------------------------------------------------------------------
-
 class LoginDialogMediator(Mediator):
     def __init__(
         self,
@@ -848,10 +761,10 @@ class LoginDialogMediator(Mediator):
         else:
             self._status.set_text("로그인 실패")
 
+
 # -------------------------------------------------------------------
 # 10. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     username = UsernameField()
     password = PasswordField()
@@ -983,8 +896,8 @@ Event 타입 자체에 의미가 담기면, Sender 객체의 Identity를 확인�
 
 ```python
 # 기존: Sender 참조 검사
-if sender is self.username: ...
-
+if sender is self.username:
+    ...
 # 개선: Event 타입 자체로 식별
 UsernameChanged(value="aragorn")
 PasswordChanged(value="anduril")
@@ -1254,11 +1167,7 @@ def coordinate_login(state: LoginState, using view: LoginView, auth: Auth) -> Un
 하나의 거대한 Mediator(God Object)를 기능별 Small Reducer로 분할하여 합성합니다.
 
 ```python
-app_reducer = combine_reducers(
-    login_reducer,
-    search_reducer,
-    settings_reducer,
-)
+app_reducer = combine_reducers(login_reducer, search_reducer, settings_reducer)
 ```
 
 ---

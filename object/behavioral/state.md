@@ -48,127 +48,70 @@ Cancelled:
 
 ```python
 class BadOrder:
-
     def __init__(self):
         self.state = "pending"
 
     def pay(self) -> None:
-
         if self.state == "pending":
-
-            print(
-                "[Order] 결제를 완료합니다."
-            )
-
+            print("[Order] 결제를 완료합니다.")
             self.state = "paid"
-
         elif self.state == "paid":
-
-            raise RuntimeError(
-                "이미 결제된 주문입니다."
-            )
-
+            raise RuntimeError("이미 결제된 주문입니다.")
         elif self.state == "shipped":
-
-            raise RuntimeError(
-                "배송된 주문은 결제할 수 없습니다."
-            )
-
+            raise RuntimeError("배송된 주문은 결제할 수 없습니다.")
         elif self.state == "cancelled":
-
-            raise RuntimeError(
-                "취소된 주문은 결제할 수 없습니다."
-            )
+            raise RuntimeError("취소된 주문은 결제할 수 없습니다.")
 
     def ship(self) -> None:
-
         if self.state == "pending":
-
-            raise RuntimeError(
-                "결제되지 않은 주문은 배송할 수 없습니다."
-            )
-
+            raise RuntimeError("결제되지 않은 주문은 배송할 수 없습니다.")
         elif self.state == "paid":
-
-            print(
-                "[Order] 주문을 배송합니다."
-            )
-
+            print("[Order] 주문을 배송합니다.")
             self.state = "shipped"
-
         elif self.state == "shipped":
-
-            raise RuntimeError(
-                "이미 배송된 주문입니다."
-            )
-
+            raise RuntimeError("이미 배송된 주문입니다.")
         elif self.state == "cancelled":
-
-            raise RuntimeError(
-                "취소된 주문은 배송할 수 없습니다."
-            )
+            raise RuntimeError("취소된 주문은 배송할 수 없습니다.")
 
     def cancel(self) -> None:
-
         if self.state == "pending":
-
-            print(
-                "[Order] 주문을 취소합니다."
-            )
-
+            print("[Order] 주문을 취소합니다.")
             self.state = "cancelled"
-
         elif self.state == "paid":
-
-            print(
-                "[Order] 결제를 취소하고 주문을 취소합니다."
-            )
-
+            print("[Order] 결제를 취소하고 주문을 취소합니다.")
             self.state = "cancelled"
-
         elif self.state == "shipped":
-
-            raise RuntimeError(
-                "배송된 주문은 취소할 수 없습니다."
-            )
-
+            raise RuntimeError("배송된 주문은 취소할 수 없습니다.")
         elif self.state == "cancelled":
-
-            raise RuntimeError(
-                "이미 취소된 주문입니다."
-            )
+            raise RuntimeError("이미 취소된 주문입니다.")
 ```
 
 현재는 상태가 네 개뿐이지만 모든 동작이 상태를 다시 확인합니다.
 
-```text
-pay()
-    ├─ pending
-    ├─ paid
-    ├─ shipped
-    └─ cancelled
+```mermaid
+flowchart TD
+    pay["pay()"] --> pay_pending[pending]
+    pay --> pay_paid[paid]
+    pay --> pay_shipped[shipped]
+    pay --> pay_cancelled[cancelled]
 
-ship()
-    ├─ pending
-    ├─ paid
-    ├─ shipped
-    └─ cancelled
+    ship["ship()"] --> ship_pending[pending]
+    ship --> ship_paid[paid]
+    ship --> ship_shipped[shipped]
+    ship --> ship_cancelled[cancelled]
 
-cancel()
-    ├─ pending
-    ├─ paid
-    ├─ shipped
-    └─ cancelled
+    cancel["cancel()"] --> cancel_pending[pending]
+    cancel --> cancel_paid[paid]
+    cancel --> cancel_shipped[shipped]
+    cancel --> cancel_cancelled[cancelled]
 ```
 
 새로운 상태로 `RefundRequested`가 추가된다고 가정합니다.
 
-```text
-Paid
-  ↓ 환불 요청
-RefundRequested
-  ↓ 승인
-Cancelled
+```mermaid
+stateDiagram-v2
+    Paid --> RefundRequested: 환불 요청
+    RefundRequested --> Cancelled: 승인
 ```
 
 그러면 기존의 여러 메서드를 다시 확인해야 합니다.
@@ -178,9 +121,11 @@ def pay(self):
     if self.state == "refund_requested":
         ...
 
+
 def ship(self):
     if self.state == "refund_requested":
         ...
+
 
 def cancel(self):
     if self.state == "refund_requested":
@@ -205,21 +150,13 @@ def cancel(self):
 
 일반적인 구조는 다음과 같습니다.
 
-```text
-Client
-   ↓
-Context
-   │
-   └─ current_state
-            │
-            ↓
-          State
-          / | \
-         /  |  \
-        ↓   ↓   ↓
-      StateA
-      StateB
-      StateC
+```mermaid
+flowchart TD
+    Client --> Context
+    Context -->|current_state| State
+    State --> StateA
+    State --> StateB
+    State --> StateC
 ```
 
 먼저 상태 인터페이스를 정의합니다.
@@ -229,146 +166,68 @@ from abc import ABC, abstractmethod
 
 
 class OrderState(ABC):
-
     @abstractmethod
-    def pay(
-        self,
-        order: "Order",
-    ) -> None:
+    def pay(self, order: "Order") -> None:
         pass
 
     @abstractmethod
-    def ship(
-        self,
-        order: "Order",
-    ) -> None:
+    def ship(self, order: "Order") -> None:
         pass
 
     @abstractmethod
-    def cancel(
-        self,
-        order: "Order",
-    ) -> None:
+    def cancel(self, order: "Order") -> None:
         pass
 ```
 
 `Pending` 상태는 자신에게 허용된 행동과 전이를 알고 있습니다.
 
 ```python
-class PendingState(
-    OrderState
-):
+class PendingState(OrderState):
+    def pay(self, order: Order) -> None:
+        print("[Pending] 결제를 완료합니다.")
+        order.transition_to(PaidState())
 
-    def pay(
-        self,
-        order: Order,
-    ) -> None:
+    def ship(self, order: Order) -> None:
+        raise RuntimeError("결제되지 않은 주문은 배송할 수 없습니다.")
 
-        print(
-            "[Pending] 결제를 완료합니다."
-        )
-
-        order.transition_to(
-            PaidState()
-        )
-
-    def ship(
-        self,
-        order: Order,
-    ) -> None:
-
-        raise RuntimeError(
-            "결제되지 않은 주문은 배송할 수 없습니다."
-        )
-
-    def cancel(
-        self,
-        order: Order,
-    ) -> None:
-
-        print(
-            "[Pending] 주문을 취소합니다."
-        )
-
-        order.transition_to(
-            CancelledState()
-        )
+    def cancel(self, order: Order) -> None:
+        print("[Pending] 주문을 취소합니다.")
+        order.transition_to(CancelledState())
 ```
 
 `Paid` 상태는 별도의 객체입니다.
 
 ```python
-class PaidState(
-    OrderState
-):
+class PaidState(OrderState):
+    def pay(self, order: Order) -> None:
+        raise RuntimeError("이미 결제된 주문입니다.")
 
-    def pay(
-        self,
-        order: Order,
-    ) -> None:
+    def ship(self, order: Order) -> None:
+        print("[Paid] 주문을 배송합니다.")
+        order.transition_to(ShippedState())
 
-        raise RuntimeError(
-            "이미 결제된 주문입니다."
-        )
-
-    def ship(
-        self,
-        order: Order,
-    ) -> None:
-
-        print(
-            "[Paid] 주문을 배송합니다."
-        )
-
-        order.transition_to(
-            ShippedState()
-        )
-
-    def cancel(
-        self,
-        order: Order,
-    ) -> None:
-
-        print(
-            "[Paid] 결제를 취소하고 "
-            "주문을 취소합니다."
-        )
-
-        order.transition_to(
-            CancelledState()
-        )
+    def cancel(self, order: Order) -> None:
+        print("[Paid] 결제를 취소하고 " "주문을 취소합니다.")
+        order.transition_to(CancelledState())
 ```
 
 Context인 `Order`는 구체적인 상태별 규칙을 알지 않습니다.
 
 ```python
 class Order:
-
     def __init__(self):
-        self._state: OrderState = (
-            PendingState()
-        )
+        self._state: OrderState = PendingState()
 
     def pay(self) -> None:
-        self._state.pay(
-            self
-        )
+        self._state.pay(self)
 
     def ship(self) -> None:
-        self._state.ship(
-            self
-        )
+        self._state.ship(self)
 
     def cancel(self) -> None:
-        self._state.cancel(
-            self
-        )
+        self._state.cancel(self)
 
-    def transition_to(
-        self,
-        state: OrderState,
-    ) -> None:
-
+    def transition_to(self, state: OrderState) -> None:
         self._state = state
 ```
 
@@ -376,34 +235,19 @@ class Order:
 
 ```python
 order = Order()
-
 order.pay()
 order.ship()
 ```
 
 하지만 내부 행동은 현재 State 객체에 따라 달라집니다.
 
-```text
-Order
-  │
-  │ pay()
-  ↓
-PendingState.pay()
-  │
-  └─ transition
-         ↓
-     PaidState
+```mermaid
+flowchart TD
+    Order1[Order] -->|pay| PendingPay["PendingState.pay()"]
+    PendingPay -->|transition| PaidState
 
-
-Order
-  │
-  │ ship()
-  ↓
-PaidState.ship()
-  │
-  └─ transition
-         ↓
-     ShippedState
+    Order2[Order] -->|ship| PaidShip["PaidState.ship()"]
+    PaidShip -->|transition| ShippedState
 ```
 
 핵심은 단순히 `if` 문을 여러 클래스로 옮기는 것에 있지 않습니다.
@@ -446,20 +290,16 @@ State와 Strategy는 구조적으로 매우 비슷합니다.
 
 Strategy:
 
-```text
-Context
-   │
-   ↓
-Strategy
+```mermaid
+flowchart TD
+    Context --> Strategy
 ```
 
 State:
 
-```text
-Context
-   │
-   ↓
-State
+```mermaid
+flowchart TD
+    Context --> State
 ```
 
 둘 다 객체 합성을 이용해 행동을 위임합니다.
@@ -469,19 +309,15 @@ State
 Strategy는 일반적으로 **클라이언트 또는 구성 영역이 어떤 알고리즘을 사용할지 선택**합니다.
 
 ```python
-calculator.set_strategy(
-    DiscountStrategy()
-)
+calculator.set_strategy(DiscountStrategy())
 ```
 
 State에서는 **객체 내부 상태 변화에 따라 사용하는 행동이 바뀝니다.**
 
-```text
-Pending
-   ↓ pay
-Paid
-   ↓ ship
-Shipped
+```mermaid
+stateDiagram-v2
+    Pending --> Paid: pay
+    Paid --> Shipped: ship
 ```
 
 즉:
@@ -529,10 +365,9 @@ Shipped:
 
 State 패턴의 State는 **현재 행동을 결정하는 활성 상태**입니다.
 
-```text
-Order
-   ↓
-PaidState
+```mermaid
+flowchart TD
+    Order --> PaidState
 ```
 
 Memento는 특정 시점의 **과거 상태 Snapshot**입니다.
@@ -571,14 +406,10 @@ Transitions
 
 예:
 
-```text
-Pending
-   │ Pay
-   ↓
-Paid
-   │ Ship
-   ↓
-Shipped
+```mermaid
+stateDiagram-v2
+    Pending --> Paid: Pay
+    Paid --> Shipped: Ship
 ```
 
 State 패턴은 이러한 상태 기반 행동을 **객체지향 클래스와 다형성으로 구현하는 방법 중 하나**입니다.
@@ -611,17 +442,10 @@ Python 표준 라이브러리와 주요 프레임워크에도 객체가 현재 �
 
 개념적으로 다음과 같이 볼 수 있습니다.
 
-```text
-Pending
-   │ set_result()
-   ↓
-Done
-
-
-Pending
-   │ cancel()
-   ↓
-Cancelled
+```mermaid
+stateDiagram-v2
+    Pending --> Done: set_result()
+    Pending --> Cancelled: cancel()
 ```
 
 그리고 같은 메서드라도 현재 상태에 따라 의미가 달라집니다.
@@ -651,12 +475,9 @@ Python의 `IOBase` 계열 Stream은 `open` 상태와 `closed` 상태에 따라 �
 
 개념적으로:
 
-```text
-Open
-  │
-  │ close()
-  ↓
-Closed
+```mermaid
+stateDiagram-v2
+    Open --> Closed: close()
 ```
 
 입니다.
@@ -684,26 +505,21 @@ Django의 transaction 관리 역시 현재 transaction nesting 상태와 예외 
 
 개념적으로 다음과 같은 상태 전이로 볼 수 있습니다.
 
-```text
-Outside Transaction
-        │
-        │ enter atomic
-        ↓
-Inside Transaction
-        │
-        │ enter nested atomic
-        ↓
-Inside Savepoint
+```mermaid
+stateDiagram-v2
+    OutsideTransaction: Outside Transaction
+    InsideTransaction: Inside Transaction
+    InsideSavepoint: Inside Savepoint
+    OutsideTransaction --> InsideTransaction: enter atomic
+    InsideTransaction --> InsideSavepoint: enter nested atomic
 ```
 
 종료 시에는 성공과 실패에 따라:
 
-```text
-Success
-    → commit / release savepoint
-
-Failure
-    → rollback
+```mermaid
+flowchart LR
+    Success --> commit["commit / release savepoint"]
+    Failure --> rollback
 ```
 
 으로 동작합니다.
@@ -787,27 +603,21 @@ Concrete States
 
 핵심 관계는 다음과 같습니다.
 
-```text
-Order
-  │
-  └─ current_state
-           │
-           ├─ PendingState
-           ├─ PaidState
-           ├─ ShippedState
-           └─ CancelledState
+```mermaid
+flowchart TD
+    Order -->|current_state| PendingState
+    Order -->|current_state| PaidState
+    Order -->|current_state| ShippedState
+    Order -->|current_state| CancelledState
 ```
 
 상태가 전이되면 `Order` 객체 자체를 교체하는 것이 아니라 내부 State 객체가 변경됩니다.
 
-```text
-Order
-  │
-  ├─ PendingState
-  │       ↓ pay
-  ├─ PaidState
-  │       ↓ ship
-  └─ ShippedState
+```mermaid
+flowchart TD
+    Order --> PendingState
+    PendingState -->|pay| PaidState
+    PaidState -->|ship| ShippedState
 ```
 
 ---
@@ -818,10 +628,10 @@ Order
 from __future__ import annotations
 from abc import ABC, abstractmethod
 
+
 # -------------------------------------------------------------------
 # 1. State Interface
 # -------------------------------------------------------------------
-
 class OrderState(ABC):
     @abstractmethod
     def name(self) -> str:
@@ -839,10 +649,10 @@ class OrderState(ABC):
     def cancel(self, order: Order) -> None:
         pass
 
+
 # -------------------------------------------------------------------
 # 2. Context
 # -------------------------------------------------------------------
-
 class Order:
     def __init__(self):
         self._state: OrderState = PendingState()
@@ -864,10 +674,10 @@ class Order:
     def cancel(self) -> None:
         self._state.cancel(self)
 
+
 # -------------------------------------------------------------------
 # 3. Concrete State - Pending
 # -------------------------------------------------------------------
-
 class PendingState(OrderState):
     def name(self) -> str:
         return "Pending"
@@ -883,10 +693,10 @@ class PendingState(OrderState):
         print("[Pending] 주문을 취소합니다.")
         order.transition_to(CancelledState())
 
+
 # -------------------------------------------------------------------
 # 4. Concrete State - Paid
 # -------------------------------------------------------------------
-
 class PaidState(OrderState):
     def name(self) -> str:
         return "Paid"
@@ -902,10 +712,10 @@ class PaidState(OrderState):
         print("[Paid] 결제를 취소하고 " "주문을 취소합니다.")
         order.transition_to(CancelledState())
 
+
 # -------------------------------------------------------------------
 # 5. Concrete State - Shipped
 # -------------------------------------------------------------------
-
 class ShippedState(OrderState):
     def name(self) -> str:
         return "Shipped"
@@ -919,10 +729,10 @@ class ShippedState(OrderState):
     def cancel(self, order: Order) -> None:
         raise RuntimeError("배송된 주문은 " "취소할 수 없습니다.")
 
+
 # -------------------------------------------------------------------
 # 6. Concrete State - Cancelled
 # -------------------------------------------------------------------
-
 class CancelledState(OrderState):
     def name(self) -> str:
         return "Cancelled"
@@ -936,10 +746,10 @@ class CancelledState(OrderState):
     def cancel(self, order: Order) -> None:
         raise RuntimeError("이미 취소된 주문입니다.")
 
+
 # -------------------------------------------------------------------
 # 7. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     order = Order()
     print(order.state_name)
@@ -954,37 +764,20 @@ if __name__ == "__main__":
 
 실행 흐름은 다음과 같습니다.
 
-```text
-Pending
+```mermaid
+flowchart TD
+    Pending -->|order.pay| PendingPay["PendingState.pay()"]
+    PendingPay --> Paid
 
-    order.pay()
-        ↓
-
-PendingState.pay()
-        ↓
-
-Paid
-
-
-Paid
-
-    order.ship()
-        ↓
-
-PaidState.ship()
-        ↓
-
-Shipped
+    Paid -->|order.ship| PaidShip["PaidState.ship()"]
+    PaidShip --> Shipped
 ```
 
 Context의 메서드는 상태를 검사하지 않습니다.
 
 ```python
 def pay(self) -> None:
-
-    self._state.pay(
-        self
-    )
+    self._state.pay(self)
 ```
 
 다음과 같은 코드가 사라집니다.
@@ -992,10 +785,8 @@ def pay(self) -> None:
 ```python
 if self.state == "pending":
     ...
-
 elif self.state == "paid":
     ...
-
 elif self.state == "shipped":
     ...
 ```
@@ -1009,9 +800,7 @@ elif self.state == "shipped":
 앞의 예제에서는 Concrete State가 직접 다음 상태를 결정합니다.
 
 ```python
-order.transition_to(
-    PaidState()
-)
+order.transition_to(PaidState())
 ```
 
 이 방식의 장점은 특정 상태의 행동과 전이 규칙이 같은 클래스에 모인다는 것입니다.
@@ -1213,57 +1002,37 @@ Pending인데 tracking이 존재한다
 객체지향 State에서는 State 객체가 Context를 변경합니다.
 
 ```python
-order.transition_to(
-    PaidState()
-)
+order.transition_to(PaidState())
 ```
 
 불변 데이터에서는 기존 상태를 수정하지 않습니다.
 
 ```python
-def pay(
-    order: PendingOrder,
-    transaction:
-        TransactionId,
-) -> PaidOrder:
-
-    return PaidOrder(
-        items=order.items,
-        transaction=transaction,
-    )
+def pay(order: PendingOrder, transaction: TransactionId) -> PaidOrder:
+    return PaidOrder(items=order.items, transaction=transaction)
 ```
 
 타입만 보아도 전이가 드러납니다.
 
-```text
-PendingOrder
-     ↓ pay
-PaidOrder
+```mermaid
+flowchart TD
+    PendingOrder -->|pay| PaidOrder
 ```
 
 배송:
 
 ```python
-def ship(
-    order: PaidOrder,
-    tracking:
-        TrackingNumber,
-) -> ShippedOrder:
-
+def ship(order: PaidOrder, tracking: TrackingNumber) -> ShippedOrder:
     return ShippedOrder(
-        items=order.items,
-        transaction=
-            order.transaction,
-        tracking=tracking,
+        items=order.items, transaction=order.transaction, tracking=tracking
     )
 ```
 
 타입:
 
-```text
-PaidOrder
-    ↓ ship
-ShippedOrder
+```mermaid
+flowchart TD
+    PaidOrder -->|ship| ShippedOrder
 ```
 
 상태 전이가 **함수의 입력 타입과 출력 타입**으로 표현됩니다.
@@ -1304,25 +1073,17 @@ class ShippedState:
 Typestate 방식에서는 해당 상태에 애초에 연산을 정의하지 않습니다.
 
 ```python
-def pay(
-    order: PendingOrder,
-) -> PaidOrder:
-    ...
+def pay(order: PendingOrder) -> PaidOrder: ...
 ```
 
 ```python
-def ship(
-    order: PaidOrder,
-) -> ShippedOrder:
-    ...
+def ship(order: PaidOrder) -> ShippedOrder: ...
 ```
 
 `ShippedOrder`에 `pay()`는 없습니다.
 
 ```python
-pay(
-    shipped_order
-)
+pay(shipped_order)
 ```
 
 컴파일러:
@@ -1368,31 +1129,21 @@ def create_order(...) -> Order[Pending]:
 결제:
 
 ```python
-def pay(
-    order:
-        Order[Pending],
-) -> Order[Paid]:
-    ...
+def pay(order: Order[Pending]) -> Order[Paid]: ...
 ```
 
 배송:
 
 ```python
-def ship(
-    order:
-        Order[Paid],
-) -> Order[Shipped]:
-    ...
+def ship(order: Order[Paid]) -> Order[Shipped]: ...
 ```
 
 상태 전이가:
 
-```text
-Order[Pending]
-      ↓
-Order[Paid]
-      ↓
-Order[Shipped]
+```mermaid
+flowchart TD
+    OrderPending["Order[Pending]"] --> OrderPaid["Order[Paid]"]
+    OrderPaid --> OrderShipped["Order[Shipped]"]
 ```
 
 라는 타입 전이로 나타납니다.
@@ -1464,49 +1215,17 @@ data OrderEvent =
 
 ```python
 def transition(
-    state: OrderState,
-    event: OrderEvent,
-) -> Result[
-    OrderState,
-    InvalidTransition,
-]:
-
-    match (
-        state,
-        event,
-    ):
-
-        case (
-            Pending,
-            PaymentReceived,
-        ):
-            return Ok(
-                Paid
-            )
-
-        case (
-            Paid,
-            ShipmentStarted,
-        ):
-            return Ok(
-                Shipped
-            )
-
-        case (
-            Pending | Paid,
-            CancelRequested,
-        ):
-            return Ok(
-                Cancelled
-            )
-
+    state: OrderState, event: OrderEvent
+) -> Result[OrderState, InvalidTransition]:
+    match (state, event):
+        case (Pending, PaymentReceived):
+            return Ok(Paid)
+        case (Paid, ShipmentStarted):
+            return Ok(Shipped)
+        case (Pending | Paid, CancelRequested):
+            return Ok(Cancelled)
         case _:
-            return Err(
-                InvalidTransition(
-                    state,
-                    event,
-                )
-            )
+            return Err(InvalidTransition(state, event))
 ```
 
 객체 계층이 아니라 **명시적인 전이 함수**로 State Machine을 표현합니다.
@@ -1519,46 +1238,18 @@ def transition(
 
 ```python
 transition_table = {
-    (
-        Pending,
-        PaymentReceived,
-    ):
-        Paid,
-
-    (
-        Paid,
-        ShipmentStarted,
-    ):
-        Shipped,
-
-    (
-        Pending,
-        CancelRequested,
-    ):
-        Cancelled,
-
-    (
-        Paid,
-        CancelRequested,
-    ):
-        Cancelled,
+    (Pending, PaymentReceived): Paid,
+    (Paid, ShipmentStarted): Shipped,
+    (Pending, CancelRequested): Cancelled,
+    (Paid, CancelRequested): Cancelled,
 }
 ```
 
 전이:
 
 ```python
-def transition(
-    state,
-    event,
-):
-
-    return transition_table[
-        (
-            state,
-            event,
-        )
-    ]
+def transition(state, event):
+    return transition_table[(state, event)]
 ```
 
 장점은 전체 상태 머신을 한눈에 볼 수 있다는 것입니다.
@@ -1605,11 +1296,11 @@ State:
 
 객체지향 State 패턴은 새로운 Concrete State 클래스를 추가하기 쉽습니다.
 
-```text
-State
-  ├─ PendingState
-  ├─ PaidState
-  └─ NewState
+```mermaid
+flowchart TD
+    State --> PendingState
+    State --> PaidState
+    State --> NewState
 ```
 
 이는 상태 종류가 외부 Plugin 등에서 계속 추가되는 **Open World**에 적합할 수 있습니다.
@@ -1662,26 +1353,21 @@ type Mealy[
 주문 예제:
 
 ```python
-def step(
-    state: OrderState,
-    event: OrderEvent,
-) -> (
-    OrderState,
-    Vector[OrderEffect],
-):
-    ...
+def step(state: OrderState, event: OrderEvent) -> (OrderState, Vector[OrderEffect]): ...
 ```
 
 결제 Event:
 
-```text
-Pending + PaymentReceived ───> Paid + SendReceipt
+```mermaid
+flowchart LR
+    Pending -->|PaymentReceived| Paid_out["Paid + SendReceipt"]
 ```
 
 배송 Event:
 
-```text
-Paid + ShipmentStarted ───> Shipped + NotifyCustomer
+```mermaid
+flowchart LR
+    Paid -->|ShipmentStarted| Shipped_out["Shipped + NotifyCustomer"]
 ```
 
 상태 전이와 외부 Effect를 분리할 수 있습니다.
@@ -1699,29 +1385,14 @@ State ───> Output
 예를 들어 UI 표시:
 
 ```python
-def view(
-    state: OrderState,
-) -> OrderView:
-
+def view(state: OrderState) -> OrderView:
     match state:
-
         case Pending:
-            return OrderView(
-                label="결제 대기",
-                can_pay=True,
-            )
-
+            return OrderView(label="결제 대기", can_pay=True)
         case Paid:
-            return OrderView(
-                label="배송 준비",
-                can_pay=False,
-            )
-
+            return OrderView(label="배송 준비", can_pay=False)
         case Shipped:
-            return OrderView(
-                label="배송 중",
-                can_pay=False,
-            )
+            return OrderView(label="배송 중", can_pay=False)
 ```
 
 UI가 상태를 직접 mutation하는 대신:
@@ -1767,19 +1438,17 @@ data OrderEffect =
 
 ```python
 def transition(
-    state: OrderState,
-    event: OrderEvent,
-) -> (
-    OrderState,
-    Vector[OrderEffect],
-):
-    ...
+    state: OrderState, event: OrderEvent
+) -> (OrderState, Vector[OrderEffect]): ...
 ```
 
 Runtime이 Effect를 실행합니다.
 
-```text
-State + Event ───> Pure Transition ───> New State + Effects ───> Interpreter
+```mermaid
+flowchart LR
+    input["State + Event"] --> transition[Pure Transition]
+    transition --> output["New State + Effects"]
+    output --> interpreter[Interpreter]
 ```
 
 상태 머신 자체를 순수하게 유지할 수 있습니다.
@@ -1790,8 +1459,9 @@ State + Event ───> Pure Transition ───> New State + Effects ──�
 
 결제 요청을 받았다고 바로 `Paid`로 전이하면 안 될 수 있습니다.
 
-```text
-Pending ── PayClicked ──> ???
+```mermaid
+flowchart LR
+    Pending -->|PayClicked| Unknown["???"]
 ```
 
 실제 결제가 실패할 수 있기 때문입니다.
@@ -1814,10 +1484,11 @@ data OrderState =
 
 전이:
 
-```text
-Pending ── PaymentRequested ──> PaymentProcessing ── PaymentSucceeded ──> Paid
-
-PaymentProcessing ── PaymentFailed ──> PaymentFailed
+```mermaid
+stateDiagram-v2
+    Pending --> PaymentProcessing: PaymentRequested
+    PaymentProcessing --> Paid: PaymentSucceeded
+    PaymentProcessing --> PaymentFailed: PaymentFailed
 ```
 
 **중간 상태도 도메인에서 실제 의미를 가진다면 타입으로 표현하는 것이 중요합니다.**
@@ -1835,21 +1506,10 @@ State ── await Event ──> State Transition ── await Event ──> Sta
 가상의 함수:
 
 ```python
-async def run_machine(
-    initial: State,
-    events:
-        AsyncStream[Event],
-) -> State:
-
+async def run_machine(initial: State, events: AsyncStream[Event]) -> State:
     state = initial
-
     async for event in events:
-
-        state = transition(
-            state,
-            event,
-        )
-
+        state = transition(state, event)
     return state
 ```
 
@@ -1868,11 +1528,7 @@ Initial State ── Event₁ ──> State₁ ── Event₂ ──> State₂ 
 따라서:
 
 ```python
-current = fold(
-    events,
-    initial_state,
-    transition,
-)
+current = fold(events, initial_state, transition)
 ```
 
 으로 표현할 수 있습니다.
@@ -1903,8 +1559,11 @@ NotCreated
 
 Event를 차례로 적용하면:
 
-```text
-NotCreated ── OrderCreated ──> Pending ── PaymentReceived ──> Paid ── ShipmentStarted ──> Shipped
+```mermaid
+stateDiagram-v2
+    NotCreated --> Pending: OrderCreated
+    Pending --> Paid: PaymentReceived
+    Paid --> Shipped: ShipmentStarted
 ```
 
 현재 상태를 얻을 수 있습니다.
@@ -2012,10 +1671,7 @@ linear Order[State]
 결제:
 
 ```python
-def pay(
-    order: Order[Pending],
-) -> Order[Paid]:
-    ...
+def pay(order: Order[Pending]) -> Order[Paid]: ...
 ```
 
 호출:
@@ -2046,10 +1702,12 @@ Order[Pending] has already been consumed by pay().
 
 고전적인 State 패턴은 다음과 같습니다.
 
-```text
-Context ───> State Object ───┬───> handle A
-                             ├───> handle B
-                             └───> transition
+```mermaid
+flowchart LR
+    Context --> StateObject[State Object]
+    StateObject --> handleA[handle A]
+    StateObject --> handleB[handle B]
+    StateObject --> transition
 ```
 
 하지만 더 일반적으로 보면:

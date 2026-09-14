@@ -12,7 +12,6 @@
 
 ```python
 class TextEditor:
-
     def __init__(self):
         self.text = ""
 
@@ -26,7 +25,6 @@ class TextEditor:
 
 
 class BadEditorApplication:
-
     def __init__(self, editor: TextEditor):
         self.editor = editor
 
@@ -72,9 +70,7 @@ Undo 실행 시에는 명령 종류별로 분기하여 처리해야 합니다.
 def undo(self) -> None:
     if not self.history:
         return
-
     command = self.history.pop()
-
     if command[0] == "insert":
         ...
     elif command[0] == "delete":
@@ -129,7 +125,6 @@ from abc import ABC, abstractmethod
 
 
 class Command(ABC):
-
     @abstractmethod
     def execute(self) -> None:
         pass
@@ -143,7 +138,6 @@ class Command(ABC):
 
 ```python
 class InsertTextCommand(Command):
-
     def __init__(self, editor: TextEditor, position: int, text: str):
         self._editor = editor
         self._position = position
@@ -160,7 +154,6 @@ class InsertTextCommand(Command):
 
 ```python
 class DeleteTextCommand(Command):
-
     def __init__(self, editor: TextEditor, position: int, length: int):
         self._editor = editor
         self._position = position
@@ -179,7 +172,6 @@ Invoker(`EditorHistory`)는 구체적인 편집 작업의 내용이나 Receiver�
 
 ```python
 class EditorHistory:
-
     def __init__(self):
         self._undo_stack: list[Command] = []
 
@@ -206,7 +198,6 @@ Queue에 담아 나중에 실행할 수도 있습니다. 다음 발췌 코드는
 
 ```python
 queue.append(command)
-
 for command in queue:
     command.execute()
 ```
@@ -295,7 +286,6 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
         print("작업을 실행합니다.")
 ```
@@ -324,10 +314,8 @@ Celery의 `Signature`는 실행할 작업과 인자를 값으로 보관하는 �
 ```python
 # 명령 표현 (생성)
 signature = add.s(10, 20)
-
 # 지연 / 비동기 실행
 signature.delay()
-
 # Macro처럼 워크플로우로 합성
 workflow = add.s(2, 2) | multiply.s(10)
 ```
@@ -421,6 +409,7 @@ classDiagram
 ```python
 from abc import ABC, abstractmethod
 
+
 # 1. Receiver
 class TextEditor:
     def __init__(self) -> None:
@@ -442,6 +431,7 @@ class TextEditor:
         self._text = self._text[:position] + self._text[position + length :]
         return deleted
 
+
 # 2. Command Interface
 class Command(ABC):
     @abstractmethod
@@ -451,6 +441,7 @@ class Command(ABC):
     @abstractmethod
     def undo(self) -> None:
         pass
+
 
 # 3. Concrete Command - Insert
 class InsertTextCommand(Command):
@@ -465,6 +456,7 @@ class InsertTextCommand(Command):
     def undo(self) -> None:
         self._editor.delete(self._position, len(self._text))
 
+
 # 4. Concrete Command - Delete
 class DeleteTextCommand(Command):
     def __init__(self, editor: TextEditor, position: int, length: int):
@@ -478,6 +470,7 @@ class DeleteTextCommand(Command):
 
     def undo(self) -> None:
         self._editor.insert(self._position, self._deleted_text)
+
 
 # 5. Invoker
 class EditorHistory:
@@ -508,6 +501,7 @@ class EditorHistory:
         self._redo_stack.pop()
         self._undo_stack.append(command)
 
+
 # 6. Composite Command (Macro Command)
 class MacroCommand(Command):
     def __init__(self, commands: list[Command]):
@@ -529,6 +523,7 @@ class MacroCommand(Command):
         # 실행의 역순으로 undo 호출
         for command in reversed(self._commands):
             command.undo()
+
 
 # 7. 실행 (Client / Usage)
 if __name__ == "__main__":
@@ -602,14 +597,11 @@ Macro는 `!`와 ` Welcome`을 하나의 사용자 작업으로 묶습니다. 실
 editor = TextEditor()
 history = EditorHistory()
 history.execute(InsertTextCommand(editor, 0, "Hello World"))
-
-replace_selection = MacroCommand([
-    DeleteTextCommand(editor, 6, 5),
-    InsertTextCommand(editor, 6, "Python"),
-])
+replace_selection = MacroCommand(
+    [DeleteTextCommand(editor, 6, 5), InsertTextCommand(editor, 6, "Python")]
+)
 history.execute(replace_selection)
 print(editor.text)
-
 history.undo()
 print(editor.text)
 ```
@@ -629,8 +621,9 @@ History는 교체 작업의 세부 내용을 몰라도 한 번의 Undo로 원래
 
 본문의 편집기는 `InsertTextCommand`에 실행할 작업과 인자를, `DeleteTextCommand`에는 복구에 필요한 문자열까지 보관합니다. 이를 함수형 관점에서 보면 **요청의 표현, 상태의 변화, 실행 기록을 어떤 값으로 나눌 것인가**라는 문제로 이어집니다.
 
-```text
-요청 생성 → 실행 대기 → 상태 변경 → 실행 결과와 복구 정보 보관
+```mermaid
+flowchart LR
+    create[요청 생성] --> wait[실행 대기] --> change[상태 변경] --> keep[실행 결과와 복구 정보 보관]
 ```
 
 이 부록에서는 불변 데이터, ADT, GADT, 고차 함수와 효과 처리를 지원하는 **가상의 Python 스타일 문법**을 사용합니다. 실제 실행 가능한 편집기는 본문의 6절에 있습니다.
@@ -864,8 +857,9 @@ Effect Handler는 이 연산을 실제 파일 저장이나 테스트용 메모�
 
 고정된 편집 목록은 Macro로 충분하지만, 앞선 결과에 따라 다음 작업이 달라질 수도 있습니다.
 
-```text
-ReadLength → 길이 n 획득 → Insert(n, "!") 생성 → 저장
+```mermaid
+flowchart LR
+    readLength[ReadLength] --> getLength["길이 n 획득"] --> makeInsert["Insert(n, '!') 생성"] --> save[저장]
 ```
 
 이처럼 결과와 후속 계산을 연결하는 프로그램을 Free Monad 계열의 표현으로 모델링할 수 있습니다. 다음 계산이 함수로 보관되면 실행 전 전체 경로를 열거하거나 JSON으로 전송하기는 어려울 수 있습니다. 단순 편집 이력에는 고정된 명령 목록을 유지하고, 결과에 의존하는 프로그램 구성이 필요할 때 추가 추상화를 검토하는 편이 읽기 쉽습니다.

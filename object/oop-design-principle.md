@@ -89,9 +89,11 @@ class OrderCalculator:
     def calculate_total(self, order):
         return sum(item.price for item in order.items)
 
+
 class OrderRepository:
     def save(self, order):
         print("DB에 주문 저장")
+
 
 class OrderNotifier:
     def send_confirmation(self, order):
@@ -166,20 +168,11 @@ classDiagram
 
 ```python
 class Logger:
-    def write_to_file(self):
-        ...
-
-    def send_to_email(self):
-        ...
-
-    def format_json(self):
-        ...
-
-    def format_text(self):
-        ...
-
-    def filter_by_module(self):
-        ...
+    def write_to_file(self): ...
+    def send_to_email(self): ...
+    def format_json(self): ...
+    def format_text(self): ...
+    def filter_by_module(self): ...
 ```
 
 새로운 출력 형태나 포맷이 추가될 때마다 `Logger` 클래스 자체를 계속 수정해야 했을 것입니다. 실제 `logging` 모듈은 역할을 분리하여 출력 방식과 포맷을 독립적으로 교체할 수 있도록 설계되었습니다.
@@ -220,13 +213,10 @@ Open/Closed Principle은 소프트웨어 구성 요소가 **확장에는 열려 
 def calculate_discount(customer_type, price):
     if customer_type == "regular":
         return price * 0.05
-
     if customer_type == "vip":
         return price * 0.10
-
     if customer_type == "employee":
         return price * 0.20
-
     return 0
 ```
 
@@ -244,17 +234,18 @@ flowchart LR
 ```python
 from typing import Protocol
 
-class DiscountPolicy(Protocol):
-    def discount(self, price: int) -> int:
-        ...
 
+class DiscountPolicy(Protocol):
+    def discount(self, price: int) -> int: ...
 class RegularDiscount:
     def discount(self, price: int) -> int:
         return int(price * 0.05)
 
+
 class VipDiscount:
     def discount(self, price: int) -> int:
         return int(price * 0.10)
+
 
 class EmployeeDiscount:
     def discount(self, price: int) -> int:
@@ -265,11 +256,7 @@ class EmployeeDiscount:
 
 ```python
 class PriceCalculator:
-    def calculate(
-        self,
-        price: int,
-        policy: DiscountPolicy,
-    ) -> int:
+    def calculate(self, price: int, policy: DiscountPolicy) -> int:
         return price - policy.discount(price)
 ```
 
@@ -345,6 +332,7 @@ pytest는 hook specification과 hook implementation이라는 접점을 제공하
 ```python
 import pytest
 
+
 @pytest.hookimpl
 def pytest_runtest_setup(item):
     print("test setup")
@@ -407,8 +395,10 @@ class Bird:
     def fly(self):
         print("날아간다")
 
+
 class Sparrow(Bird):
     pass
+
 
 class Penguin(Bird):
     def fly(self):
@@ -448,13 +438,16 @@ def make_bird_fly(bird: Bird):
 class Bird:
     pass
 
+
 class FlyingBird(Bird):
     def fly(self):
         raise NotImplementedError
 
+
 class Sparrow(FlyingBird):
     def fly(self):
         print("참새가 날아간다")
+
 
 class Penguin(Bird):
     pass
@@ -646,6 +639,7 @@ Interface Segregation Principle은 **클라이언트가 사용하지 않는 메�
 ```python
 from abc import ABC, abstractmethod
 
+
 class Machine(ABC):
     @abstractmethod
     def print(self):
@@ -709,17 +703,13 @@ classDiagram
 ```python
 from typing import Protocol
 
+
 class Printer(Protocol):
-    def print(self) -> None:
-        ...
-
+    def print(self) -> None: ...
 class Scanner(Protocol):
-    def scan(self) -> None:
-        ...
-
+    def scan(self) -> None: ...
 class Fax(Protocol):
-    def fax(self) -> None:
-        ...
+    def fax(self) -> None: ...
 ```
 
 ```mermaid
@@ -1032,6 +1022,7 @@ class EmailSender:
     def send(self, message):
         print(f"이메일 전송: {message}")
 
+
 class OrderService:
     def __init__(self):
         self.sender = EmailSender()
@@ -1062,9 +1053,9 @@ classDiagram
 ```python
 from typing import Protocol
 
+
 class MessageSender(Protocol):
-    def send(self, message: str) -> None:
-        ...
+    def send(self, message: str) -> None: ...
 ```
 
 세부 전송 클래스는 이 인터페이스 규약을 준수하도록 구현합니다.
@@ -1073,6 +1064,7 @@ class MessageSender(Protocol):
 class EmailSender:
     def send(self, message: str) -> None:
         print(f"이메일 전송: {message}")
+
 
 class SmsSender:
     def send(self, message: str) -> None:
@@ -1121,7 +1113,6 @@ classDiagram
 ```python
 sender = EmailSender()
 service = OrderService(sender)
-
 service.complete_order()
 ```
 
@@ -1171,11 +1162,7 @@ Python의 HTTP 라이브러리 `requests`는 Transport Adapter라는 구조로 D
 import requests
 
 session = requests.Session()
-
-session.mount(
-    "https://example.com/",
-    MyAdapter(),
-)
+session.mount("https://example.com/", MyAdapter())
 ```
 
 `requests` 모듈 내부에는 모든 Adapter가 구현해야 하는 표준 규약인 `BaseAdapter` 추상 클래스가 존재합니다.
@@ -1232,10 +1219,8 @@ class Checkout:
     def pay(self, payment_type, amount):
         if payment_type == "card":
             print("카드 결제")
-
         elif payment_type == "bank":
             print("계좌 이체")
-
         elif payment_type == "point":
             print("포인트 결제")
 ```
@@ -1245,17 +1230,18 @@ class Checkout:
 ```python
 from typing import Protocol
 
-class PaymentMethod(Protocol):
-    def pay(self, amount: int) -> None:
-        ...
 
+class PaymentMethod(Protocol):
+    def pay(self, amount: int) -> None: ...
 class CardPayment:
     def pay(self, amount: int) -> None:
         print(f"카드로 {amount}원 결제")
 
+
 class BankTransfer:
     def pay(self, amount: int) -> None:
         print(f"계좌이체로 {amount}원 결제")
+
 
 class PointPayment:
     def pay(self, amount: int) -> None:
@@ -1415,9 +1401,11 @@ class Checkout:
     def pay(self, amount):
         raise NotImplementedError
 
+
 class CardCheckout(Checkout):
     def pay(self, amount):
         print("카드 결제")
+
 
 class BankCheckout(Checkout):
     def pay(self, amount):
@@ -1479,9 +1467,11 @@ class EmailSender:
     def send(self, message):
         print(message)
 
+
 class SmsSender:
     def send(self, message):
         print(message)
+
 
 class NotificationService:
     def __init__(self, sender):
@@ -1500,9 +1490,9 @@ class NotificationService:
 ```python
 from typing import Protocol
 
+
 class Sender(Protocol):
-    def send(self, message: str) -> None:
-        ...
+    def send(self, message: str) -> None: ...
 ```
 
 ### `ABC`
@@ -1511,6 +1501,7 @@ class Sender(Protocol):
 
 ```python
 from abc import ABC, abstractmethod
+
 
 class Sender(ABC):
     @abstractmethod
@@ -1534,8 +1525,10 @@ Python에서는 상태를 갖지 않는 단순 전략 패턴을 구현할 때 �
 def regular_discount(price):
     return int(price * 0.05)
 
+
 def vip_discount(price):
     return int(price * 0.10)
+
 
 def calculate_price(price, discount_policy):
     return price - discount_policy(price)
@@ -1544,10 +1537,7 @@ def calculate_price(price, discount_policy):
 함수를 직접 인자로 넘깁니다.
 
 ```python
-total = calculate_price(
-    10000,
-    vip_discount,
-)
+total = calculate_price(10000, vip_discount)
 ```
 
 ```mermaid
@@ -1599,14 +1589,10 @@ class WeatherService:
 ```python
 class FakeWeatherApi:
     def fetch(self):
-        return {
-            "temperature": 20,
-        }
+        return {"temperature": 20}
 
-service = WeatherService(
-    FakeWeatherApi()
-)
 
+service = WeatherService(FakeWeatherApi())
 assert service.get_weather()["temperature"] == 20
 ```
 

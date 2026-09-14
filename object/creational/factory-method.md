@@ -13,50 +13,37 @@ from abc import ABC, abstractmethod
 
 
 class Monster(ABC):
-
     @abstractmethod
     def attack(self) -> None:
         pass
 
 
 class Goblin(Monster):
-
     def attack(self) -> None:
         print("[고블린] 단검 공격!")
 
 
 class IceGolem(Monster):
-
     def attack(self) -> None:
         print("[아이스 골렘] 얼음 주먹 공격!")
 
 
 class FireDragon(Monster):
-
     def attack(self) -> None:
         print("[화염 드래곤] 브레스 공격!")
 
 
 class BadDungeon:
-
-    def enter(
-        self,
-        dungeon_type: str,
-    ) -> None:
-
+    def enter(self, dungeon_type: str) -> None:
         # 문제점 1: 사용하는 쪽에서 구체 제품을 직접 결정
         if dungeon_type == "forest":
             monster = Goblin()
-
         elif dungeon_type == "ice":
             monster = IceGolem()
-
         elif dungeon_type == "volcano":
             monster = FireDragon()
-
         else:
             raise ValueError("알 수 없는 던전입니다.")
-
         # 문제점 2: 생성 로직과 실제 비즈니스 로직이 혼재됨
         print("던전에 입장했습니다.")
         monster.attack()
@@ -67,16 +54,12 @@ class BadDungeon:
 ```python
 if dungeon_type == "forest":
     monster = Goblin()
-
 elif dungeon_type == "ice":
     monster = IceGolem()
-
 elif dungeon_type == "volcano":
     monster = FireDragon()
-
 elif dungeon_type == "swamp":
     monster = PoisonSlime()
-
 elif dungeon_type == "desert":
     monster = SandWorm()
 ```
@@ -85,16 +68,12 @@ elif dungeon_type == "desert":
 
 ```python
 def preview_monster(dungeon_type: str) -> Monster:
-
     if dungeon_type == "forest":
         return Goblin()
-
     elif dungeon_type == "ice":
         return IceGolem()
-
     elif dungeon_type == "volcano":
         return FireDragon()
-
     raise ValueError("알 수 없는 던전입니다.")
 ```
 
@@ -119,14 +98,12 @@ def preview_monster(dungeon_type: str) -> Monster:
 
 ```python
 class Dungeon(ABC):
-
     @abstractmethod
     def create_monster(self) -> Monster:
         pass
 
     def enter(self) -> None:
         monster = self.create_monster()
-
         print("던전에 입장했습니다.")
         monster.attack()
 ```
@@ -135,13 +112,11 @@ class Dungeon(ABC):
 
 ```python
 class ForestDungeon(Dungeon):
-
     def create_monster(self) -> Monster:
         return Goblin()
 
 
 class IceDungeon(Dungeon):
-
     def create_monster(self) -> Monster:
         return IceGolem()
 ```
@@ -199,15 +174,12 @@ Python 표준 라이브러리의 `unittest.TestCase.run()`은 별도의 결과 �
 
 ```python
 class TestCase:
-
     def defaultTestResult(self):
         return TestResult()
 
     def run(self, result=None):
-
         if result is None:
             result = self.defaultTestResult()
-
         # 공통 테스트 실행 로직
         ...
 ```
@@ -224,18 +196,13 @@ Django의 `FormMixin`은 `get_form()`을 통해 Form 인스턴스를 생성하�
 
 ```python
 class FormMixin:
-
     def get_form_class(self):
         return self.form_class
 
     def get_form(self, form_class=None):
-
         if form_class is None:
             form_class = self.get_form_class()
-
-        return form_class(
-            **self.get_form_kwargs()
-        )
+        return form_class(**self.get_form_kwargs())
 ```
 
 하위 View가 `get_form_class()` 또는 `get_form()`을 오버라이드하여 상위 폼 처리 흐름을 유지하면서 생성 대상을 변경할 수 있도록 구성되어 있습니다.
@@ -246,12 +213,9 @@ SQLAlchemy의 `TypeDecorator.load_dialect_impl()`은 현재 데이터베이스 D
 
 ```python
 class GUID(TypeDecorator):
-
     def load_dialect_impl(self, dialect):
-
         if dialect.name == "postgresql":
             return UUID()
-
         return CHAR(32)
 ```
 
@@ -320,35 +284,37 @@ classDiagram
 ```python
 from abc import ABC, abstractmethod
 
+
 # -------------------------------------------------------------------
 # 1. 제품 인터페이스 (Product)
 # -------------------------------------------------------------------
-
 class Monster(ABC):
     @abstractmethod
     def attack(self) -> None:
         pass
 
+
 # -------------------------------------------------------------------
 # 2. 구체 제품 (Concrete Products)
 # -------------------------------------------------------------------
-
 class Goblin(Monster):
     def attack(self) -> None:
         print("[고블린] 단검 공격!")
+
 
 class IceGolem(Monster):
     def attack(self) -> None:
         print("[아이스 골렘] 얼음 주먹 공격!")
 
+
 class FireDragon(Monster):
     def attack(self) -> None:
         print("[화염 드래곤] 브레스 공격!")
 
+
 # -------------------------------------------------------------------
 # 3. Creator
 # -------------------------------------------------------------------
-
 class Dungeon(ABC):
     @abstractmethod
     def create_monster(self) -> Monster:
@@ -361,34 +327,36 @@ class Dungeon(ABC):
         print("\n=== 던전 입장 ===")
         monster.attack()
 
+
 # -------------------------------------------------------------------
 # 4. 구체 Creator (Concrete Creators)
 # -------------------------------------------------------------------
-
 class ForestDungeon(Dungeon):
     def create_monster(self) -> Monster:
         return Goblin()
+
 
 class IceDungeon(Dungeon):
     def create_monster(self) -> Monster:
         return IceGolem()
 
+
 class VolcanoDungeon(Dungeon):
     def create_monster(self) -> Monster:
         return FireDragon()
 
+
 # -------------------------------------------------------------------
 # 5. 클라이언트
 # -------------------------------------------------------------------
-
 def explore_dungeon(dungeon: Dungeon) -> None:
     # 클라이언트는 어떤 Monster가 생성되는지 알 필요가 없음
     dungeon.enter()
 
+
 # -------------------------------------------------------------------
 # 6. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     dungeons: list[Dungeon] = [ForestDungeon(), IceDungeon(), VolcanoDungeon()]
     for dungeon in dungeons:
@@ -412,13 +380,11 @@ if __name__ == "__main__":
 
 ```python
 class PoisonSlime(Monster):
-
     def attack(self) -> None:
         print("[독 슬라임] 독액 공격!")
 
 
 class SwampDungeon(Dungeon):
-
     def create_monster(self) -> Monster:
         return PoisonSlime()
 ```
@@ -449,9 +415,7 @@ $$\text{ConcreteCreator} \longrightarrow \text{ConcreteProduct}$$
 
 ```python
 class Dungeon:
-
-    def create_monster(self) -> Monster:
-        ...
+    def create_monster(self) -> Monster: ...
 ```
 
 하지만 함수가 일급 객체인 언어에서는 "무언가를 생성하는 행위" 자체를 하나의 값으로 표현할 수 있습니다.
@@ -518,26 +482,15 @@ immutable record SpawnContext:
 고블린 생성 함수는 다음과 같습니다.
 
 ```python
-def create_goblin(
-    context: SpawnContext,
-) -> Goblin:
-
-    return Goblin(
-        level=context.player_level,
-        elite=context.difficulty == Hard,
-    )
+def create_goblin(context: SpawnContext) -> Goblin:
+    return Goblin(level=context.player_level, elite=context.difficulty == Hard)
 ```
 
 아이스 골렘 생성 함수 역시 동일한 Factory 타입을 따릅니다.
 
 ```python
-def create_ice_golem(
-    context: SpawnContext,
-) -> IceGolem:
-
-    return IceGolem(
-        level=context.player_level + 10,
-    )
+def create_ice_golem(context: SpawnContext) -> IceGolem:
+    return IceGolem(level=context.player_level + 10)
 ```
 
 상위 알고리즘은 구체 제품에 관계없이 동작합니다.
@@ -554,14 +507,8 @@ def spawn[M <: Monster](
 이 구조에서는 생성 정책이 **상속 계층**에 고정되는 대신 **함수 매개변수**로 이동하므로, 실행 중에도 생성 전략을 자유롭게 교체할 수 있습니다.
 
 ```python
-factory = (
-    create_ice_golem if difficulty == Hard else create_goblin
-)
-
-monster = spawn(
-    context,
-    factory,
-)
+factory = create_ice_golem if difficulty == Hard else create_goblin
+monster = spawn(context, factory)
 ```
 
 ### 3. Creator와 Product의 관계를 연관 타입으로 표현하기
@@ -612,7 +559,7 @@ impl Factory[IceFactory]:
 
 ```python
 monster = create(ForestFactory())  # monster : Goblin
-monster = create(IceFactory())     # monster : IceGolem
+monster = create(IceFactory())  # monster : IceGolem
 ```
 
 고전 Factory Method가 런타임 다형성으로 관리하던 **`Creator → Product`** 관계를 `Factory F → Associated Product Type`이라는 정적 타입 관계 형태로 보존하는 접근법입니다.
@@ -687,18 +634,12 @@ data Monster =
 생성 함수는 패턴 매칭을 활용합니다.
 
 ```python
-def create_monster(
-    dungeon: DungeonType,
-) -> Monster:
-
+def create_monster(dungeon: DungeonType) -> Monster:
     match dungeon:
-
         case Forest:
             return Goblin(attack=20)
-
         case Ice:
             return IceGolem(attack=40)
-
         case Volcano:
             return FireDragon(attack=100)
 ```
@@ -748,10 +689,8 @@ def create_boss() -> Result[Boss, ResourceError]:
 
 ```python
 match create_boss():
-
     case Ok(boss):
         boss.attack()
-
     case Err(error):
         show_error(error)
 ```

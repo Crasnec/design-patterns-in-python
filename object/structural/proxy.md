@@ -14,7 +14,6 @@
 
 ```python
 class RealImage:
-
     def __init__(self, path: str):
         self.path = path
         # 문제점 1: 객체 생성 즉시 비용이 큰 리소스를 로딩
@@ -32,11 +31,7 @@ class RealImage:
 여러 이미지 객체를 미리 구성한다고 가정합니다.
 
 ```python
-images = [
-    RealImage("photo1.jpg"),
-    RealImage("photo2.jpg"),
-    RealImage("photo3.jpg"),
-]
+images = [RealImage("photo1.jpg"), RealImage("photo2.jpg"), RealImage("photo3.jpg")]
 ```
 
 아직 어떤 이미지도 화면에 표시하지 않았지만, 생성자 호출만으로 모든 이미지가 디스크에서 로딩됩니다.
@@ -57,9 +52,7 @@ images[0].display()
 
 ```python
 class AdminService:
-
-    def delete_user(self, user_id: int) -> None:
-        ...
+    def delete_user(self, user_id: int) -> None: ...
 ```
 
 클라이언트가 `AdminService`를 직접 참조하면 호출 전에 권한을 검사해야 합니다.
@@ -103,7 +96,6 @@ from abc import ABC, abstractmethod
 
 
 class Image(ABC):
-
     @abstractmethod
     def display(self) -> None:
         pass
@@ -113,20 +105,17 @@ class Image(ABC):
 
 ```python
 class RealImage(Image):
-
     def __init__(self, path: str):
         self.path = path
         self._data = self._load_from_disk()
 
-    def display(self) -> None:
-        ...
+    def display(self) -> None: ...
 ```
 
 Proxy 역시 동일한 `Image` 인터페이스를 구현합니다.
 
 ```python
 class ImageProxy(Image):
-
     def __init__(self, path: str):
         self.path = path
         self._real_image: RealImage | None = None
@@ -134,18 +123,13 @@ class ImageProxy(Image):
     def display(self) -> None:
         if self._real_image is None:
             self._real_image = RealImage(self.path)
-
         self._real_image.display()
 ```
 
 Proxy 생성 자체는 매우 가볍습니다.
 
 ```python
-images = [
-    ImageProxy("photo1.jpg"),
-    ImageProxy("photo2.jpg"),
-    ImageProxy("photo3.jpg"),
-]
+images = [ImageProxy("photo1.jpg"), ImageProxy("photo2.jpg"), ImageProxy("photo3.jpg")]
 ```
 
 이 시점에는 실제 이미지가 로딩되지 않습니다.
@@ -233,8 +217,9 @@ Proxy는 목적에 따라 여러 형태로 구분할 수 있습니다.
 
 비용이 큰 실제 객체의 생성을 지연합니다.
 
-```text
-ImageProxy ──> (필요할 때 생성) ──> RealImage
+```mermaid
+flowchart LR
+    proxy[ImageProxy] -->|필요할 때 생성| real[RealImage]
 ```
 
 * **대표적인 용도:** 대형 이미지, 대형 문서, DB 연결, 복잡한 객체 그래프
@@ -243,25 +228,32 @@ ImageProxy ──> (필요할 때 생성) ──> RealImage
 
 호출 전에 접근 권한을 검사합니다.
 
-```text
-Client ──> ProtectionProxy ──(권한 검사)──> RealSubject
+```mermaid
+flowchart LR
+    client[Client] --> proxy[ProtectionProxy]
+    proxy -->|권한 검사| real[RealSubject]
 ```
 
 #### Remote Proxy
 
 다른 프로세스나 서버에 존재하는 객체를 로컬 객체처럼 표현합니다.
 
-```text
-Client ──> RemoteProxy ──(Serialization)──> Network ──> Remote Object
+```mermaid
+flowchart LR
+    client[Client] --> proxy[RemoteProxy]
+    proxy -->|Serialization| network[Network]
+    network --> remote[Remote Object]
 ```
 
 #### Caching Proxy
 
 실제 객체의 호출 결과를 보관하고 같은 요청에 대해 기존 결과를 재사용합니다.
 
-```text
-Client ──> CachingProxy ──┬── Cache Hit  ──> (결과 바로 반환)
-                         └── Cache Miss ──> RealSubject
+```mermaid
+flowchart LR
+    client[Client] --> proxy[CachingProxy]
+    proxy -->|Cache Hit| result[결과 바로 반환]
+    proxy -->|Cache Miss| real[RealSubject]
 ```
 
 #### Smart Reference Proxy
@@ -289,23 +281,13 @@ result = server.add(10, 20)
 
 표면적으로는 `server.add(10, 20)`처럼 보이지만, 내부적으로는 다음과 같이 수행됩니다.
 
-```text
-Python method call
-       │
-       ▼
-  ServerProxy
-       │
-       ▼
-XML serialization
-       │
-       ▼
-     HTTP
-       │
-       ▼
-Remote XML-RPC Server
-       │
-       ▼
-Remote method execution
+```mermaid
+flowchart TD
+    call[Python method call] --> proxy[ServerProxy]
+    proxy --> xml[XML serialization]
+    xml --> http[HTTP]
+    http --> server[Remote XML-RPC Server]
+    server --> exec[Remote method execution]
 ```
 
 즉 원격 객체의 위치와 통신 세부 사항을 Proxy가 대신 관리한다는 점에서 **Remote Proxy**의 직접적인 사례입니다.
@@ -327,8 +309,11 @@ with Manager() as manager:
 
 `values`는 일반적인 `list` 자체가 아니라 공유 리스트를 가리키는 Proxy입니다.
 
-```text
-Process A ──> ListProxy ──(IPC)──> Manager Process ──> Actual List
+```mermaid
+flowchart LR
+    processA[Process A] --> proxy[ListProxy]
+    proxy -->|IPC| manager[Manager Process]
+    manager --> list[Actual List]
 ```
 
 공식 문서 역시 Proxy를 다른 프로세스에 존재하는 공유 객체를 참조하는 객체로 정의하고, Proxy의 메서드가 referent의 대응 메서드를 호출한다고 설명합니다. 이는 **Remote Proxy / Process Proxy**의 전형적인 구조와 매우 가깝습니다.
@@ -355,8 +340,10 @@ proxy.some_method()
 
 공식 문서에서도 `weakref.proxy()`가 명시적인 역참조 없이 대부분의 문맥에서 원본 객체 대신 사용할 수 있는 Proxy를 반환한다고 설명합니다. 원본 객체가 이미 가비지 컬렉션된 이후 Proxy에 접근하면 `ReferenceError`가 발생합니다.
 
-```text
-Client ──> Weak Proxy ──(Weak Reference)──> Real Object
+```mermaid
+flowchart LR
+    client[Client] --> proxy[Weak Proxy]
+    proxy -->|Weak Reference| real[Real Object]
 ```
 
 Proxy가 실제 객체의 수명을 강제로 연장하지 않는다는 점에서 참조와 생명 주기를 중재하는 **Smart Reference Proxy**와 유사한 사례로 볼 수 있습니다.
@@ -403,11 +390,11 @@ classDiagram
 
 핵심 관계는 다음과 같습니다.
 
-```text
-Client ──> Image
-            ▲
-            │
-       ImageProxy ──(Controls access)──> RealImage
+```mermaid
+flowchart TD
+    client[Client] --> image[Image]
+    proxy[ImageProxy] --> image
+    proxy -->|Controls access| real[RealImage]
 ```
 
 클라이언트는 `Image` 인터페이스에만 의존하며 Proxy가 실제 객체의 생성과 접근 시점을 제어합니다.
@@ -420,19 +407,19 @@ Client ──> Image
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+
 # -------------------------------------------------------------------
 # 1. Subject
 # -------------------------------------------------------------------
-
 class Image(ABC):
     @abstractmethod
     def display(self) -> None:
         pass
 
+
 # -------------------------------------------------------------------
 # 2. Real Subject
 # -------------------------------------------------------------------
-
 class RealImage(Image):
     def __init__(self, path: str):
         self._path = Path(path)
@@ -447,10 +434,10 @@ class RealImage(Image):
     def display(self) -> None:
         print(f"[RealImage] {self._path} 표시")
 
+
 # -------------------------------------------------------------------
 # 3. Proxy
 # -------------------------------------------------------------------
-
 class ImageProxy(Image):
     def __init__(self, path: str):
         self._path = path
@@ -464,17 +451,17 @@ class ImageProxy(Image):
         # 이후 호출은 실제 객체에 위임
         self._real_image.display()
 
+
 # -------------------------------------------------------------------
 # 4. 클라이언트
 # -------------------------------------------------------------------
-
 def show_image(image: Image) -> None:
     image.display()
+
 
 # -------------------------------------------------------------------
 # 5. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     images: list[Image] = [
         ImageProxy("photo1.jpg"),
@@ -512,10 +499,11 @@ if __name__ == "__main__":
 
 `photo2.jpg`는 한 번도 사용되지 않았기 때문에 실제 이미지 객체도 생성되지 않습니다.
 
-```text
-photo1 ──> Proxy ──> RealImage 생성됨
-photo2 ──> Proxy ──> RealImage 없음
-photo3 ──> Proxy ──> RealImage 생성됨
+```mermaid
+flowchart LR
+    photo1[photo1] --> proxy1[Proxy] --> real1[RealImage 생성됨]
+    photo2[photo2] --> proxy2[Proxy] --> real2[RealImage 없음]
+    photo3[photo3] --> proxy3[Proxy] --> real3[RealImage 생성됨]
 ```
 
 클라이언트에서는 이 차이를 알 필요가 없습니다.
@@ -539,8 +527,9 @@ show_image(images[1])
 
 고전적인 Proxy는 다음 구조를 가집니다.
 
-```text
-Client ──> Proxy ──> Real Subject
+```mermaid
+flowchart LR
+    client[Client] --> proxy[Proxy] --> real[Real Subject]
 ```
 
 하지만 Proxy가 실제로 수행하는 역할(생성 지연, 접근 권한 검사, 원격 호출 변환, 캐싱, 수명 주기 관리, 동시성 동기화 등)을 더 추상적으로 표현하면 다음과 같습니다.
@@ -563,8 +552,11 @@ Client ──> Proxy ──> Real Subject
 
 고전적인 Virtual Proxy는 실제 객체 생성을 지연합니다.
 
-```text
-Proxy 생성 ──> (아직 Real Subject 없음) ──> 최초 method 호출 ──> Real Subject 생성
+```mermaid
+flowchart LR
+    create[Proxy 생성] --> none[아직 Real Subject 없음]
+    none --> call[최초 method 호출]
+    call --> real[Real Subject 생성]
 ```
 
 이를 타입으로 직접 표현할 수 있습니다.
@@ -585,8 +577,10 @@ image: Lazy[Image] = lazy { load_image("photo.jpg") }
 real_image = force(image)
 ```
 
-```text
-Unevaluated ──(force() 호출)──> load_image() 실행 ──> Evaluated(Image)
+```mermaid
+flowchart LR
+    unevaluated[Unevaluated] -->|force() 호출| exec[load_image 실행]
+    exec --> evaluated[Evaluated Image]
 ```
 
 두 번째 호출부터는 기존 결과를 사용합니다.
@@ -634,8 +628,10 @@ $$\text{Virtual Proxy} \approx \text{Memoized Lazy}[T]$$
 
 고전적인 Protection Proxy는 호출 전에 권한을 확인합니다.
 
-```text
-Client ──> Protection Proxy ──(permission check)──> Real Subject
+```mermaid
+flowchart LR
+    client[Client] --> proxy[Protection Proxy]
+    proxy -->|permission check| real[Real Subject]
 ```
 
 ```python
@@ -726,11 +722,8 @@ user_service: RemoteHandle[UserService]
 
 ```python
 def call[T, Args, Result](
-    target: RemoteHandle[T],
-    method: Method[T, Args, Result],
-    args: Args,
-) -> Async[Result[Result, RemoteError]]:
-    ...
+    target: RemoteHandle[T], method: Method[T, Args, Result], args: Args
+) -> Async[Result[Result, RemoteError]]: ...
 ```
 
 ```python
@@ -781,9 +774,11 @@ def load_user(id: UserId) -> User ! RemoteCall:
 
 Caching Proxy의 구조는 다음과 같습니다.
 
-```text
-Client ──> Caching Proxy ──┬── Cache Hit  ──> Result
-                          └── Cache Miss ──> Real Subject
+```mermaid
+flowchart LR
+    client[Client] --> proxy[Caching Proxy]
+    proxy -->|Cache Hit| result[Result]
+    proxy -->|Cache Miss| real[Real Subject]
 ```
 
 함수형 관점에서는 순수 함수의 Memoization으로 표현할 수 있습니다.
@@ -868,8 +863,11 @@ Type Error: connection has already been consumed.
 
 고전적인 Proxy는 메서드 호출을 받아 락을 획득하거나 작업 큐에 전달합니다.
 
-```text
-Client ──> ThreadSafeProxy ──> Lock / Queue ──> RealSubject
+```mermaid
+flowchart LR
+    client[Client] --> proxy[ThreadSafeProxy]
+    proxy --> lock[Lock / Queue]
+    lock --> real[RealSubject]
 ```
 
 Actor 기반 모델에서는 객체 자체를 직접 공유하지 않고 Handle만 제공합니다.
@@ -887,8 +885,10 @@ counter: ActorRef[Counter]
 send(counter, Increment)
 ```
 
-```text
-ActorRef ──(Message)──> Actor Mailbox ──> Actor State
+```mermaid
+flowchart LR
+    ref[ActorRef] -->|Message| mailbox[Actor Mailbox]
+    mailbox --> state[Actor State]
 ```
 
 실제 객체의 내부 상태에 직접 접근할 수 없게 만드는 구조로, 동시성 접근을 통제하는 Proxy를 언어의 동시성 모델로 일반화한 형태입니다.
@@ -927,8 +927,9 @@ ActorRef ──(Message)──> Actor Mailbox ──> Actor State
 
 보다 일반적으로 Proxy는 실제 연산의 앞뒤에 접근 정책을 삽입하는 효과 변환(Effect Transformation)으로 볼 수 있습니다.
 
-```text
-Client Operation ──> Proxy Policy ──> Real Operation
+```mermaid
+flowchart LR
+    op[Client Operation] --> policy[Proxy Policy] --> real[Real Operation]
 ```
 
 * **Caching Proxy:** $A \rightarrow B ! \text{Database} \quad \Longrightarrow \quad A \rightarrow B ! \text{Cache} + \text{Database}$
@@ -943,8 +944,11 @@ Client Operation ──> Proxy Policy ──> Real Operation
 
 고전적인 Proxy 구조를 더 일반화하면 다음과 같습니다.
 
-```text
-Client ──> Indirect Reference ──> Access Policy ──> Resource
+```mermaid
+flowchart LR
+    client[Client] --> indirect[Indirect Reference]
+    indirect --> policy[Access Policy]
+    policy --> resource[Resource]
 ```
 
 접근 정책은 Lazy, Authorization, Remote, Cache, Weak, Synchronized, Transactional 등으로 달라질 수 있습니다.

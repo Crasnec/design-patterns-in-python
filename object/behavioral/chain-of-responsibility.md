@@ -65,9 +65,7 @@ class BadSupportService:
             return self.technical.handle(ticket)
         elif ticket.category == "general":
             return self.faq.handle(ticket)
-
         return "[Human Operator] 상담원에게 요청을 전달합니다."
-
 ```
 
 새로운 요청 종류가 추가되면 기존 분기문을 수정해야 합니다.
@@ -75,7 +73,6 @@ class BadSupportService:
 ```python
 if ticket.category == "security":
     return self.security_support.handle(ticket)
-
 ```
 
 문제가 여기에서 끝나지 않을 수도 있습니다. 예를 들어 일반 문의라고 하더라도 FAQ에서 처리할 수 없는 질문은 다음 담당자에게 넘겨야 한다고 가정합니다.
@@ -90,7 +87,6 @@ flowchart TD
     billing_check -->|No| technical_check{Technical이 처리 가능한가?}
     technical_check -->|Yes| technical[Technical]
     technical_check -->|No| human[Human Operator]
-
 ```
 
 이런 규칙까지 클라이언트가 관리하기 시작하면 다음과 같은 코드가 만들어집니다.
@@ -99,18 +95,13 @@ flowchart TD
 # 아래는 처리 후보 선택이 반복되는 구조를 보여주는 발췌 코드입니다.
 if emergency.can_handle(ticket):
     return emergency.handle(ticket)
-
 if faq.can_handle(ticket):
     return faq.handle(ticket)
-
 if billing.can_handle(ticket):
     return billing.handle(ticket)
-
 if technical.can_handle(ticket):
     return technical.handle(ticket)
-
 return "[Human Operator] 상담원에게 요청을 전달합니다."
-
 ```
 
 처리 객체가 늘어날수록 클라이언트가 책임 선택 규칙 전체를 관리하게 됩니다.
@@ -138,7 +129,6 @@ flowchart TD
     handler_a -->|처리 불가| handler_b{Handler B}
     handler_b -->|처리 가능| response_b[Response]
     handler_b -->|처리 불가| handler_c[Handler C]
-
 ```
 
 ### 요청의 판단과 체인의 구성을 분리하기
@@ -162,7 +152,6 @@ class SupportHandler(ABC):
     @abstractmethod
     def handle(self, ticket: SupportTicket) -> str | None:
         pass
-
 ```
 
 기본 Handler는 다음 Handler에 대한 참조를 가집니다.
@@ -172,9 +161,7 @@ class BaseSupportHandler(SupportHandler):
     def __init__(self):
         self._next: SupportHandler | None = None
 
-    def set_next(
-        self, handler: "BaseSupportHandler"
-    ) -> "BaseSupportHandler":
+    def set_next(self, handler: "BaseSupportHandler") -> "BaseSupportHandler":
         self._next = handler
         return handler  # 체이닝 편의성을 위해 다음 핸들러 반환
 
@@ -182,7 +169,6 @@ class BaseSupportHandler(SupportHandler):
         if self._next is None:
             return None
         return self._next.handle(ticket)
-
 ```
 
 구체 Handler는 자신이 처리할 수 있는 요청인지 판단합니다.
@@ -200,7 +186,6 @@ class TechnicalSupportHandler(BaseSupportHandler):
         if ticket.category == "technical":
             return "[Technical] 기술팀이 처리합니다."
         return super().handle(ticket)
-
 ```
 
 이제 Handler를 원하는 순서로 연결합니다.
@@ -211,16 +196,13 @@ faq = FAQSupportHandler()
 billing = BillingSupportHandler()
 technical = TechnicalSupportHandler()
 fallback = HumanSupportHandler()
-
 emergency.set_next(faq).set_next(billing).set_next(technical).set_next(fallback)
-
 ```
 
 클라이언트는 체인의 첫 번째 Handler에게 요청을 전달하기만 하면 됩니다.
 
 ```python
 result = emergency.handle(ticket)
-
 ```
 
 클라이언트는 다음 사실을 알 필요가 없습니다.
@@ -234,11 +216,16 @@ result = emergency.handle(ticket)
 
 요청은 Chain을 따라 순차적으로 이동합니다.
 
-```text
-Emergency → FAQ → Billing → Technical → Human Operator
+```mermaid
+flowchart LR
+    emergency[Emergency] --> faq[FAQ] --> billing[Billing] --> technical[Technical] --> human[Human Operator]
+```
 
-일반 기술 문의: Emergency (Pass) → FAQ (Pass) → Billing (Pass) → Technical (Handle)
+일반 기술 문의는 다음과 같이 이동합니다.
 
+```mermaid
+flowchart LR
+    emergency2[Emergency<br/>Pass] --> faq2[FAQ<br/>Pass] --> billing2[Billing<br/>Pass] --> technical2[Technical<br/>Handle]
 ```
 
 핵심은 단순히 `if` 문을 여러 클래스로 나누는 것이 아닙니다. **요청의 발신자가 최종 수신자를 직접 선택하지 않도록 하고, 요청 처리 책임을 여러 Handler에게 순차적으로 위임하여 처리자 선택 자체를 Chain의 구조로 표현하는 것**이 책임 연쇄 패턴의 본질입니다.
@@ -269,19 +256,15 @@ Emergency → FAQ → Billing → Technical → Human Operator
 * **처리 대상이 고정적이라면 불필요할 수 있음:** 요청 종류와 담당자가 1:1로 고정되어 있다면 단순 Dictionary Dispatcher가 더 명확합니다.
 
 ```python
-handlers = {
-    "billing": billing_handler,
-    "technical": technical_handler,
-}
-
+handlers = {"billing": billing_handler, "technical": technical_handler}
 ```
 
 * **Chain 순서는 비즈니스 정책:** 먼저 배치된 Handler가 요청을 선점할 수 있으므로 순서를 단순한 구현 세부 사항으로 취급해서는 안 됩니다.
 * **미처리 결과의 명시:** 마지막에 Fallback Handler를 두면 담당자가 없는 요청의 경로를 정할 수 있습니다. 상담원 연결은 접수 방식이며, 실제 요청 해결이나 외부 작업의 성공까지 보장하지는 않습니다.
 
-```text
-Specialized Handler ──> Specialized Handler ──> Fallback Handler
-
+```mermaid
+flowchart LR
+    handler1[Specialized Handler] --> handler2[Specialized Handler] --> fallback[Fallback Handler]
 ```
 
 * **한 Handler가 처리를 반드시 종료할 필요는 없음:** 고전적인 Chain of Responsibility에서는 한 Handler가 처리하면 연쇄가 종료되지만, 필요에 따라 처리 후 다음 Handler에도 전달하는 변형(Pipeline 패턴 등)도 가능합니다.
@@ -296,16 +279,16 @@ Specialized Handler ──> Specialized Handler ──> Fallback Handler
 
 * **Decorator:** 같은 계약을 유지하며 기능을 **누적·가공**하는 것이 목적입니다. 캐시 적중이나 오류 등으로 내부 호출을 생략할 수도 있으므로, 모든 계층의 실행 여부만으로 두 패턴을 구분하지는 않습니다.
 
-```text
-Decorator A ──> Decorator B ──> Concrete Component
-
+```mermaid
+flowchart LR
+    decoratorA[Decorator A] --> decoratorB[Decorator B] --> component[Concrete Component]
 ```
 
 * **Chain of Responsibility:** 여러 후보 중 누가 요청을 맡아서 처리할 것인가(탐색)가 목적입니다.
 
-```text
-Handler A ──(Pass)──> Handler B (Handle & Stop)
-
+```mermaid
+flowchart LR
+    handlerA[Handler A] -->|Pass| handlerB[Handler B<br/>Handle and Stop]
 ```
 
 > **웹 Middleware의 성격:** 웹 프레임워크의 Middleware는 두 성격을 모두 가집니다. 다음 Handler를 무조건 호출하면서 전/후처리를 더하면 Decorator 성격을 띠고, 권한 검사 등 특정 조건에서 다음 Handler를 호출하지 않고 응답을 Short-circuit하면 Chain of Responsibility 성격을 띱니다.
@@ -334,7 +317,6 @@ def simple_middleware(get_response):
         return response
 
     return middleware
-
 ```
 
 Middleware가 `get_response`를 호출하지 않고 직접 `HttpResponse`를 반환하면, 뒤쪽의 Middleware와 View는 실행되지 않고 종료됩니다(Short-circuit).
@@ -347,10 +329,8 @@ Python 표준 라이브러리의 `urllib.request.OpenerDirector`는 여러 `Base
 import urllib.request
 
 opener = urllib.request.build_opener(
-    urllib.request.ProxyHandler(),
-    urllib.request.HTTPBasicAuthHandler(),
+    urllib.request.ProxyHandler(), urllib.request.HTTPBasicAuthHandler()
 )
-
 ```
 
 `OpenerDirector`는 처리 단계와 `handler_order`에 따라 Handler를 호출합니다. URL 열기와 오류 처리에서는 유효한 응답을 얻을 때까지 후보를 시도하는 흐름이 있습니다. 요청·응답 전처리처럼 여러 Handler를 거치는 단계도 있으므로 모든 메서드가 동일한 `Response | None` 계약을 따르는 것은 아닙니다.
@@ -407,7 +387,6 @@ classDiagram
 
     BaseSupportHandler --> SupportHandler : _next
     Client --> SupportHandler : Sends request
-
 ```
 
 ### 역할 정의
@@ -427,16 +406,19 @@ classDiagram
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True)
 class SupportTicket:
     category: str
     message: str
     priority: int = 0
 
+
 class SupportHandler(ABC):
     @abstractmethod
     def handle(self, ticket: SupportTicket) -> str | None:
         pass
+
 
 class BaseSupportHandler(SupportHandler):
     def __init__(self) -> None:
@@ -451,11 +433,13 @@ class BaseSupportHandler(SupportHandler):
             return None
         return self._next.handle(ticket)
 
+
 class EmergencySupportHandler(BaseSupportHandler):
     def handle(self, ticket: SupportTicket) -> str | None:
         if ticket.priority >= 100:
             return "[Emergency] 긴급 지원팀으로 요청을 전달합니다."
         return super().handle(ticket)
+
 
 class FAQSupportHandler(BaseSupportHandler):
     def handle(self, ticket: SupportTicket) -> str | None:
@@ -463,11 +447,13 @@ class FAQSupportHandler(BaseSupportHandler):
             return "[FAQ] 일반 문의를 자동 응답합니다."
         return super().handle(ticket)
 
+
 class BillingSupportHandler(BaseSupportHandler):
     def handle(self, ticket: SupportTicket) -> str | None:
         if ticket.category == "billing":
             return "[Billing] 결제 담당자가 요청을 처리합니다."
         return super().handle(ticket)
+
 
 class TechnicalSupportHandler(BaseSupportHandler):
     def handle(self, ticket: SupportTicket) -> str | None:
@@ -475,9 +461,11 @@ class TechnicalSupportHandler(BaseSupportHandler):
             return "[Technical] 기술 지원팀이 요청을 처리합니다."
         return super().handle(ticket)
 
+
 class HumanSupportHandler(BaseSupportHandler):
     def handle(self, ticket: SupportTicket) -> str | None:
         return "[Human Operator] 상담원에게 요청을 전달합니다."
+
 
 def create_support_chain() -> SupportHandler:
     emergency = EmergencySupportHandler()
@@ -489,12 +477,14 @@ def create_support_chain() -> SupportHandler:
     emergency.set_next(faq).set_next(billing).set_next(technical).set_next(fallback)
     return emergency
 
+
 def process_ticket(handler: SupportHandler, ticket: SupportTicket) -> None:
     result = handler.handle(ticket)
     if result is None:
         print("처리할 수 없는 요청입니다.")
     else:
         print(result)
+
 
 if __name__ == "__main__":
     chain = create_support_chain()
@@ -543,7 +533,6 @@ chain = EmergencySupportHandler()
 chain.set_next(SecuritySupportHandler()).set_next(FAQSupportHandler()).set_next(
     BillingSupportHandler()
 ).set_next(TechnicalSupportHandler()).set_next(HumanSupportHandler())
-
 process_ticket(chain, SupportTicket("security", "계정 접근 문의", 10))
 process_ticket(chain, SupportTicket("security", "긴급 계정 침해", 100))
 ```
@@ -572,7 +561,7 @@ process_ticket(chain, SupportTicket("security", "긴급 계정 침해", 100))
 
 ### 부록을 읽는 순서와 전제
 
-1~3절은 본문의 지원 요청을 함수 목록으로 처리하는 과정입니다. 4~5절은 미처리와 실패를 구별하고 순서 있는 선택을 합성하는 방법을 다룹니다. 6~7절에서는 이 구조가 단순 분배표나 Middleware와 어떻게 다른지 살펴봅니다.
+1\~3절은 본문의 지원 요청을 함수 목록으로 처리하는 과정입니다. 4\~5절은 미처리와 실패를 구별하고 순서 있는 선택을 합성하는 방법을 다룹니다. 6\~7절에서는 이 구조가 단순 분배표나 Middleware와 어떻게 다른지 살펴봅니다.
 
 ---
 
@@ -611,8 +600,7 @@ handlers: Vector[Handler[SupportTicket, str]] = [
 
 
 def first_handled[Req, Res](
-    handlers: Vector[Handler[Req, Res]],
-    request: Req,
+    handlers: Vector[Handler[Req, Res]], request: Req
 ) -> Option[Res]:
     for handler in handlers:
         match handler(request):
@@ -640,9 +628,16 @@ def human_handler(ticket: SupportTicket) -> Option[str]:
 
 이 함수는 항상 결과를 반환하므로 마지막에 배치합니다. 맨 앞에 두면 모든 요청을 선점하여 전문 담당자에게 도달하지 않습니다.
 
-```text
-전문 담당자들 → human_handler → 상담원 연결
-human_handler → 전문 담당자들 → 뒤쪽 후보에 도달하지 않음
+```mermaid
+flowchart LR
+    subgraph 올바른 순서
+        direction LR
+        specialists1[전문 담당자들] --> human1[human_handler] --> escalate[상담원 연결]
+    end
+    subgraph 잘못된 순서
+        direction LR
+        human2[human_handler] --> specialists2[전문 담당자들<br/>도달하지 않음]
+    end
 ```
 
 이처럼 체인의 순서는 단순한 저장 순서가 아니라 업무 정책입니다. 설정으로 Handler를 등록하더라도 긴급 우선, 전문 담당, 최종 접수라는 관계를 유지해야 합니다. Fallback이 보장하는 것은 접수 경로이며, 문의가 실제로 해결되었다는 사실은 별도의 처리 결과입니다.
@@ -698,8 +693,7 @@ def dispatch[Req, Res, Err](handlers, request: Req) -> Decision[Res, Err]:
 
 ```python
 def or_else[Req, Res](
-    left: Handler[Req, Res],
-    right: Handler[Req, Res],
+    left: Handler[Req, Res], right: Handler[Req, Res]
 ) -> Handler[Req, Res]:
     def combined(request: Req) -> Option[Res]:
         match left(request):
@@ -707,6 +701,7 @@ def or_else[Req, Res](
                 return Some(response)
             case None:
                 return right(request)
+
     return combined
 ```
 

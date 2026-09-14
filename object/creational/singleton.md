@@ -12,7 +12,6 @@
 
 ```python
 class GameConfig:
-
     def __init__(self):
         self.sound_volume = 80
         self.difficulty = "normal"
@@ -21,12 +20,9 @@ class GameConfig:
 # 서로 다른 위치에서 각각 생성
 battle_config = GameConfig()
 ui_config = GameConfig()
-
 battle_config.difficulty = "hard"
-
 print(battle_config.difficulty)
 # hard
-
 print(ui_config.difficulty)
 # normal
 ```
@@ -37,7 +33,6 @@ print(ui_config.difficulty)
 
 ```python
 class DatabaseManager:
-
     def __init__(self):
         # 비용이 큰 초기화 작업
         self.connection_pool = create_connection_pool()
@@ -54,7 +49,6 @@ service_c = DatabaseManager()
 
 ```python
 config = GameConfig()
-
 battle_service = BattleService(config)
 ui_service = UIService(config)
 audio_service = AudioService(config)
@@ -95,7 +89,6 @@ flowchart LR
 ```python
 config1 = GameConfig()
 config2 = GameConfig()
-
 assert config1 is config2
 ```
 
@@ -103,7 +96,6 @@ assert config1 is config2
 
 ```python
 config1.difficulty = "hard"
-
 print(config2.difficulty)
 # hard
 ```
@@ -148,11 +140,7 @@ print(config2.difficulty)
 
 ```python
 config = GameConfig()
-
-app = Application(
-    battle=BattleService(config),
-    ui=UIService(config),
-)
+app = Application(battle=BattleService(config), ui=UIService(config))
 ```
 
 이 경우 애플리케이션 내 인스턴스는 하나만 존재하지만, 클래스 자체는 Singleton에 직접 결합되지 않습니다.
@@ -189,7 +177,6 @@ import logging
 
 logger1 = logging.getLogger("game")
 logger2 = logging.getLogger("game")
-
 assert logger1 is logger2
 ```
 
@@ -309,10 +296,10 @@ classDiagram
 from threading import RLock
 from typing import Any
 
+
 # -------------------------------------------------------------------
 # 1. Singleton Meta Class
 # -------------------------------------------------------------------
-
 class SingletonMeta(type):
     _instances: dict[type, object] = {}
     _lock = RLock()
@@ -325,10 +312,10 @@ class SingletonMeta(type):
                 cls._instances[cls] = instance
             return cls._instances[cls]
 
+
 # -------------------------------------------------------------------
 # 2. Singleton
 # -------------------------------------------------------------------
-
 class GameConfig(metaclass=SingletonMeta):
     def __init__(self):
         self.sound_volume = 80
@@ -343,24 +330,25 @@ class GameConfig(metaclass=SingletonMeta):
     def show(self) -> None:
         print(f"볼륨: {self.sound_volume}, " f"난이도: {self.difficulty}")
 
+
 # -------------------------------------------------------------------
 # 3. 클라이언트
 # -------------------------------------------------------------------
-
 class BattleService:
     def start(self) -> None:
         config = GameConfig()
         print(f"[전투 시스템] " f"난이도={config.difficulty}")
+
 
 class UIService:
     def show_settings(self) -> None:
         config = GameConfig()
         print(f"[UI 시스템] " f"볼륨={config.sound_volume}")
 
+
 # -------------------------------------------------------------------
 # 4. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     config1 = GameConfig()
     config2 = GameConfig()
@@ -392,7 +380,6 @@ True
 ```python
 config1 = GameConfig()
 config2 = GameConfig()
-
 assert config1 is config2
 ```
 
@@ -402,15 +389,11 @@ assert config1 is config2
 
 예를 들어 복수의 프로세스로 애플리케이션을 실행한다면 다음과 같은 구조가 됩니다.
 
-```text
-Process A
-    └─ GameConfig instance A
-
-Process B
-    └─ GameConfig instance B
-
-Process C
-    └─ GameConfig instance C
+```mermaid
+flowchart TD
+    processA[Process A] --> instanceA[GameConfig instance A]
+    processB[Process B] --> instanceB[GameConfig instance B]
+    processC[Process C] --> instanceC[GameConfig instance C]
 ```
 
 각 프로세스마다 독립된 Singleton 인스턴스가 존재할 수 있습니다.
@@ -432,13 +415,12 @@ Process C
 
 전통적인 객체지향 Singleton은 이 모든 책임을 단일 클래스 내부에 집약시킵니다.
 
-```text
-Singleton Class
-      │
-      ├─ 생성 제한
-      ├─ 상태 보관
-      ├─ 수명 관리
-      └─ 전역 접근
+```mermaid
+flowchart TD
+    singleton[Singleton Class] --> creation[생성 제한]
+    singleton --> state[상태 보관]
+    singleton --> lifecycle[수명 관리]
+    singleton --> access[전역 접근]
 ```
 
 반면 현대적인 타입 시스템과 함수형 패러다임에서는 이 요구사항들을 서로 분리하여 훨씬 명확하게 모델링할 수 있습니다.
@@ -458,20 +440,13 @@ immutable record GameConfig:
 객체가 완전히 불변이라면 애플리케이션 내 여러 위치에서 동일한 설정값을 사용하는 데 굳이 Singleton 객체라는 장치가 필수적이지 않습니다.
 
 ```python
-config = GameConfig(
-    difficulty=Hard,
-    sound_volume=80,
-)
+config = GameConfig(difficulty=Hard, sound_volume=80)
 ```
 
 이 값을 필요한 함수들에 순수하게 전달합니다.
 
 ```python
-def calculate_damage(
-    hero: Hero,
-    config: GameConfig,
-) -> Damage:
-
+def calculate_damage(hero: Hero, config: GameConfig) -> Damage:
     match config.difficulty:
         case Easy:
             ...
@@ -482,15 +457,8 @@ def calculate_damage(
 다른 연산에도 동일한 설정 값을 바인딩해 줍니다.
 
 ```python
-damage = calculate_damage(
-    hero,
-    config,
-)
-
-screen = render_ui(
-    player,
-    config,
-)
+damage = calculate_damage(hero, config)
+screen = render_ui(player, config)
 ```
 
 여기서 본질적인 핵심은 "GameConfig 메모리 인스턴스가 시스템 내에 정확히 단 하나만 존재하는가?"가 아닙니다.
@@ -506,12 +474,8 @@ screen = render_ui(
 고전적인 Singleton 구현 방식에서는 함수 내부에서 직접 전역 접근 지점을 호출하곤 합니다.
 
 ```python
-def calculate_damage(
-    hero: Hero,
-) -> Damage:
-
+def calculate_damage(hero: Hero) -> Damage:
     config = GameConfig.instance()
-
     ...
 ```
 
@@ -523,10 +487,9 @@ calculate_damage : Hero -> Damage
 
 타입 시그니처 뒤에 숨겨진 전역 의존성이 형성되어 있는 것입니다.
 
-```text
-calculate_damage
-      │
-      └── GameConfig Singleton
+```mermaid
+flowchart TD
+    calc[calculate_damage] --> singleton[GameConfig Singleton]
 ```
 
 Capability 개념을 지원하는 가상의 타입 시스템에서는 필요한 권한과 기능을 시그니처에 명시적으로 선언할 수 있습니다.
@@ -588,9 +551,7 @@ damage = calculate_damage(
 
 ```python
 load_user(id, database, logger, config)
-
 calculate_damage(hero, logger, config)
-
 save_result(result, database, logger, config)
 ```
 
@@ -866,10 +827,11 @@ resource[
 
 앞서 살펴본 `logging.getLogger(name)` 사례처럼, 실제 시스템에서는 단 하나의 인스턴스가 아니라 **키(Key)별 단일 인스턴스**가 필요한 패턴이 흔히 발생합니다.
 
-```text
-"game"     → Logger A
-"database" → Logger B
-"network"  → Logger C
+```mermaid
+flowchart LR
+    game["game"] --> loggerA[Logger A]
+    database["database"] --> loggerB[Logger B]
+    network["network"] --> loggerC[Logger C]
 ```
 
 타입 매개변수에 Key를 포함할 수 있는 가상의 구조를 정의해 봅니다.
@@ -919,15 +881,11 @@ database_logger:
 
 고전적인 Singleton 패턴의 구조는 다음과 같습니다.
 
-```text
-Singleton Class
-      │
-      ├─ instance 하나 생성
-      │
-      └─ global access
-              │
-              ↓
-           Clients
+```mermaid
+flowchart TD
+    singleton[Singleton Class] --> instance[instance 하나 생성]
+    singleton --> access[global access]
+    access --> clients[Clients]
 ```
 
 그러나 현대적인 관점에서는 이 패턴을 여러 구성 축으로 정밀하게 분해하여 다룰 수 있습니다.

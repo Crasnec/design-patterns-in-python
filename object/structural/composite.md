@@ -13,34 +13,19 @@
 
 ```python
 class Soldier:
-
-    def __init__(
-        self,
-        name: str,
-        power: int,
-    ):
+    def __init__(self, name: str, power: int):
         self.name = name
         self.power = power
 
 
 class Squad:
-
-    def __init__(
-        self,
-        name: str,
-        soldiers: list[Soldier],
-    ):
+    def __init__(self, name: str, soldiers: list[Soldier]):
         self.name = name
         self.soldiers = soldiers
 
 
 class Platoon:
-
-    def __init__(
-        self,
-        name: str,
-        squads: list[Squad],
-    ):
+    def __init__(self, name: str, squads: list[Squad]):
         self.name = name
         self.squads = squads
 ```
@@ -48,26 +33,13 @@ class Platoon:
 각 객체의 전투력을 계산하려면 타입별 처리가 필요합니다.
 
 ```python
-def calculate_power(
-    unit: Soldier | Squad | Platoon,
-) -> int:
-
+def calculate_power(unit: Soldier | Squad | Platoon) -> int:
     if isinstance(unit, Soldier):
         return unit.power
-
     elif isinstance(unit, Squad):
-        return sum(
-            soldier.power
-            for soldier in unit.soldiers
-        )
-
+        return sum(soldier.power for soldier in unit.soldiers)
     elif isinstance(unit, Platoon):
-        return sum(
-            soldier.power
-            for squad in unit.squads
-            for soldier in squad.soldiers
-        )
-
+        return sum(soldier.power for squad in unit.squads for soldier in squad.soldiers)
     raise TypeError("알 수 없는 부대 타입입니다.")
 ```
 
@@ -88,11 +60,7 @@ flowchart TD
 
 ```python
 class Division:
-
-    def __init__(
-        self,
-        platoons: list[Platoon],
-    ):
+    def __init__(self, platoons: list[Platoon]):
         self.platoons = platoons
 ```
 
@@ -100,7 +68,6 @@ class Division:
 
 ```python
 if isinstance(unit, Division):
-
     return sum(
         soldier.power
         for platoon in unit.platoons
@@ -138,7 +105,6 @@ flowchart LR
 
 ```python
 class Unit(ABC):
-
     @abstractmethod
     def get_power(self) -> int:
         pass
@@ -148,12 +114,7 @@ class Unit(ABC):
 
 ```python
 class Soldier(Unit):
-
-    def __init__(
-        self,
-        name: str,
-        power: int,
-    ):
+    def __init__(self, name: str, power: int):
         self.name = name
         self.power = power
 
@@ -165,60 +126,43 @@ class Soldier(Unit):
 
 ```python
 class UnitGroup(Unit):
-
-    def __init__(
-        self,
-        name: str,
-    ):
+    def __init__(self, name: str):
         self.name = name
         self._children: list[Unit] = []
 
-    def add(
-        self,
-        unit: Unit,
-    ) -> None:
+    def add(self, unit: Unit) -> None:
         self._children.append(unit)
 
     def get_power(self) -> int:
-        return sum(
-            child.get_power()
-            for child in self._children
-        )
+        return sum(child.get_power() for child in self._children)
 ```
 
 여기서 핵심은 `UnitGroup`이 보유한 자식 요소의 타입 역시 `Unit`이라는 점입니다.
 따라서 자식은 `Soldier`일 수도 있고:
 
-```text
-UnitGroup
-    ├─ Soldier
-    └─ Soldier
+```mermaid
+flowchart TD
+    unitGroup1[UnitGroup] --> soldier1a[Soldier]
+    unitGroup1 --> soldier1b[Soldier]
 ```
 
 또 다른 `UnitGroup`일 수도 있습니다.
 
-```text
-UnitGroup
-    │
-    ├─ Soldier
-    │
-    └─ UnitGroup
-          ├─ Soldier
-          └─ UnitGroup
-                └─ Soldier
+```mermaid
+flowchart TD
+    unitGroup2[UnitGroup] --> soldier2[Soldier]
+    unitGroup2 --> unitGroup2a[UnitGroup]
+    unitGroup2a --> soldier2a[Soldier]
+    unitGroup2a --> unitGroup2b[UnitGroup]
+    unitGroup2b --> soldier2b[Soldier]
 ```
 
 이 구조에서는 트리의 깊이에 제한이 없습니다.
 클라이언트는 객체가 `Leaf`인지 `Composite`인지 구별하지 않고 연산을 호출합니다.
 
 ```python
-def show_power(
-    unit: Unit,
-) -> None:
-
-    print(
-        f"총 전투력: {unit.get_power()}"
-    )
+def show_power(unit: Unit) -> None:
+    print(f"총 전투력: {unit.get_power()}")
 ```
 
 다음 객체들을 모두 동일한 방식으로 전달할 수 있습니다.
@@ -232,20 +176,14 @@ show_power(division)
 
 호출하는 입장에서는 이들이 모두 단순한 `Unit`으로 보입니다.
 
-```text
-Client
-   │
-   ↓
- Unit
-   │
-   ├─ Soldier
-   │
-   └─ UnitGroup
-          │
-          ├─ Soldier
-          └─ UnitGroup
-                 │
-                 └─ ...
+```mermaid
+flowchart TD
+    client[Client] --> unit[Unit]
+    unit --> soldier3[Soldier]
+    unit --> unitGroup3[UnitGroup]
+    unitGroup3 --> soldier3a[Soldier]
+    unitGroup3 --> unitGroup3a[UnitGroup]
+    unitGroup3a --> more3["..."]
 ```
 
 컴포지트 패턴의 본질은 단순히 트리 자료구조를 구축하는 데 있지 않습니다. `Leaf`와 `Composite`가 같은 추상 인터페이스를 공유하여, **단일 객체와 객체의 재귀적 집합을 클라이언트가 같은 계약으로 다루게 하는 것**이 패턴의 핵심입니다.
@@ -290,7 +228,6 @@ Composite 패턴을 설계할 때는 크게 두 가지 접근 방식을 사용�
 
 ```python
 class Unit(ABC):
-
     @abstractmethod
     def get_power(self) -> int:
         pass
@@ -310,14 +247,8 @@ soldier.add(other_soldier)  # 런타임 예외 발생 필요
 따라서 다음과 같이 예외를 발생시키는 처리가 수반됩니다.
 
 ```python
-def add(
-    self,
-    unit: Unit,
-) -> None:
-
-    raise TypeError(
-        "Leaf에는 자식을 추가할 수 없습니다."
-    )
+def add(self, unit: Unit) -> None:
+    raise TypeError("Leaf에는 자식을 추가할 수 없습니다.")
 ```
 
 결과적으로 **인터페이스 일관성은 높아지지만 타입 안전성은 낮아집니다.**
@@ -328,19 +259,13 @@ def add(
 
 ```python
 class Unit(ABC):
-
     @abstractmethod
     def get_power(self) -> int:
         pass
 
 
 class UnitGroup(Unit):
-
-    def add(
-        self,
-        unit: Unit,
-    ) -> None:
-        ...
+    def add(self, unit: Unit) -> None: ...
 ```
 
 * **장점**: `soldier.add(...)`와 같은 잘못된 코드 작성을 정적 타입 단계에서 차단할 수 있으며, 타입의 실제 역할을 정확히 표현합니다.
@@ -369,32 +294,18 @@ XML은 본질적으로 계층적인 데이터 구조이며, 파이썬의 `xml.et
 import xml.etree.ElementTree as ET
 
 root = ET.Element("army")
-
-squad = ET.SubElement(
-    root,
-    "squad",
-)
-
-ET.SubElement(
-    squad,
-    "soldier",
-)
-
-ET.SubElement(
-    squad,
-    "soldier",
-)
+squad = ET.SubElement(root, "squad")
+ET.SubElement(squad, "soldier")
+ET.SubElement(squad, "soldier")
 ```
 
 구조는 다음과 같습니다.
 
-```text
-Element("army")
-    │
-    └─ Element("squad")
-           │
-           ├─ Element("soldier")
-           └─ Element("soldier")
+```mermaid
+flowchart TD
+    army["Element(&quot;army&quot;)"] --> squad["Element(&quot;squad&quot;)"]
+    squad --> soldier1["Element(&quot;soldier&quot;)"]
+    squad --> soldier2["Element(&quot;soldier&quot;)"]
 ```
 
 모든 노드가 동일한 `Element` 타입으로 다루어지고 자식을 재귀적으로 포함할 수 있다는 점에서 Composite 구조와 매우 유사합니다.
@@ -413,15 +324,12 @@ a + b * c
 
 개념적으로 아래와 같은 트리 구조로 변환됩니다.
 
-```text
-BinOp(+)
-  │
-  ├─ Name(a)
-  │
-  └─ BinOp(*)
-       │
-       ├─ Name(b)
-       └─ Name(c)
+```mermaid
+flowchart TD
+    binopPlus["BinOp(+)"] --> nameA["Name(a)"]
+    binopPlus --> binopMul["BinOp(*)"]
+    binopMul --> nameB["Name(b)"]
+    binopMul --> nameC["Name(c)"]
 ```
 
 Leaf역할을 하는 `Name` 노드와 하위 노드를 집합으로 갖는 `BinOp` 노드가 하나의 AST 계층 구조 내에서 재귀적으로 결합하는 컴포지트 형태를 띱니다.
@@ -432,15 +340,12 @@ Leaf역할을 하는 `Name` 노드와 하위 노드를 집합으로 갖는 `BinO
 
 공식 문서 설명에 따르면, 메시지의 페이로드(Payload)는 단순 문자열/바이트일 수도 있고, 독립된 헤더와 페이로드를 갖는 서브 메시지들의 시퀀스일 수도 있습니다. 또한 `walk()` 메서드를 사용하면 깊이 우선 탐색(DFS) 방식으로 메시지 트리의 모든 파트와 서브 파트를 일관되게 순회할 수 있습니다.
 
-```text
-EmailMessage
-    │
-    ├─ EmailMessage(text/plain)
-    │
-    └─ EmailMessage(multipart/alternative)
-          │
-          ├─ EmailMessage(text/plain)
-          └─ EmailMessage(text/html)
+```mermaid
+flowchart TD
+    root["EmailMessage"] --> plain1["EmailMessage(text/plain)"]
+    root --> multipart["EmailMessage(multipart/alternative)"]
+    multipart --> plain2["EmailMessage(text/plain)"]
+    multipart --> html["EmailMessage(text/html)"]
 ```
 
 최상위 메시지나 내부 서브 메시지가 모두 동일한 `EmailMessage` 클래스 인스턴스로 표현되고 재귀적으로 중첩된다는 점에서 Composite 패턴의 특성을 강하게 보여줍니다.
@@ -488,12 +393,11 @@ classDiagram
 
 핵심적인 재귀 포함 관계는 다음과 같이 나타납니다.
 
-```text
-UnitGroup ── contains ──> Unit
-                           │
-                           ├─ Soldier
-                           │
-                           └─ UnitGroup
+```mermaid
+flowchart LR
+    unitGroup4[UnitGroup] -->|contains| unit4[Unit]
+    unit4 --> soldier4[Soldier]
+    unit4 --> unitGroup4a[UnitGroup]
 ```
 
 `Composite` 자신도 `Component` 인터페이스를 구현하므로 트리가 재귀적으로 형성될 수 있습니다.
@@ -505,10 +409,10 @@ UnitGroup ── contains ──> Unit
 ```python
 from abc import ABC, abstractmethod
 
+
 # -------------------------------------------------------------------
 # 1. Component
 # -------------------------------------------------------------------
-
 class Unit(ABC):
     @abstractmethod
     def get_power(self) -> int:
@@ -518,10 +422,10 @@ class Unit(ABC):
     def show(self, indent: int = 0) -> None:
         pass
 
+
 # -------------------------------------------------------------------
 # 2. Leaf
 # -------------------------------------------------------------------
-
 class Soldier(Unit):
     def __init__(self, name: str, power: int):
         self.name = name
@@ -532,12 +436,12 @@ class Soldier(Unit):
 
     def show(self, indent: int = 0) -> None:
         prefix = " " * indent
-        print(f'{prefix}- Soldier: {self.name} (전투력: {self.power})')
+        print(f"{prefix}- Soldier: {self.name} (전투력: {self.power})")
+
 
 # -------------------------------------------------------------------
 # 3. Composite
 # -------------------------------------------------------------------
-
 class UnitGroup(Unit):
     def __init__(self, name: str):
         self.name = name
@@ -554,38 +458,38 @@ class UnitGroup(Unit):
 
     def show(self, indent: int = 0) -> None:
         prefix = " " * indent
-        print(f'{prefix}+ {self.name} (총 전투력: {self.get_power()})')
+        print(f"{prefix}+ {self.name} (총 전투력: {self.get_power()})")
         for child in self._children:
             child.show(indent + 4)
+
 
 # -------------------------------------------------------------------
 # 4. 클라이언트
 # -------------------------------------------------------------------
-
 def print_unit_info(unit: Unit) -> None:
     unit.show()
     print(f"\n총 전투력: " f"{unit.get_power()}")
 
+
 # -------------------------------------------------------------------
 # 5. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     # Leaf 생성
-    aragorn = Soldier(name='아라곤', power=100)
-    legolas = Soldier(name='레골라스', power=90)
-    gimli = Soldier(name='김리', power=95)
-    boromir = Soldier(name='보로미르', power=85)
+    aragorn = Soldier(name="아라곤", power=100)
+    legolas = Soldier(name="레골라스", power=90)
+    gimli = Soldier(name="김리", power=95)
+    boromir = Soldier(name="보로미르", power=85)
     # Composite 생성
-    fellowship = UnitGroup('반지원정대')
+    fellowship = UnitGroup("반지원정대")
     fellowship.add(aragorn)
     fellowship.add(legolas)
     fellowship.add(gimli)
     # 또 다른 Composite 생성
-    gondor = UnitGroup('곤도르 부대')
+    gondor = UnitGroup("곤도르 부대")
     gondor.add(boromir)
     # Composite 내부에 Composite 추가
-    allied_forces = UnitGroup('연합군')
+    allied_forces = UnitGroup("연합군")
     allied_forces.add(fellowship)
     allied_forces.add(gondor)
     print_unit_info(allied_forces)
@@ -608,8 +512,8 @@ if __name__ == "__main__":
 클라이언트는 전달받는 대상의 구체적 구조와 관계없이 아래 객체들을 완전히 동일한 인터페이스로 처리합니다.
 
 ```python
-print_unit_info(aragorn)        # Leaf 단일 객체
-print_unit_info(fellowship)     # Composite 단일 계층
+print_unit_info(aragorn)  # Leaf 단일 객체
+print_unit_info(fellowship)  # Composite 단일 계층
 print_unit_info(allied_forces)  # Composite 중첩 계층
 ```
 
@@ -617,16 +521,14 @@ print_unit_info(allied_forces)  # Composite 중첩 계층
 2. **`fellowship`**: `Soldier`들을 자식으로 가지는 `UnitGroup` (`Composite`)
 3. **`allied_forces`**: `UnitGroup`을 자식으로 포함하는 최상위 `UnitGroup` (`Composite`의 중첩)
 
-```text
-UnitGroup (allied_forces)
-    │
-    ├─ UnitGroup (fellowship)
-    │    ├─ Soldier (aragorn)
-    │    ├─ Soldier (legolas)
-    │    └─ Soldier (gimli)
-    │
-    └─ UnitGroup (gondor)
-         └─ Soldier (boromir)
+```mermaid
+flowchart TD
+    allied["UnitGroup (allied_forces)"] --> fellowship["UnitGroup (fellowship)"]
+    allied --> gondor["UnitGroup (gondor)"]
+    fellowship --> aragorn["Soldier (aragorn)"]
+    fellowship --> legolas["Soldier (legolas)"]
+    fellowship --> gimli["Soldier (gimli)"]
+    gondor --> boromir["Soldier (boromir)"]
 ```
 
 어떤 구조이든 클라이언트는 단지 다음 메서드를 호출할 뿐입니다.
@@ -646,12 +548,11 @@ unit.show()
 
 고전적인 Composite 패턴은 다음과 같은 구성을 가집니다.
 
-```text
-Component
-    │
-    ├─ Leaf
-    │
-    └─ Composite ──> Component*
+```mermaid
+flowchart TD
+    component[Component] --> leaf[Leaf]
+    component --> composite[Composite]
+    composite -->|contains| component
 ```
 
 `Composite`가 `Component`를 재귀적으로 포함하는 구조를 수학식으로 단순화하면 다음과 같습니다.
@@ -692,14 +593,12 @@ data Unit =
 
 `Group`의 자식 타입이 다시 자기 자신인 `Unit`으로 정의되어 있습니다.
 
-```text
-Unit
-  │
-  ├─ Soldier
-  │
-  └─ Group
-        │
-        └─ Vector[Unit] ──> ...
+```mermaid
+flowchart TD
+    unit5[Unit] --> soldier5[Soldier]
+    unit5 --> group5[Group]
+    group5 --> vector5["Vector[Unit]"]
+    vector5 --> more5["..."]
 ```
 
 이 타입을 사용하면 데이터 구조를 단 하나의 표현식으로 직접 구성할 수 있습니다.
@@ -710,21 +609,9 @@ army = Group(
     children=[
         Group(
             name="반지원정대",
-            children=[
-                Soldier(
-                    "아라곤",
-                    100,
-                ),
-                Soldier(
-                    "레골라스",
-                    90,
-                ),
-            ],
+            children=[Soldier("아라곤", 100), Soldier("레골라스", 90)],
         ),
-        Soldier(
-            "보로미르",
-            85,
-        ),
+        Soldier("보로미르", 85),
     ],
 )
 ```
@@ -744,26 +631,12 @@ unit.get_power()
 반면 ADT 관점에서는 데이터 정의와 연산 로직을 서로 분리할 수 있습니다.
 
 ```python
-def get_power(
-    unit: Unit,
-) -> Int:
-
+def get_power(unit: Unit) -> Int:
     match unit:
-
-        case Soldier(
-            name,
-            power,
-        ):
+        case Soldier(name, power):
             return power
-
-        case Group(
-            name,
-            children,
-        ):
-            return sum(
-                get_power(child)
-                for child in children
-            )
+        case Group(name, children):
+            return sum(get_power(child) for child in children)
 ```
 
 * **`Soldier`**: `power` 값을 그대로 반환
@@ -833,28 +706,18 @@ def fold_unit[R](
 이제 전투력 계산 로직은 재귀 구현 없이 선언적으로 작성할 수 있습니다.
 
 ```python
-def total_power(
-    unit: Unit,
-) -> Int:
-
+def total_power(unit: Unit) -> Int:
     return fold_unit(
-        unit,
-        soldier=lambda name, power: power,
-        group=lambda name, powers: sum(powers),
+        unit, soldier=lambda name, power: power, group=lambda name, powers: sum(powers)
     )
 ```
 
 인원수 집계 함수 역시 마찬가지입니다.
 
 ```python
-def count_soldiers(
-    unit: Unit,
-) -> Int:
-
+def count_soldiers(unit: Unit) -> Int:
     return fold_unit(
-        unit,
-        soldier=lambda name, power: 1,
-        group=lambda name, counts: sum(counts),
+        unit, soldier=lambda name, power: 1, group=lambda name, counts: sum(counts)
     )
 ```
 
@@ -866,30 +729,31 @@ def count_soldiers(
 
 재귀적 ADT에서 각 하위 구조를 먼저 계산하고, 그 결과를 현재 노드의 결합 규칙에 전달하는 구조적 Fold를 **Catamorphism**이라고 부릅니다. 모든 재귀 함수를 뜻하는 것은 아니며, 결과 역시 숫자뿐 아니라 문자열이나 새로운 트리일 수 있습니다.
 
-```text
-Recursive Tree ──> [Leaf 변환] ──> [Branch 결과 결합] ──> 최종 축약값
+```mermaid
+flowchart LR
+    tree["Recursive Tree"] --> leafConv["Leaf 변환"] --> branchComb["Branch 결과 결합"] --> result["최종 축약값"]
 ```
 
 전투력 계산 과정은 다음과 같은 흐름을 가집니다.
 
-```text
-Group
- ├─ Soldier(100)
- ├─ Soldier(90)
- └─ Group
-      ├─ Soldier(80)
-      └─ Soldier(70)
+```mermaid
+flowchart TD
+    group6[Group] --> s100["Soldier(100)"]
+    group6 --> s90["Soldier(90)"]
+    group6 --> group6a[Group]
+    group6a --> s80["Soldier(80)"]
+    group6a --> s70["Soldier(70)"]
 ```
 
 1. 각 `Leaf`를 해당 전투력 값으로 변환합니다.
 
-```text
-Group
- ├─ 100
- ├─ 90
- └─ Group
-      ├─ 80
-      └─ 70
+```mermaid
+flowchart TD
+    group7[Group] --> v100["100"]
+    group7 --> v90["90"]
+    group7 --> group7a[Group]
+    group7a --> v80["80"]
+    group7a --> v70["70"]
 ```
 
 2. 각 `Group` 단계에서 자식들의 값을 합산합니다.
@@ -958,33 +822,12 @@ where Monoid[T]:
 트리의 모든 `Leaf` 값을 일괄 변환해야 하는 상황을 생각해 봅니다. (예: 모든 병사의 전투력을 10% 상승)
 
 ```python
-def buff(
-    unit: Unit,
-) -> Unit:
-
+def buff(unit: Unit) -> Unit:
     match unit:
-
-        case Soldier(
-            name,
-            power,
-        ):
-            return Soldier(
-                name,
-                power * 110 // 100,
-            )
-
-        case Group(
-            name,
-            children,
-        ):
-            return Group(
-                name,
-                [
-                    buff(child)
-                    for child
-                    in children
-                ],
-            )
+        case Soldier(name, power):
+            return Soldier(name, power * 110 // 100)
+        case Group(name, children):
+            return Group(name, [buff(child) for child in children])
 ```
 
 이 예제는 구조를 유지하는 값 변환을 보여줍니다. 이를 Functor로 일반화하려면 `Tree[A]`처럼 변환할 값의 타입을 매개변수로 두고, 항등 변환과 함수 합성에 관한 법칙을 만족하는 `map`을 정의해야 합니다. 고정된 `Unit` 타입의 `buff()` 하나가 곧 범용 Functor 구현인 것은 아닙니다.
@@ -1035,12 +878,11 @@ def add_child(
 
 이때 **영속적 자료구조(Persistent Data Structure)** 기술을 사용하면 변경되지 않은 서브트리의 노드들을 메모리상에서 구조적으로 공유(Structural Sharing)하여 효율성을 극대화합니다.
 
-```text
-old_tree ─────┐
-              ├── (공유되는 서브트리)
-new_tree ─────┘
-                \
-                 [새로 추가된 노드]
+```mermaid
+flowchart LR
+    oldTree[old_tree] --> shared["(공유되는 서브트리)"]
+    newTree[new_tree] --> shared
+    newTree --> newNode["새로 추가된 노드"]
 ```
 
 ---
@@ -1058,8 +900,9 @@ group_b.add(group_a)  # 순환 구조 형성!
 
 유한한 귀납적 ADT를 이미 완성된 하위 값만으로 생성하고, 가변 참조·재귀적 지연 바인딩·우회 생성 수단을 허용하지 않는 모델에서는 순환을 만들 수 없습니다. 여기서 보장은 불변성만이 아니라 **유한한 값의 생성 규칙**에서 나옵니다.
 
-```text
-Unit₀ ──> Unit₁ ──> Unit₂
+```mermaid
+flowchart LR
+    unit0["Unit₀"] --> unit1["Unit₁"] --> unit2["Unit₂"]
 ```
 
 이 제약을 지키는 모델은 순환 방지를 생성 규칙으로 옮깁니다. Python의 frozen dataclass나 불변 참조 하나만으로 객체 그래프 전체에 이 조건이 성립하지는 않습니다. 외부 데이터에서 트리를 복원할 때는 순환·깊이·노드 수의 검증이 여전히 필요할 수 있습니다.
@@ -1090,10 +933,7 @@ Unit₀ ──> Unit₁ ──> Unit₂
 트리의 각 노드별로 비동기 작업이나 데이터베이스 조회 같은 효과(Effect)를 실행하는 상황을 가정해 봅니다.
 
 ```python
-async def load_status(
-    soldier: Soldier,
-) -> SoldierStatus:
-    ...
+async def load_status(soldier: Soldier) -> SoldierStatus: ...
 ```
 
 효과 시스템을 지원하는 타입 환경에서는 트리 순회 로직과 부수 효과 로직의 경계를 타입에 드러낼 수 있습니다.
@@ -1148,15 +988,10 @@ type Unit = Fix[UnitF]
 이제 **Catamorphism (`cata`)** 기법을 적용하면, 개발자는 재귀 로직을 작성하지 않고 단일 노드에 대한 계산 규칙인 **Algebra**만 정의하면 됩니다.
 
 ```python
-def power_algebra(
-    node: UnitF[Int],
-) -> Int:
-
+def power_algebra(node: UnitF[Int]) -> Int:
     match node:
-
         case SoldierF(_, power):
             return power
-
         case GroupF(_, powers):
             return sum(powers)
 

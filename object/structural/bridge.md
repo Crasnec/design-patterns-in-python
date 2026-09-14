@@ -20,58 +20,37 @@ from abc import ABC, abstractmethod
 
 
 class Shape(ABC):
-
     @abstractmethod
     def draw(self) -> None:
         pass
 
 
 class VectorCircle(Shape):
-
-    def __init__(
-        self,
-        x: int,
-        y: int,
-        radius: int,
-    ):
+    def __init__(self, x: int, y: int, radius: int):
         self.x = x
         self.y = y
         self.radius = radius
 
     def draw(self) -> None:
-        print(
-            "[Vector] "
-            f"Circle({self.x}, {self.y}, {self.radius})"
-        )
+        print("[Vector] " f"Circle({self.x}, {self.y}, {self.radius})")
 
 
 class RasterCircle(Shape):
-
-    def __init__(
-        self,
-        x: int,
-        y: int,
-        radius: int,
-    ):
+    def __init__(self, x: int, y: int, radius: int):
         self.x = x
         self.y = y
         self.radius = radius
 
     def draw(self) -> None:
-        print(
-            "[Raster] "
-            f"Circle({self.x}, {self.y}, {self.radius})"
-        )
+        print("[Raster] " f"Circle({self.x}, {self.y}, {self.radius})")
 
 
 class VectorRectangle(Shape):
-
     def draw(self) -> None:
         print("[Vector] Rectangle")
 
 
 class RasterRectangle(Shape):
-
     def draw(self) -> None:
         print("[Raster] Rectangle")
 ```
@@ -128,32 +107,21 @@ flowchart LR
 
 그리고 `Shape`가 `Renderer`를 상속하는 대신 참조하도록 구성합니다.
 
-```text
-Shape ──── has-a ────> Renderer
+```mermaid
+flowchart LR
+    shape[Shape] -->|has-a| renderer[Renderer]
 ```
 
 `Renderer`는 도형을 실제로 출력하기 위한 연산을 제공합니다.
 
 ```python
 class Renderer(ABC):
-
     @abstractmethod
-    def draw_circle(
-        self,
-        x: int,
-        y: int,
-        radius: int,
-    ) -> None:
+    def draw_circle(self, x: int, y: int, radius: int) -> None:
         pass
 
     @abstractmethod
-    def draw_rectangle(
-        self,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-    ) -> None:
+    def draw_rectangle(self, x: int, y: int, width: int, height: int) -> None:
         pass
 ```
 
@@ -161,11 +129,7 @@ class Renderer(ABC):
 
 ```python
 class Shape(ABC):
-
-    def __init__(
-        self,
-        renderer: Renderer,
-    ):
+    def __init__(self, renderer: Renderer):
         self._renderer = renderer
 
     @abstractmethod
@@ -174,92 +138,50 @@ class Shape(ABC):
 
 
 class Circle(Shape):
-
-    def __init__(
-        self,
-        renderer: Renderer,
-        x: int,
-        y: int,
-        radius: int,
-    ):
+    def __init__(self, renderer: Renderer, x: int, y: int, radius: int):
         super().__init__(renderer)
         self.x = x
         self.y = y
         self.radius = radius
 
     def draw(self) -> None:
-        self._renderer.draw_circle(
-            self.x,
-            self.y,
-            self.radius,
-        )
+        self._renderer.draw_circle(self.x, self.y, self.radius)
 ```
 
 `Vector`와 `Raster`의 차이는 `Renderer` 구현에서 처리합니다.
 
 ```python
 class VectorRenderer(Renderer):
-
-    def draw_circle(
-        self,
-        x: int,
-        y: int,
-        radius: int,
-    ) -> None:
-        print(
-            "[Vector] "
-            f"Circle({x}, {y}, {radius})"
-        )
+    def draw_circle(self, x: int, y: int, radius: int) -> None:
+        print("[Vector] " f"Circle({x}, {y}, {radius})")
 
 
 class RasterRenderer(Renderer):
-
-    def draw_circle(
-        self,
-        x: int,
-        y: int,
-        radius: int,
-    ) -> None:
-        print(
-            "[Raster] "
-            f"Circle({x}, {y}, {radius})"
-        )
+    def draw_circle(self, x: int, y: int, radius: int) -> None:
+        print("[Raster] " f"Circle({x}, {y}, {radius})")
 ```
 
 이제 조합을 위해 별도의 클래스가 필요하지 않습니다.
 
 ```python
-vector_circle = Circle(
-    VectorRenderer(),
-    x=10,
-    y=20,
-    radius=5,
-)
-
-raster_circle = Circle(
-    RasterRenderer(),
-    x=10,
-    y=20,
-    radius=5,
-)
+vector_circle = Circle(VectorRenderer(), x=10, y=20, radius=5)
+raster_circle = Circle(RasterRenderer(), x=10, y=20, radius=5)
 ```
 
 같은 `Circle` 클래스가 서로 다른 `Renderer` 구현과 조합됩니다.
 
-```text
-             ┌── VectorRenderer
-Circle ──────┤
-             └── RasterRenderer
+```mermaid
+flowchart LR
+    circle[Circle] --> vector_renderer[VectorRenderer]
+    circle --> raster_renderer[RasterRenderer]
 ```
 
 마찬가지로 같은 `Renderer`를 여러 `Abstraction`이 공유할 수 있습니다.
 
-```text
-Circle ───────────┐
-                  ↓
-             VectorRenderer
-                  ↑
-Rectangle ────────┘
+```mermaid
+flowchart TD
+    circle[Circle] --> vector_renderer[VectorRenderer]
+    rectangle[Rectangle] --> vector_renderer
 ```
 
 핵심은 단순히 객체 하나를 다른 객체에 주입하는 것이 아닙니다.
@@ -303,17 +225,13 @@ Rectangle ────────┘
 
 Matplotlib은 상위 Plotting 영역(Frontend)과 실제 화면 출력/파일 생성 영역(Backend)을 명확히 분리합니다.
 
-```text
-High-level Figure / Artist
-          │
-          ↓
-Backend-independent abstraction
-          │
-          ↓
-FigureCanvas / Renderer
-     ┌────┼─────┐
-     ↓    ↓     ↓
-    Agg   SVG   PDF
+```mermaid
+flowchart TD
+    figure["High-level Figure / Artist"] --> abstraction["Backend-independent abstraction"]
+    abstraction --> canvas["FigureCanvas / Renderer"]
+    canvas --> agg[Agg]
+    canvas --> svg[SVG]
+    canvas --> pdf[PDF]
 ```
 
 동일한 Plot 코드를 유지하면서 `QtAgg`, `TkAgg`, `SVG`, `PDF` 등의 렌더링 백엔드를 독립적으로 결합할 수 있으며, 이는 상위 그래픽 모델과 실제 출력 기술이라는 두 변화 축을 분리한다는 점에서 Bridge 패턴의 대표적 사례입니다.
@@ -324,14 +242,13 @@ FigureCanvas / Renderer
 
 SQLAlchemy의 `Engine`은 데이터베이스 연결 추상화와 데이터베이스별 실제 통신 구현을 분리합니다.
 
-```text
-SQLAlchemy Engine
-        │
-        ↓
-      Dialect
-   ┌────┼──────┬──────┐
-   ↓    ↓      ↓      ↓
-Postgres MySQL SQLite Oracle
+```mermaid
+flowchart TD
+    engine["SQLAlchemy Engine"] --> dialect[Dialect]
+    dialect --> postgres[Postgres]
+    dialect --> mysql[MySQL]
+    dialect --> sqlite[SQLite]
+    dialect --> oracle[Oracle]
 ```
 
 상위 `Engine` API 및 쿼리 구성 로직과 실제 DBAPI별 SQL 변환 및 통신 로직(`Dialect`)이 별도의 축으로 분리되어 독립적으로 진화합니다.
@@ -342,14 +259,13 @@ Postgres MySQL SQLite Oracle
 
 Python의 `logging` 시스템에서는 `Logger`가 로그 이벤트를 생성·관리하고, 실제 I/O 처리는 결합된 `Handler` 객체에 위임합니다.
 
-```text
-Logger
-  │
-  └── LogRecord
-        ├─ StreamHandler
-        ├─ FileHandler
-        ├─ SocketHandler
-        └─ SMTPHandler
+```mermaid
+flowchart TD
+    logger[Logger] --> record[LogRecord]
+    record --> stream[StreamHandler]
+    record --> file[FileHandler]
+    record --> socket[SocketHandler]
+    record --> smtp[SMTPHandler]
 ```
 
 `Logger` 계층과 출력 `Handler` 계층이 독립적으로 구성 및 확장 가능하다는 점에서 Bridge와 유사한 구조를 보여줍니다.
@@ -420,10 +336,10 @@ classDiagram
 ```python
 from abc import ABC, abstractmethod
 
+
 # -------------------------------------------------------------------
 # 1. Implementor
 # -------------------------------------------------------------------
-
 class Renderer(ABC):
     @abstractmethod
     def draw_circle(self, x: int, y: int, radius: int) -> None:
@@ -433,32 +349,33 @@ class Renderer(ABC):
     def draw_rectangle(self, x: int, y: int, width: int, height: int) -> None:
         pass
 
+
 # -------------------------------------------------------------------
 # 2. Concrete Implementors
 # -------------------------------------------------------------------
-
 class VectorRenderer(Renderer):
     def draw_circle(self, x: int, y: int, radius: int) -> None:
-        print(f'[Vector] 원의 경로를 생성합니다. center=({x}, {y}), radius={radius}')
+        print(f"[Vector] 원의 경로를 생성합니다. center=({x}, {y}), radius={radius}")
 
     def draw_rectangle(self, x: int, y: int, width: int, height: int) -> None:
         print(
-            f'[Vector] 사각형 경로를 생성합니다. position=({x}, {y}), size=({width}, {height})'
+            f"[Vector] 사각형 경로를 생성합니다. position=({x}, {y}), size=({width}, {height})"
         )
+
 
 class RasterRenderer(Renderer):
     def draw_circle(self, x: int, y: int, radius: int) -> None:
-        print(f'[Raster] 원의 픽셀을 계산합니다. center=({x}, {y}), radius={radius}')
+        print(f"[Raster] 원의 픽셀을 계산합니다. center=({x}, {y}), radius={radius}")
 
     def draw_rectangle(self, x: int, y: int, width: int, height: int) -> None:
         print(
-            f'[Raster] 사각형의 픽셀을 채웁니다. position=({x}, {y}), size=({width}, {height})'
+            f"[Raster] 사각형의 픽셀을 채웁니다. position=({x}, {y}), size=({width}, {height})"
         )
+
 
 # -------------------------------------------------------------------
 # 3. Abstraction
 # -------------------------------------------------------------------
-
 class Shape(ABC):
     def __init__(self, renderer: Renderer):
         self._renderer = renderer
@@ -467,10 +384,10 @@ class Shape(ABC):
     def draw(self) -> None:
         pass
 
+
 # -------------------------------------------------------------------
 # 4. Refined Abstractions
 # -------------------------------------------------------------------
-
 class Circle(Shape):
     def __init__(self, renderer: Renderer, x: int, y: int, radius: int):
         super().__init__(renderer)
@@ -480,6 +397,7 @@ class Circle(Shape):
 
     def draw(self) -> None:
         self._renderer.draw_circle(x=self.x, y=self.y, radius=self.radius)
+
 
 class Rectangle(Shape):
     def __init__(self, renderer: Renderer, x: int, y: int, width: int, height: int):
@@ -494,10 +412,10 @@ class Rectangle(Shape):
             x=self.x, y=self.y, width=self.width, height=self.height
         )
 
+
 # -------------------------------------------------------------------
 # 5. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     vector = VectorRenderer()
     raster = RasterRenderer()
@@ -679,8 +597,9 @@ trait DrawingAlgebra[R]:
 
 더 나아가 그래픽 연산 자체를 중간 표현(IR / Command ADT) 데이터로 기술할 수 있습니다.
 
-```text
-Shape  ──(describe)──>  DrawCommand (IR)  ──(render)──>  [ SVG / Raster / GPU ]
+```mermaid
+flowchart LR
+    shape[Shape] -->|describe| ir["DrawCommand (IR)"] -->|render| backend["SVG / Raster / GPU"]
 ```
 
 ```text
@@ -748,10 +667,11 @@ draw_png =
     describe >> render_png
 ```
 
-```text
-                ┌─ render_svg
-describe ───────┼─ render_png
-                └─ render_terminal
+```mermaid
+flowchart LR
+    describe[describe] --> render_svg[render_svg]
+    describe --> render_png[render_png]
+    describe --> render_terminal[render_terminal]
 ```
 
 객체 간 참조 대신 변환 함수를 연결합니다. `describe`와 SVG 문자열 생성은 순수 함수로 작성할 수 있지만, 파일 저장이나 화면 출력까지 수행하는 Renderer는 부수효과를 가집니다. 함수로 표현했다는 이유만으로 계산이 순수해지지는 않습니다.

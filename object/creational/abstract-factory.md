@@ -12,7 +12,6 @@ class BadHero:
     def __init__(self, name: str, job: str):
         self.name = name
         self.job = job
-        
         # 문제점 1: 구체적인 클래스에 직접 의존 (Tight Coupling)
         # 클라이언트가 Sword, Wand, ChainMail, Robe 등의 구체 클래스명을 직접 명시함
         if job == "warrior":
@@ -30,7 +29,7 @@ class BadHero:
             return Sword()
         elif job == "mage" and item_type == "armor":
             # 실수로 마법사에게 전사 갑옷을 반환해도 문법 에러가 발생하지 않음
-            return ChainMail() 
+            return ChainMail()
 ```
 
 ### 이 방식이 가진 단점
@@ -153,6 +152,7 @@ classDiagram
 ```python
 from abc import ABC, abstractmethod
 
+
 # -------------------------------------------------------------------
 # 1. 추상 제품 (Abstract Products)
 # -------------------------------------------------------------------
@@ -161,10 +161,12 @@ class Weapon(ABC):
     def attack(self) -> None:
         pass
 
+
 class Armor(ABC):
     @abstractmethod
     def defend(self) -> None:
         pass
+
 
 # -------------------------------------------------------------------
 # 2. 구체 제품 (Concrete Products)
@@ -173,17 +175,21 @@ class Sword(Weapon):
     def attack(self) -> None:
         print("[검] 물리 베기 공격! (데미지: 50)")
 
+
 class ChainMail(Armor):
     def defend(self) -> None:
         print("[사슬 갑옷] 물리 데미지를 감소시킵니다.")
+
 
 class Wand(Weapon):
     def attack(self) -> None:
         print("[지팡이] 화염구 발사! (데미지: 80)")
 
+
 class Robe(Armor):
     def defend(self) -> None:
         print("[마법 로브] 마법 보호막으로 흡수합니다.")
+
 
 # -------------------------------------------------------------------
 # 3. 추상 팩토리 (Abstract Factory)
@@ -197,6 +203,7 @@ class EquipmentFactory(ABC):
     def create_armor(self) -> Armor:
         pass
 
+
 # -------------------------------------------------------------------
 # 4. 구체 팩토리 (Concrete Factories)
 # -------------------------------------------------------------------
@@ -207,12 +214,14 @@ class WarriorEquipmentFactory(EquipmentFactory):
     def create_armor(self) -> Armor:
         return ChainMail()
 
+
 class MageEquipmentFactory(EquipmentFactory):
     def create_weapon(self) -> Weapon:
         return Wand()
 
     def create_armor(self) -> Armor:
         return Robe()
+
 
 # -------------------------------------------------------------------
 # 5. 클라이언트
@@ -228,6 +237,7 @@ class Hero:
         print(f"\n=== {self.name} 전투 시작 ===")
         self.weapon.attack()
         self.armor.defend()
+
 
 # -------------------------------------------------------------------
 # 실행 (Usage)
@@ -268,12 +278,15 @@ if __name__ == "__main__":
 def warrior_supplier():
     return Sword(), ChainMail()
 
+
 def mage_supplier():
     return Wand(), Robe()
+
 
 def create_hero(name: str, supplier_fn):
     weapon, armor = supplier_fn()  # 단순 함수 호출로 객체 세트 수급
     return Hero(name, weapon, armor)
+
 
 hero1 = create_hero("아라곤", warrior_supplier)
 ```
@@ -290,26 +303,28 @@ hero1 = create_hero("아라곤", warrior_supplier)
 from dataclasses import dataclass
 from typing import Union
 
+
 # 1. Product Type (곱 타입): 세트 조합을 타입 레벨에서 명시
 @dataclass(frozen=True)
 class WarriorSet:
     weapon: Sword
     armor: ChainMail
 
+
 @dataclass(frozen=True)
 class MageSet:
     weapon: Wand
     armor: Robe
 
+
 # 2. Sum Type (합 타입): 허용되는 세트들의 합집합
 JobEquipment = Union[WarriorSet, MageSet]
-
 # 올바른 조합
 good_warrior = WarriorSet(Sword(), ChainMail())
 
+
 # 정적 타입 체커(mypy) 사용 시, 아래와 같은 잘못된 조합을 검사 단계에서 탐지합니다.
 # bad_warrior = WarriorSet(Wand(), ChainMail()) # Type Error!
-
 # 3. 패턴 매칭을 통한 안전한 소비
 def equip_hero(equipment: JobEquipment):
     match equipment:

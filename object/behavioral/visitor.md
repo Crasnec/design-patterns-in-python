@@ -63,11 +63,7 @@ class City:
     population: int
 
     def export_json(self) -> dict[str, object]:
-        return {
-            "type": "city",
-            "name": self.name,
-            "population": self.population,
-        }
+        return {"type": "city", "name": self.name, "population": self.population}
 
     def calculate_value(self) -> int:
         return self.population * 100
@@ -85,11 +81,7 @@ class Forest:
     area: float
 
     def export_json(self) -> dict[str, object]:
-        return {
-            "type": "forest",
-            "name": self.name,
-            "area": self.area,
-        }
+        return {"type": "forest", "name": self.name, "area": self.area}
 
     def calculate_value(self) -> int:
         return int(self.area * 300)
@@ -104,14 +96,9 @@ class Mine:
     mineral: str
     production: int
 
-    def export_json(self) -> dict[str, object]:
-        ...
-
-    def calculate_value(self) -> int:
-        ...
-
-    def create_report(self) -> str:
-        ...
+    def export_json(self) -> dict[str, object]: ...
+    def calculate_value(self) -> int: ...
+    def create_report(self) -> str: ...
 ```
 
 문제는 이 기능들이 `City`, `Forest`, `Mine`의 핵심 도메인 역할과 직접적인 관련이 없다는 점입니다.
@@ -148,17 +135,9 @@ AI Feature Extraction
 ```python
 def export_json(element) -> dict[str, object]:
     if isinstance(element, City):
-        return {
-            "type": "city",
-            "name": element.name,
-            "population": element.population,
-        }
+        return {"type": "city", "name": element.name, "population": element.population}
     if isinstance(element, Forest):
-        return {
-            "type": "forest",
-            "name": element.name,
-            "area": element.area,
-        }
+        return {"type": "forest", "name": element.name, "area": element.area}
     if isinstance(element, Mine):
         return {
             "type": "mine",
@@ -242,7 +221,6 @@ from abc import ABC, abstractmethod
 
 
 class WorldElement(ABC):
-
     @abstractmethod
     def accept(self, visitor: WorldVisitor) -> None:
         pass
@@ -283,7 +261,6 @@ Visitor 인터페이스는 모든 Element 종류별 방문 메서드를 선언�
 
 ```python
 class WorldVisitor(ABC):
-
     @abstractmethod
     def visit_city(self, city: City) -> None:
         pass
@@ -301,30 +278,18 @@ class WorldVisitor(ABC):
 
 ```python
 class JsonExportVisitor(WorldVisitor):
-
-    def visit_city(self, city: City) -> None:
-        ...
-
-    def visit_forest(self, forest: Forest) -> None:
-        ...
-
-    def visit_mine(self, mine: Mine) -> None:
-        ...
+    def visit_city(self, city: City) -> None: ...
+    def visit_forest(self, forest: Forest) -> None: ...
+    def visit_mine(self, mine: Mine) -> None: ...
 ```
 
 통계 집계 연산 역시 구체적인 Visitor 클래스로 분리됩니다.
 
 ```python
 class StatisticsVisitor(WorldVisitor):
-
-    def visit_city(self, city: City) -> None:
-        ...
-
-    def visit_forest(self, forest: Forest) -> None:
-        ...
-
-    def visit_mine(self, mine: Mine) -> None:
-        ...
+    def visit_city(self, city: City) -> None: ...
+    def visit_forest(self, forest: Forest) -> None: ...
+    def visit_mine(self, mine: Mine) -> None: ...
 ```
 
 클라이언트는 객체 구조 변경 없이 Visitor 구현체만 교체하여 실행합니다.
@@ -335,12 +300,10 @@ elements: list[WorldElement] = [
     Forest("고대의 숲", 450.0),
     Mine("북부 광산", "철", 2_000),
 ]
-
 # 1. JSON Export 실행
 json_visitor = JsonExportVisitor()
 for element in elements:
     element.accept(json_visitor)
-
 # 2. 통계 계산 실행
 stats_visitor = StatisticsVisitor()
 for element in elements:
@@ -349,17 +312,20 @@ for element in elements:
 
 구조는 다음과 같이 전환됩니다.
 
-```text
-[Before]
-City        ──> export_json(), calculate_value(), create_report()
-Forest      ──> export_json(), calculate_value(), create_report()
-Mine        ──> export_json(), calculate_value(), create_report()
-
-[After]
-City, Forest, Mine  ──> accept(visitor)
-
-JsonExportVisitor   ──> visit_city(), visit_forest(), visit_mine()
-StatisticsVisitor   ──> visit_city(), visit_forest(), visit_mine()
+```mermaid
+flowchart LR
+    subgraph Before[Before]
+        city1[City] --> ops1["export_json(), calculate_value(), create_report()"]
+        forest1[Forest] --> ops1
+        mine1[Mine] --> ops1
+    end
+    subgraph After[After]
+        city2[City] --> accept["accept(visitor)"]
+        forest2[Forest] --> accept
+        mine2[Mine] --> accept
+        accept --> json["JsonExportVisitor: visit_city(), visit_forest(), visit_mine()"]
+        accept --> stats["StatisticsVisitor: visit_city(), visit_forest(), visit_mine()"]
+    end
 ```
 
 즉, 코드의 구조화 방향이 "Element 기준의 연산 파편화"에서 "Operation 기준의 타입별 처리 응집"으로 변경됩니다.
@@ -392,9 +358,10 @@ element.accept(visitor)
 
 $$\text{Element Type} \times \text{Visitor Type}$$
 
-```text
-City × JsonExportVisitor      → City 객체의 JSON 변환
-Mine × StatisticsVisitor     → Mine 객체의 통계 집계
+```mermaid
+flowchart LR
+    cityXjson["City × JsonExportVisitor"] --> cityresult["City 객체의 JSON 변환"]
+    mineXstats["Mine × StatisticsVisitor"] --> mineresult["Mine 객체의 통계 집계"]
 ```
 
 이 이중 디스패치 구조 덕분에 타입 분기 조건문 없이도 정교한 다형성 처리가 가능해집니다.
@@ -469,7 +436,6 @@ import ast
 
 
 class FunctionCounter(ast.NodeVisitor):
-
     def __init__(self):
         self.count = 0
 
@@ -485,7 +451,6 @@ def hello():
 def world():
     pass
 """)
-
 visitor = FunctionCounter()
 visitor.visit(tree)
 print(visitor.count)  # 출력: 2
@@ -502,7 +467,6 @@ import ast
 
 
 class RenameVariable(ast.NodeTransformer):
-
     def visit_Name(self, node: ast.Name) -> ast.AST:
         if node.id == "old_name":
             return ast.Name(id="new_name", ctx=node.ctx)
@@ -594,6 +558,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import json
 
+
 # -------------------------------------------------------------------
 # 1. Visitor Interface
 # -------------------------------------------------------------------
@@ -610,6 +575,7 @@ class WorldVisitor(ABC):
     def visit_mine(self, mine: Mine) -> None:
         pass
 
+
 # -------------------------------------------------------------------
 # 2. Element Interface
 # -------------------------------------------------------------------
@@ -617,6 +583,7 @@ class WorldElement(ABC):
     @abstractmethod
     def accept(self, visitor: WorldVisitor) -> None:
         pass
+
 
 # -------------------------------------------------------------------
 # 3. Concrete Elements
@@ -629,6 +596,7 @@ class City(WorldElement):
     def accept(self, visitor: WorldVisitor) -> None:
         visitor.visit_city(self)
 
+
 @dataclass(frozen=True)
 class Forest(WorldElement):
     name: str
@@ -636,6 +604,7 @@ class Forest(WorldElement):
 
     def accept(self, visitor: WorldVisitor) -> None:
         visitor.visit_forest(self)
+
 
 @dataclass(frozen=True)
 class Mine(WorldElement):
@@ -645,6 +614,7 @@ class Mine(WorldElement):
 
     def accept(self, visitor: WorldVisitor) -> None:
         visitor.visit_mine(self)
+
 
 # -------------------------------------------------------------------
 # 4. Concrete Visitors
@@ -674,6 +644,7 @@ class JsonExportVisitor(WorldVisitor):
     def result(self) -> str:
         return json.dumps(self._items, ensure_ascii=False, indent=2)
 
+
 class StatisticsVisitor(WorldVisitor):
     def __init__(self):
         self.city_count = 0
@@ -702,6 +673,7 @@ class StatisticsVisitor(WorldVisitor):
             f"광산={self.mine_count}개(총 생산량: {self.total_production})"
         )
 
+
 # -------------------------------------------------------------------
 # 5. Object Structure
 # -------------------------------------------------------------------
@@ -712,6 +684,7 @@ class World:
     def accept(self, visitor: WorldVisitor) -> None:
         for element in self._elements:
             element.accept(visitor)
+
 
 # -------------------------------------------------------------------
 # 6. Usage Example
@@ -767,7 +740,12 @@ def export_json(element: WorldElement) -> JsonValue:
         case Forest(name, area):
             return {"type": "forest", "name": name, "area": area}
         case Mine(name, mineral, production):
-            return {"type": "mine", "name": name, "mineral": mineral, "production": production}
+            return {
+                "type": "mine",
+                "name": name,
+                "mineral": mineral,
+                "production": production,
+            }
 ```
 
 별도의 `accept()` 인터페이스나 Visitor 클래스를 작성하지 않고, 패턴 매칭 함수가 Visitor와 같은 연산 분배 역할을 맡습니다.

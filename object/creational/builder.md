@@ -29,25 +29,19 @@ class BadHero:
         self.title = title
         self.guild = guild
         self.skills = skills or []
-
         # 문제점 1: 생성자가 객체 구성 규칙을 전부 알고 있어야 함
         if job == "warrior":
             self.weapon = weapon or "Sword"
             self.armor = armor or "ChainMail"
-
             if strength < 15:
                 raise ValueError("전사는 최소 힘 15가 필요합니다.")
-
         elif job == "mage":
             self.weapon = weapon or "Wand"
             self.armor = armor or "Robe"
-
             if intelligence < 15:
                 raise ValueError("마법사는 최소 지능 15가 필요합니다.")
-
         else:
             raise ValueError("알 수 없는 직업입니다.")
-
         # 문제점 2: 객체 생성 과정에 후처리 로직까지 혼재됨
         if level >= 10 and title is None:
             self.title = "숙련된 모험가"
@@ -71,7 +65,6 @@ hero = BadHero(
 
 ```python
 # 전사 생성 규칙이 여러 클라이언트에 중복되어 작성됨
-
 hero1 = BadHero(
     name="아라곤",
     job="warrior",
@@ -82,7 +75,6 @@ hero1 = BadHero(
     armor="PlateArmor",
     skills=["Slash", "Guard"],
 )
-
 hero2 = BadHero(
     name="보로미르",
     job="warrior",
@@ -177,11 +169,7 @@ mage = director.construct_mage(builder, "간달프")
 `select()`로 기본 질의 객체를 생성한 뒤 `where()`, `join()`, `group_by()`, `order_by()` 등을 연속적으로 적용하여 SQL 표현식을 단계적으로 구성합니다.
 
 ```python
-stmt = (
-    select(User)
-    .where(User.active == True)
-    .order_by(User.name)
-)
+stmt = select(User).where(User.active == True).order_by(User.name)
 ```
 
 ### Django (QuerySet)
@@ -190,10 +178,7 @@ stmt = (
 
 ```python
 users = (
-    User.objects
-    .filter(is_active=True)
-    .exclude(status="banned")
-    .order_by("-created_at")
+    User.objects.filter(is_active=True).exclude(status="banned").order_by("-created_at")
 )
 ```
 
@@ -203,11 +188,9 @@ users = (
 
 ```python
 parser = argparse.ArgumentParser()
-
 parser.add_argument("filename")
 parser.add_argument("--verbose", action="store_true")
 parser.add_argument("--count", type=int, default=1)
-
 args = parser.parse_args()
 ```
 
@@ -274,10 +257,10 @@ classDiagram
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
+
 # -------------------------------------------------------------------
 # 1. 제품 (Product)
 # -------------------------------------------------------------------
-
 @dataclass
 class Hero:
     name: str
@@ -298,10 +281,10 @@ class Hero:
         print(f"방어구: {self.armor}")
         print(f"스킬: {', '.join(self.skills)}")
 
+
 # -------------------------------------------------------------------
 # 2. 빌더 인터페이스 (Builder)
 # -------------------------------------------------------------------
-
 class CharacterBuilder(ABC):
     @abstractmethod
     def reset(self) -> "CharacterBuilder":
@@ -329,10 +312,10 @@ class CharacterBuilder(ABC):
     def build(self) -> Hero:
         pass
 
+
 # -------------------------------------------------------------------
 # 3. 구체 빌더 (Concrete Builder)
 # -------------------------------------------------------------------
-
 class DefaultHeroBuilder(CharacterBuilder):
     def __init__(self):
         self.reset()
@@ -398,10 +381,10 @@ class DefaultHeroBuilder(CharacterBuilder):
         self.reset()
         return hero
 
+
 # -------------------------------------------------------------------
 # 4. 디렉터 (Director)
 # -------------------------------------------------------------------
-
 class HeroDirector:
     def construct_warrior(self, builder: CharacterBuilder, name: str) -> Hero:
         return (
@@ -425,10 +408,10 @@ class HeroDirector:
             .build()
         )
 
+
 # -------------------------------------------------------------------
 # 5. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     builder = DefaultHeroBuilder()
     director = HeroDirector()
@@ -457,13 +440,13 @@ if __name__ == "__main__":
 
 고전적인 Builder는 다음과 같이 완전하지 않은 중간 상태를 허용합니다.
 
-```text
-Builder
- ├─ 이름 있음
- ├─ 직업 있음
- ├─ 스탯 없음
- ├─ 장비 없음
- └─ build() 호출 가능
+```mermaid
+flowchart TD
+    Builder --> Name[이름 있음]
+    Builder --> Job[직업 있음]
+    Builder --> Stats[스탯 없음]
+    Builder --> Equipment[장비 없음]
+    Builder --> BuildCall[build 호출 가능]
 ```
 
 따라서 일반적인 객체지향 언어에서는 `build()` 실행 시 필수 필드의 존재 여부를 런타임에 재검사해야 합니다.
@@ -506,11 +489,7 @@ record HeroDraft[
 ```python
 def empty_hero() -> HeroDraft[Missing, Missing, Missing, Missing]:
     return HeroDraft(
-        name=Missing,
-        job=Missing,
-        stats=Missing,
-        equipment=Missing,
-        skills=[],
+        name=Missing, job=Missing, stats=Missing, equipment=Missing, skills=[]
     )
 ```
 
@@ -535,14 +514,7 @@ $$\text{HeroDraft}[\text{Missing}, \dots] \xrightarrow{\text{set\_name()}} \text
 `build()` 함수 인자의 타입을 '모든 값이 완성된 상태'로만 제한할 수 있습니다.
 
 ```python
-def build(
-    draft: HeroDraft[
-        Set[str],
-        Set[Job],
-        Set[Stats],
-        Set[Equipment],
-    ],
-) -> Hero:
+def build(draft: HeroDraft[Set[str], Set[Job], Set[Stats], Set[Equipment]]) -> Hero:
     return Hero(
         name=draft.name.value,
         job=draft.job.value,
@@ -612,10 +584,8 @@ def equip[J, N, S](
 
 ```python
 warrior = choose_job(empty_hero(), Warrior)
-
 # 정상 동작
 warrior = equip(warrior, WarriorEquipment(Sword(), ChainMail()))
-
 # 타입 오류 발생
 warrior = equip(warrior, MageEquipment(Wand(), Robe()))
 ```
@@ -735,8 +705,12 @@ $$\text{Empty} \rightarrow \text{Named} \rightarrow \text{JobSelected} \rightarr
 
 ```python
 def choose_job(draft: HeroDraft[Named], job: J) -> HeroDraft[JobSelected[J]]: ...
-def set_stats[J](draft: HeroDraft[JobSelected[J]], stats: Stats) -> HeroDraft[StatsConfigured[J]]: ...
-def equip[J](draft: HeroDraft[StatsConfigured[J]], equipment: EquipmentFor[J]) -> HeroDraft[Equipped[J]]: ...
+def set_stats[J](
+    draft: HeroDraft[JobSelected[J]], stats: Stats
+) -> HeroDraft[StatsConfigured[J]]: ...
+def equip[J](
+    draft: HeroDraft[StatsConfigured[J]], equipment: EquipmentFor[J]
+) -> HeroDraft[Equipped[J]]: ...
 def build[J](draft: HeroDraft[Ready[J]]) -> Hero[J]: ...
 ```
 

@@ -19,46 +19,22 @@ AchievementTracker
 
 ```python
 class HealthBar:
-
-    def update(
-        self,
-        hp: int,
-        max_hp: int,
-    ) -> None:
-
-        print(
-            f"[UI] HP: {hp}/{max_hp}"
-        )
+    def update(self, hp: int, max_hp: int) -> None:
+        print(f"[UI] HP: {hp}/{max_hp}")
 
 
 class LowHealthWarning:
-
-    def update(
-        self,
-        hp: int,
-        max_hp: int,
-    ) -> None:
-
+    def update(self, hp: int, max_hp: int) -> None:
         if hp <= max_hp * 0.2:
-            print(
-                "[Warning] 체력이 위험합니다!"
-            )
+            print("[Warning] 체력이 위험합니다!")
 
 
 class BattleLogger:
-
-    def log_hp_changed(
-        self,
-        hp: int,
-    ) -> None:
-
-        print(
-            f"[Log] HP 변경: {hp}"
-        )
+    def log_hp_changed(self, hp: int) -> None:
+        print(f"[Log] HP 변경: {hp}")
 
 
 class Player:
-
     def __init__(
         self,
         max_hp: int,
@@ -68,75 +44,41 @@ class Player:
     ):
         self.max_hp = max_hp
         self.hp = max_hp
-
         self.health_bar = health_bar
         self.warning = warning
         self.logger = logger
 
-    def take_damage(
-        self,
-        amount: int,
-    ) -> None:
-
-        self.hp = max(
-            0,
-            self.hp - amount,
-        )
-
+    def take_damage(self, amount: int) -> None:
+        self.hp = max(0, self.hp - amount)
         # 문제점:
         # 상태를 가진 객체가
         # 모든 반응 객체를 직접 알고 있음
-        self.health_bar.update(
-            self.hp,
-            self.max_hp,
-        )
-
-        self.warning.update(
-            self.hp,
-            self.max_hp,
-        )
-
-        self.logger.log_hp_changed(
-            self.hp
-        )
+        self.health_bar.update(self.hp, self.max_hp)
+        self.warning.update(self.hp, self.max_hp)
+        self.logger.log_hp_changed(self.hp)
 ```
 
 이제 새로운 기능으로 `AchievementTracker`를 추가한다고 가정합니다.
 
 ```python
 class AchievementTracker:
-
-    def check(
-        self,
-        hp: int,
-        max_hp: int,
-    ) -> None:
-
+    def check(self, hp: int, max_hp: int) -> None:
         if hp == 1:
-            print(
-                "[Achievement] "
-                "기적의 생존!"
-            )
+            print("[Achievement] " "기적의 생존!")
 ```
 
 단순히 새로운 객체를 추가하는 것만으로 끝나지 않습니다. `Player`도 수정해야 합니다.
 
 ```python
 class Player:
-    def __init__(
-        self,
-        achievement_tracker: AchievementTracker,
-    ) -> None:
+    def __init__(self, achievement_tracker: AchievementTracker) -> None:
         self.achievement_tracker = achievement_tracker
 ```
 
 상태 변경 코드에도 새로운 호출이 추가됩니다.
 
 ```python
-self.achievement_tracker.check(
-    self.hp,
-    self.max_hp,
-)
+self.achievement_tracker.check(self.hp, self.max_hp)
 ```
 
 추가 기능이 계속 늘어나면 `Player`가 점점 더 많은 외부 객체를 알아야 합니다.
@@ -184,12 +126,8 @@ from abc import ABC, abstractmethod
 
 
 class PlayerObserver(ABC):
-
     @abstractmethod
-    def update(
-        self,
-        player: "Player",
-    ) -> None:
+    def update(self, player: "Player") -> None:
         pass
 ```
 
@@ -197,138 +135,72 @@ Subject는 Observer 인터페이스만 알고 있습니다.
 
 ```python
 class Player:
-
-    def __init__(
-        self,
-        max_hp: int,
-    ):
+    def __init__(self, max_hp: int):
         self.max_hp = max_hp
         self.hp = max_hp
+        self._observers: list[PlayerObserver] = []
 
-        self._observers: list[
-            PlayerObserver
-        ] = []
+    def attach(self, observer: PlayerObserver) -> None:
+        self._observers.append(observer)
 
-    def attach(
-        self,
-        observer: PlayerObserver,
-    ) -> None:
-
-        self._observers.append(
-            observer
-        )
-
-    def detach(
-        self,
-        observer: PlayerObserver,
-    ) -> None:
-
-        self._observers.remove(
-            observer
-        )
+    def detach(self, observer: PlayerObserver) -> None:
+        self._observers.remove(observer)
 
     def _notify(self) -> None:
-
         for observer in self._observers:
-            observer.update(
-                self
-            )
+            observer.update(self)
 ```
 
 상태가 변경되면 Observer들에게 알리기만 합니다.
 
 ```python
-def take_damage(
-    self,
-    amount: int,
-) -> None:
-
-    self.hp = max(
-        0,
-        self.hp - amount,
-    )
-
+def take_damage(self, amount: int) -> None:
+    self.hp = max(0, self.hp - amount)
     self._notify()
 ```
 
 Subject는 구체적으로 누가 알림을 받고 있는지 알 필요가 없습니다.
 
-```text
-Player
-   │
-   └─ knows only: PlayerObserver
+```mermaid
+flowchart TD
+    player[Player] -->|knows only| observer[PlayerObserver]
 ```
 
 HealthBar는 Observer가 됩니다.
 
 ```python
-class HealthBar(
-    PlayerObserver
-):
-
-    def update(
-        self,
-        player: Player,
-    ) -> None:
-
-        print(
-            f"[UI] "
-            f"HP: {player.hp}/{player.max_hp}"
-        )
+class HealthBar(PlayerObserver):
+    def update(self, player: Player) -> None:
+        print(f"[UI] " f"HP: {player.hp}/{player.max_hp}")
 ```
 
 Warning도 같은 인터페이스를 구현합니다.
 
 ```python
-class LowHealthWarning(
-    PlayerObserver
-):
-
-    def update(
-        self,
-        player: Player,
-    ) -> None:
-
-        if (
-            player.hp
-            <= player.max_hp * 0.2
-        ):
-            print(
-                "[Warning] "
-                "체력이 위험합니다!"
-            )
+class LowHealthWarning(PlayerObserver):
+    def update(self, player: Player) -> None:
+        if player.hp <= player.max_hp * 0.2:
+            print("[Warning] " "체력이 위험합니다!")
 ```
 
 클라이언트가 필요한 Observer만 등록합니다.
 
 ```python
-player = Player(
-    max_hp=100
-)
-
-player.attach(
-    HealthBar()
-)
-
-player.attach(
-    LowHealthWarning()
-)
+player = Player(max_hp=100)
+player.attach(HealthBar())
+player.attach(LowHealthWarning())
 ```
 
 나중에 Observer를 추가할 수도 있습니다.
 
 ```python
-player.attach(
-    BattleLogger()
-)
+player.attach(BattleLogger())
 ```
 
 또는 더 이상 필요하지 않은 Observer를 제거할 수도 있습니다.
 
 ```python
-player.detach(
-    health_bar
-)
+player.detach(health_bar)
 ```
 
 새로운 Observer를 추가해도 `Player.take_damage()`는 변경되지 않습니다.
@@ -395,19 +267,13 @@ Observer에게 데이터를 전달하는 방법에는 크게 두 가지가 있�
 Subject 자신을 전달합니다.
 
 ```python
-observer.update(
-    subject
-)
+observer.update(subject)
 ```
 
 Observer가 필요한 데이터를 Subject에서 직접 가져옵니다.
 
 ```python
-def update(
-    self,
-    player: Player,
-) -> None:
-
+def update(self, player: Player) -> None:
     hp = player.hp
 ```
 
@@ -418,13 +284,7 @@ def update(
 변경 데이터를 직접 전달합니다.
 
 ```python
-observer.update(
-    PlayerHealthChanged(
-        old_hp=80,
-        new_hp=30,
-        max_hp=100,
-    )
-)
+observer.update(PlayerHealthChanged(old_hp=80, new_hp=30, max_hp=100))
 ```
 
 Observer는 Subject 자체를 알 필요가 없습니다.
@@ -451,22 +311,22 @@ flowchart LR
 
 Observer에서는:
 
-```text
-Subject
-   │
-   ├─ Observer A
-   ├─ Observer B
-   └─ Observer C
+```mermaid
+flowchart TD
+    subject[Subject] --> observer_a[Observer A]
+    subject --> observer_b[Observer B]
+    subject --> observer_c[Observer C]
 ```
 
 Subject가 **어떤 변화가 발생했다는 사실을 알리는 것**이 핵심입니다.
 
 Mediator에서는:
 
-```text
-Component A ─┐
-Component B ─┼──> Mediator
-Component C ─┘
+```mermaid
+flowchart LR
+    component_a[Component A] --> mediator[Mediator]
+    component_b[Component B] --> mediator
+    component_c[Component C] --> mediator
 ```
 
 Mediator가 **여러 객체가 어떤 방식으로 협력해야 하는지를 조정**합니다.
@@ -488,18 +348,19 @@ Mediator:  협력의 조정 (Centralized Interaction)
 
 전통적인 Observer는 Subject가 Observer 목록을 직접 관리하는 경우가 많습니다.
 
-```text
-Subject
-   │
-   ├─ Observer A
-   └─ Observer B
+```mermaid
+flowchart TD
+    subject[Subject] --> observer_a[Observer A]
+    subject --> observer_b[Observer B]
 ```
 
 Publish/Subscribe에서는 중간에 Broker 또는 Event Bus가 존재할 수 있습니다.
 
-```text
-Publisher ───> Event Bus ───┬───> Subscriber A
-                            └───> Subscriber B
+```mermaid
+flowchart LR
+    publisher[Publisher] --> bus[Event Bus]
+    bus --> subscriber_a[Subscriber A]
+    bus --> subscriber_b[Subscriber B]
 ```
 
 따라서 Publisher와 Subscriber는 서로의 존재뿐 아니라 직접적인 구독 목록조차 모를 수 있습니다.
@@ -517,17 +378,20 @@ Pub/Sub는 Observer 아이디어를 보다 분산된 메시징 구조로 확장�
 
 Observer는 하나의 Event를 **여러 Observer에게 전달**하는 것이 일반적입니다.
 
-```text
-Event
-  ├─ Observer A
-  ├─ Observer B
-  └─ Observer C
+```mermaid
+flowchart TD
+    event[Event] --> observer_a[Observer A]
+    event --> observer_b[Observer B]
+    event --> observer_c[Observer C]
 ```
 
 Chain of Responsibility는 일반적으로 요청을 처리할 후보를 순서대로 탐색합니다.
 
-```text
-Request ───> Handler A ───(Pass)───> Handler B ───(Handle)───> 처리 완료
+```mermaid
+flowchart LR
+    request[Request] --> handler_a[Handler A]
+    handler_a -->|Pass| handler_b[Handler B]
+    handler_b -->|Handle| done[처리 완료]
 ```
 
 즉:
@@ -549,9 +413,11 @@ Event는 **무슨 일이 발생했는지를 나타내는 데이터**입니다.
 
 따라서 현대적인 Observer에서는 둘을 함께 사용하는 경우가 많습니다.
 
-```text
-Subject ───> Event ───┬───> Observer A
-                      └───> Observer B
+```mermaid
+flowchart LR
+    subject[Subject] --> event[Event]
+    event --> observer_a[Observer A]
+    event --> observer_b[Observer B]
 ```
 
 예:
@@ -581,33 +447,23 @@ Django는 서로 느슨하게 결합된 애플리케이션 구성 요소들이 �
 Receiver를 등록합니다.
 
 ```python
-from django.core.signals import (
-    request_finished,
-)
+from django.core.signals import request_finished
 
 
-def on_request_finished(
-    sender,
-    **kwargs,
-):
-    print(
-        "요청이 완료되었습니다."
-    )
+def on_request_finished(sender, **kwargs):
+    print("요청이 완료되었습니다.")
 
 
-request_finished.connect(
-    on_request_finished
-)
+request_finished.connect(on_request_finished)
 ```
 
 구조는 다음과 같습니다.
 
-```text
-Signal
-   │
-   ├─ Receiver A
-   ├─ Receiver B
-   └─ Receiver C
+```mermaid
+flowchart TD
+    signal[Signal] --> receiver_a[Receiver A]
+    signal --> receiver_b[Receiver B]
+    signal --> receiver_c[Receiver C]
 ```
 
 Signal이 전송되면 등록된 Receiver들이 호출됩니다. Django 문서는 동기 `send()`뿐 아니라 `asend()` 기반 비동기 Signal 전송도 지원하며, Receiver는 기본적으로 등록된 순서에 따라 호출된다고 설명합니다. 또한 Django 자체가 Signal이 코드를 이해하고 디버깅하기 어렵게 만들 수 있으므로 같은 프로젝트 내부에서 명시적 호출이 가능하다면 직접 호출을 고려하라고 경고합니다.
@@ -623,26 +479,21 @@ Python의 `asyncio.Future`는 작업이 완료되었을 때 호출될 callback�
 공식 문서에 따르면 Future가 완료되면 등록된 callback에 해당 Future 객체가 전달됩니다. Future가 이미 완료된 상태에서 callback을 추가하면 event loop를 통해 callback이 예약됩니다.
 
 ```python
-def on_done(
-    future,
-):
-    print(
-        "작업 완료:",
-        future.result(),
-    )
+def on_done(future):
+    print("작업 완료:", future.result())
 
 
-future.add_done_callback(
-    on_done
-)
+future.add_done_callback(on_done)
 ```
 
 구조적으로:
 
-```text
-Future ───(completed)───> Callbacks ───┬───> Callback A
-                                        ├───> Callback B
-                                        └───> Callback C
+```mermaid
+flowchart LR
+    future[Future] -->|completed| callbacks[Callbacks]
+    callbacks --> callback_a[Callback A]
+    callbacks --> callback_b[Callback B]
+    callbacks --> callback_c[Callback C]
 ```
 
 라고 볼 수 있습니다.
@@ -660,28 +511,23 @@ Python logging에서는 하나의 Logger에 여러 Handler를 연결할 수 있�
 Logger에서 생성된 로그 이벤트는 연결된 Handler들로 전달되며, Logger 계층의 propagation을 통해 상위 Logger의 Handler까지 이벤트가 전달될 수도 있습니다. 공식 문서는 Logger가 직접 연결된 Handler 목록을 가지며 `addHandler()` / `removeHandler()`를 통해 이를 변경하고, propagation 설정에 따라 상위 Logger의 Handler들도 이벤트를 받을 수 있다고 설명합니다.
 
 ```python
-logger.addHandler(
-    console_handler
-)
-
-logger.addHandler(
-    file_handler
-)
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
 ```
 
 이후:
 
 ```python
-logger.error(
-    "서버 연결 실패"
-)
+logger.error("서버 연결 실패")
 ```
 
 가 발생하면 여러 Handler가 같은 LogRecord에 반응할 수 있습니다.
 
-```text
-Logger ───> LogRecord ───┬───> ConsoleHandler
-                         └───> FileHandler
+```mermaid
+flowchart LR
+    logger[Logger] --> record[LogRecord]
+    record --> console[ConsoleHandler]
+    record --> file[FileHandler]
 ```
 
 정확히 GoF Observer만으로 설명되는 구조는 아니지만, **하나의 이벤트를 여러 등록된 처리 객체에 전달한다는 점에서 Observer와 유사한 이벤트 통지 구조**를 확인할 수 있습니다.
@@ -759,29 +605,29 @@ Concrete Observers
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+
 # -------------------------------------------------------------------
 # 1. Event
 # -------------------------------------------------------------------
-
 @dataclass(frozen=True)
 class HealthChanged:
     old_hp: int
     new_hp: int
     max_hp: int
 
+
 # -------------------------------------------------------------------
 # 2. Observer Interface
 # -------------------------------------------------------------------
-
 class PlayerObserver(ABC):
     @abstractmethod
     def update(self, event: HealthChanged) -> None:
         pass
 
+
 # -------------------------------------------------------------------
 # 3. Subject
 # -------------------------------------------------------------------
-
 class Player:
     def __init__(self, name: str, max_hp: int):
         self.name = name
@@ -809,45 +655,45 @@ class Player:
         event = HealthChanged(old_hp=old_hp, new_hp=self.hp, max_hp=self.max_hp)
         self._notify(event)
 
+
 # -------------------------------------------------------------------
 # 4. Concrete Observer - Health Bar
 # -------------------------------------------------------------------
-
 class HealthBar(PlayerObserver):
     def update(self, event: HealthChanged) -> None:
         print("[HealthBar] " f"{event.new_hp}/{event.max_hp}")
 
+
 # -------------------------------------------------------------------
 # 5. Concrete Observer - Warning
 # -------------------------------------------------------------------
-
 class LowHealthWarning(PlayerObserver):
     def update(self, event: HealthChanged) -> None:
         ratio = event.new_hp / event.max_hp
         if ratio <= 0.2:
             print("[Warning] " "체력이 위험합니다!")
 
+
 # -------------------------------------------------------------------
 # 6. Concrete Observer - Logger
 # -------------------------------------------------------------------
-
 class BattleLogger(PlayerObserver):
     def update(self, event: HealthChanged) -> None:
         print("[BattleLogger] " f"HP: {event.old_hp} " f"-> {event.new_hp}")
 
+
 # -------------------------------------------------------------------
 # 7. Concrete Observer - Achievement
 # -------------------------------------------------------------------
-
 class AchievementTracker(PlayerObserver):
     def update(self, event: HealthChanged) -> None:
         if event.new_hp == 1:
             print("[Achievement] " "기적의 생존!")
 
+
 # -------------------------------------------------------------------
 # 8. 실행 (Usage)
 # -------------------------------------------------------------------
-
 if __name__ == "__main__":
     player = Player(name="아라곤", max_hp=100)
     health_bar = HealthBar()
@@ -867,11 +713,13 @@ if __name__ == "__main__":
 
 마지막 공격 이후 HP가 1이 되면 다음 Observer들이 각각 독립적으로 반응합니다.
 
-```text
-Player.take_damage() ───> HealthChanged ───┬───> HealthBar
-                                            ├───> LowHealthWarning
-                                            ├───> BattleLogger
-                                            └───> AchievementTracker
+```mermaid
+flowchart LR
+    take_damage["Player.take_damage()"] --> event[HealthChanged]
+    event --> health_bar[HealthBar]
+    event --> warning[LowHealthWarning]
+    event --> logger[BattleLogger]
+    event --> achievement[AchievementTracker]
 ```
 
 `Player`에는 다음과 같은 하드코딩된 호출이 없습니다.
@@ -885,27 +733,16 @@ self.warning.check(...)
 새로운 Observer를 추가할 때도 `Player`는 변경하지 않습니다.
 
 ```python
-class SoundEffectObserver(
-    PlayerObserver
-):
-
-    def update(
-        self,
-        event: HealthChanged,
-    ) -> None:
-
+class SoundEffectObserver(PlayerObserver):
+    def update(self, event: HealthChanged) -> None:
         if event.new_hp < event.old_hp:
-            play_sound(
-                "damage.wav"
-            )
+            play_sound("damage.wav")
 ```
 
 등록만 하면 됩니다.
 
 ```python
-player.attach(
-    SoundEffectObserver()
-)
+player.attach(SoundEffectObserver())
 ```
 
 ---
@@ -915,15 +752,14 @@ player.attach(
 Observer 구현에서는 구독 해제도 중요합니다.
 
 ```python
-player.attach(
-    health_bar
-)
+player.attach(health_bar)
 ```
 
 Subject가 `health_bar`를 강하게 참조(Strong Reference)하고 있다면 다른 코드에서 `health_bar`를 더 이상 사용하지 않아도 메모리에 계속 남아 있을 수 있습니다.
 
-```text
-Player ─────(Strong Reference)─────> HealthBar
+```mermaid
+flowchart LR
+    player[Player] -->|Strong Reference| health_bar[HealthBar]
 ```
 
 따라서 Observer의 수명이 Subject보다 짧을 수 있다면 다음 전략을 고려할 수 있습니다.
@@ -943,20 +779,20 @@ Player ─────(Strong Reference)─────> HealthBar
 
 고전적인 Observer는 다음 구조를 가집니다.
 
-```text
-Subject ───(State Change)───> notify() ───┬───> Observer A
-                                           ├───> Observer B
-                                           └───> Observer C
+```mermaid
+flowchart LR
+    subject[Subject] -->|State Change| notify[notify]
+    notify --> observer_a[Observer A]
+    notify --> observer_b[Observer B]
+    notify --> observer_c[Observer C]
 ```
 
 이를 더 추상적으로 바라보면 다음과 같습니다.
 
-```text
-시간에 따라 발생하는 값이나 사건
-          ↓
-     Event Stream
-          ↓
-여러 독립적인 Consumer
+```mermaid
+flowchart TD
+    value["시간에 따라 발생하는 값이나 사건"] --> stream[Event Stream]
+    stream --> consumer["여러 독립적인 Consumer"]
 ```
 
 즉 핵심 질문은 다음과 같습니다.
@@ -971,12 +807,7 @@ Subject ───(State Change)───> notify() ───┬───> Observ
 
 ```python
 class Observer:
-
-    def update(
-        self,
-        event: Event,
-    ) -> None:
-        ...
+    def update(self, event: Event) -> None: ...
 ```
 
 하지만 상태를 별도로 가질 필요가 없는 Observer라면 단순한 함수로 표현할 수 있습니다.
@@ -988,19 +819,13 @@ type Observer[E] = E -> Unit
 Health Bar:
 
 ```python
-def update_health_bar(
-    event: HealthChanged,
-) -> Unit:
-    ...
+def update_health_bar(event: HealthChanged) -> Unit: ...
 ```
 
 Logger:
 
 ```python
-def log_health(
-    event: HealthChanged,
-) -> Unit:
-    ...
+def log_health(event: HealthChanged) -> Unit: ...
 ```
 
 Subject는 함수 목록을 관리합니다.
@@ -1038,10 +863,7 @@ def subscribe[E](
 사용:
 
 ```python
-subscription = subscribe(
-    health_events,
-    update_health_bar,
-)
+subscription = subscribe(health_events, update_health_bar)
 ```
 
 구독 해제:
@@ -1075,10 +897,7 @@ data GameEvent =
 Observer는 Pattern Matching으로 처리합니다.
 
 ```python
-def observe(
-    event: GameEvent,
-) -> Unit:
-
+def observe(event: GameEvent) -> Unit:
     match event:
         case HealthChanged(player, old_hp, new_hp):
             ...
@@ -1106,10 +925,12 @@ player.health_changes: EventStream[HealthChanged]
 subscription = player.health_changes.subscribe(update_health_bar)
 ```
 
-```text
-Player State ───(change)───> EventStream[HealthChanged] ───┬───> HealthBar
-                                                           ├───> Logger
-                                                           └───> Warning
+```mermaid
+flowchart LR
+    state["Player State"] -->|change| stream["EventStream[HealthChanged]"]
+    stream --> health_bar[HealthBar]
+    stream --> logger[Logger]
+    stream --> warning[Warning]
 ```
 
 고전적인 Subject 내부의 `List[Observer]`가 독립적인 `EventStream[E]` 추상화로 이동합니다.
@@ -1132,8 +953,10 @@ damage_events = player.health_changes |> filter(lambda e: e.new_hp < e.old_hp)
 critical_health = player.health_changes |> filter(lambda e: e.new_hp <= 20)
 ```
 
-```text
-HealthChanged ───(filter)───> Damage Events ───(map)───> Damage Amounts
+```mermaid
+flowchart LR
+    health_changed[HealthChanged] -->|filter| damage_events["Damage Events"]
+    damage_events -->|map| damage_amounts["Damage Amounts"]
 ```
 
 Observer가 단순한 callback 관계에서 **합성 가능한 데이터 흐름**으로 바뀝니다.
@@ -1194,8 +1017,10 @@ health_ratio = player.hp |> map(lambda hp: hp / player.max_hp)
 is_critical = health_ratio |> map(lambda ratio: ratio <= 0.2)
 ```
 
-```text
-HP Signal ───(map)───> Health Ratio ───(map)───> Critical?
+```mermaid
+flowchart LR
+    hp_signal["HP Signal"] -->|map| health_ratio["Health Ratio"]
+    health_ratio -->|map| critical["Critical?"]
 ```
 
 "상태가 변경되었으니 객체를 호출한다"가 아니라 **데이터 사이의 관계를 선언**합니다.
@@ -1213,10 +1038,10 @@ warning.visible = player.hp.map(lambda hp: hp <= 20)
 
 더 이상 명시적인 `attach(observer)`나 `observer.update(...)`가 없을 수 있습니다. 대신 **Reactive Dependency Graph**가 Observer 관계를 대신합니다.
 
-```text
-            ┌─ HealthBar Text
-HP Signal ──┤
-            └─ Warning Visible
+```mermaid
+flowchart LR
+    hp_signal["HP Signal"] --> health_bar_text["HealthBar Text"]
+    hp_signal --> warning_visible["Warning Visible"]
 ```
 
 Observer를 **객체 그래프에서 데이터 의존 그래프로 이동**시킨 형태입니다.
@@ -1237,8 +1062,11 @@ Event 발생 사실은 Push하고(`state changed`), Observer가 실제 필요한
 
 전통적인 `notify()`는 대개 동기식입니다.
 
-```text
-Subject.notify() ───> Observer A 실행 ───> Observer B 실행 (5초 소요) ───> Observer C 실행
+```mermaid
+flowchart LR
+    notify["Subject.notify()"] --> observer_a["Observer A 실행"]
+    observer_a --> observer_b["Observer B 실행 (5초 소요)"]
+    observer_b --> observer_c["Observer C 실행"]
 ```
 
 하나의 느린 Observer가 전체 알림을 지연시킬 수 있으므로 동기성 자체가 중요한 설계 사양이 됩니다.
@@ -1302,10 +1130,12 @@ Subject가 Observer를 약한 참조로 다루면(`subscribe_weak(observer)`), O
 
 ### 18. Event Bus는 Observer 관계를 한 단계 더 간접화한다
 
-```text
-Player ───(publish)───> Event Bus ───┬───> HealthBar
-                                     ├───> Logger
-                                     └───> Achievement
+```mermaid
+flowchart LR
+    player[Player] -->|publish| bus["Event Bus"]
+    bus --> health_bar[HealthBar]
+    bus --> logger[Logger]
+    bus --> achievement[Achievement]
 ```
 
 Publisher와 Subscriber 사이의 직접적인 관계를 완전히 차단합니다.
@@ -1350,10 +1180,11 @@ Domain State Transition과 Notification Infrastructure를 완전히 분리합니
 
 ### 22. Observer를 "객체 간 통지"보다 "시간축 위의 데이터 의존성"으로 바라보기
 
-```text
-Value(t) ───┬───> UI(t)
-            ├───> Warning(t)
-            └───> Analytics(t)
+```mermaid
+flowchart LR
+    value["Value(t)"] --> ui["UI(t)"]
+    value --> warning["Warning(t)"]
+    value --> analytics["Analytics(t)"]
 ```
 
 Observer는 본질적으로 **시간에 따라 변하는 값 사이의 의존 관계**를 표현하는 방법입니다.

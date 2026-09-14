@@ -27,7 +27,6 @@ class RealImage:
 
     def display(self) -> None:
         print(f"[Display] {self.path} 표시")
-
 ```
 
 여러 이미지 객체를 미리 구성한다고 가정합니다.
@@ -38,7 +37,6 @@ images = [
     RealImage("photo2.jpg"),
     RealImage("photo3.jpg"),
 ]
-
 ```
 
 아직 어떤 이미지도 화면에 표시하지 않았지만, 생성자 호출만으로 모든 이미지가 디스크에서 로딩됩니다.
@@ -47,14 +45,12 @@ images = [
 [Disk] photo1.jpg 로딩
 [Disk] photo2.jpg 로딩
 [Disk] photo3.jpg 로딩
-
 ```
 
 실제로 사용자가 첫 번째 이미지만 보는 경우라면 나머지 두 이미지의 로딩은 불필요합니다.
 
 ```python
 images[0].display()
-
 ```
 
 접근 제어가 필요한 객체에서도 비슷한 문제가 발생합니다.
@@ -64,7 +60,6 @@ class AdminService:
 
     def delete_user(self, user_id: int) -> None:
         ...
-
 ```
 
 클라이언트가 `AdminService`를 직접 참조하면 호출 전에 권한을 검사해야 합니다.
@@ -74,7 +69,6 @@ if current_user.role == "admin":
     admin_service.delete_user(user_id)
 else:
     raise PermissionError("관리자 권한이 필요합니다.")
-
 ```
 
 이 로직이 여러 클라이언트에 반복되면 접근 정책이 시스템 곳곳으로 퍼질 수 있습니다.
@@ -100,7 +94,6 @@ flowchart LR
     client[Client] --> subject[Subject interface]
     proxy[Proxy] -->|implements| subject
     proxy --> real[RealSubject]
-
 ```
 
 먼저 클라이언트가 사용하는 공통 인터페이스를 정의합니다.
@@ -114,7 +107,6 @@ class Image(ABC):
     @abstractmethod
     def display(self) -> None:
         pass
-
 ```
 
 실제 이미지 객체는 기존과 같이 비용이 큰 리소스를 관리합니다.
@@ -128,7 +120,6 @@ class RealImage(Image):
 
     def display(self) -> None:
         ...
-
 ```
 
 Proxy 역시 동일한 `Image` 인터페이스를 구현합니다.
@@ -145,7 +136,6 @@ class ImageProxy(Image):
             self._real_image = RealImage(self.path)
 
         self._real_image.display()
-
 ```
 
 Proxy 생성 자체는 매우 가볍습니다.
@@ -156,7 +146,6 @@ images = [
     ImageProxy("photo2.jpg"),
     ImageProxy("photo3.jpg"),
 ]
-
 ```
 
 이 시점에는 실제 이미지가 로딩되지 않습니다.
@@ -165,7 +154,6 @@ images = [
 
 ```python
 images[0].display()
-
 ```
 
 ```mermaid
@@ -176,14 +164,12 @@ sequenceDiagram
     Proxy->>Real: 최초 display에서 생성
     Real->>File: 파일 로딩
     Proxy->>Real: display
-
 ```
 
 같은 Proxy를 다시 호출하면 이미 생성된 `RealImage`를 재사용합니다.
 
 ```python
 images[0].display()
-
 ```
 
 클라이언트의 관점에서는 Proxy인지 Real Subject인지 구분할 필요가 없습니다.
@@ -191,7 +177,6 @@ images[0].display()
 ```python
 def show_image(image: Image) -> None:
     image.display()
-
 ```
 
 다음 두 객체 모두 같은 방식으로 전달할 수 있습니다.
@@ -199,7 +184,6 @@ def show_image(image: Image) -> None:
 ```python
 show_image(RealImage("photo.jpg"))
 show_image(ImageProxy("photo.jpg"))
-
 ```
 
 핵심은 단순히 다른 객체를 감싸는 Wrapper를 만드는 것이 아닙니다.
@@ -236,7 +220,6 @@ show_image(ImageProxy("photo.jpg"))
 ```text
 Decorator : 기능 확장
 Proxy     : 접근 통제
-
 ```
 
 * **Proxy와 Adapter의 차이:** Adapter는 인터페이스를 다른 형태로 변환합니다. Proxy는 일반적으로 실제 객체와 동일하거나 호환되는 인터페이스를 유지합니다.
@@ -252,7 +235,6 @@ Proxy는 목적에 따라 여러 형태로 구분할 수 있습니다.
 
 ```text
 ImageProxy ──> (필요할 때 생성) ──> RealImage
-
 ```
 
 * **대표적인 용도:** 대형 이미지, 대형 문서, DB 연결, 복잡한 객체 그래프
@@ -263,7 +245,6 @@ ImageProxy ──> (필요할 때 생성) ──> RealImage
 
 ```text
 Client ──> ProtectionProxy ──(권한 검사)──> RealSubject
-
 ```
 
 #### Remote Proxy
@@ -272,7 +253,6 @@ Client ──> ProtectionProxy ──(권한 검사)──> RealSubject
 
 ```text
 Client ──> RemoteProxy ──(Serialization)──> Network ──> Remote Object
-
 ```
 
 #### Caching Proxy
@@ -282,7 +262,6 @@ Client ──> RemoteProxy ──(Serialization)──> Network ──> Remote O
 ```text
 Client ──> CachingProxy ──┬── Cache Hit  ──> (결과 바로 반환)
                          └── Cache Miss ──> RealSubject
-
 ```
 
 #### Smart Reference Proxy
@@ -306,7 +285,6 @@ from xmlrpc.client import ServerProxy
 
 server = ServerProxy("http://example.com:8000/")
 result = server.add(10, 20)
-
 ```
 
 표면적으로는 `server.add(10, 20)`처럼 보이지만, 내부적으로는 다음과 같이 수행됩니다.
@@ -328,7 +306,6 @@ Remote XML-RPC Server
        │
        ▼
 Remote method execution
-
 ```
 
 즉 원격 객체의 위치와 통신 세부 사항을 Proxy가 대신 관리한다는 점에서 **Remote Proxy**의 직접적인 사례입니다.
@@ -346,14 +323,12 @@ with Manager() as manager:
     values = manager.list([1, 2, 3])
     values.append(4)
     print(values[0])
-
 ```
 
 `values`는 일반적인 `list` 자체가 아니라 공유 리스트를 가리키는 Proxy입니다.
 
 ```text
 Process A ──> ListProxy ──(IPC)──> Manager Process ──> Actual List
-
 ```
 
 공식 문서 역시 Proxy를 다른 프로세스에 존재하는 공유 객체를 참조하는 객체로 정의하고, Proxy의 메서드가 referent의 대응 메서드를 호출한다고 설명합니다. 이는 **Remote Proxy / Process Proxy**의 전형적인 구조와 매우 가깝습니다.
@@ -367,7 +342,6 @@ Python의 `weakref.proxy()`는 객체에 대한 약한 참조를 Proxy 형태로
 ```python
 reference = weakref.ref(obj)
 value = reference()
-
 ```
 
 반면 `weakref.proxy()`는 대부분의 문맥에서 실제 객체처럼 사용할 수 있는 Proxy를 반환합니다.
@@ -377,14 +351,12 @@ import weakref
 
 proxy = weakref.proxy(obj)
 proxy.some_method()
-
 ```
 
 공식 문서에서도 `weakref.proxy()`가 명시적인 역참조 없이 대부분의 문맥에서 원본 객체 대신 사용할 수 있는 Proxy를 반환한다고 설명합니다. 원본 객체가 이미 가비지 컬렉션된 이후 Proxy에 접근하면 `ReferenceError`가 발생합니다.
 
 ```text
 Client ──> Weak Proxy ──(Weak Reference)──> Real Object
-
 ```
 
 Proxy가 실제 객체의 수명을 강제로 연장하지 않는다는 점에서 참조와 생명 주기를 중재하는 **Smart Reference Proxy**와 유사한 사례로 볼 수 있습니다.
@@ -420,7 +392,6 @@ classDiagram
 
     ImageProxy --> RealImage : Controls access
     Client --> Image : Uses
-
 ```
 
 각 역할은 다음과 같습니다.
@@ -437,7 +408,6 @@ Client ──> Image
             ▲
             │
        ImageProxy ──(Controls access)──> RealImage
-
 ```
 
 클라이언트는 `Image` 인터페이스에만 의존하며 Proxy가 실제 객체의 생성과 접근 시점을 제어합니다.
@@ -538,7 +508,6 @@ if __name__ == "__main__":
 [Proxy] RealImage를 생성합니다.
 [RealImage] photo3.jpg 로딩
 [RealImage] photo3.jpg 표시
-
 ```
 
 `photo2.jpg`는 한 번도 사용되지 않았기 때문에 실제 이미지 객체도 생성되지 않습니다.
@@ -547,7 +516,6 @@ if __name__ == "__main__":
 photo1 ──> Proxy ──> RealImage 생성됨
 photo2 ──> Proxy ──> RealImage 없음
 photo3 ──> Proxy ──> RealImage 생성됨
-
 ```
 
 클라이언트에서는 이 차이를 알 필요가 없습니다.
@@ -555,7 +523,6 @@ photo3 ──> Proxy ──> RealImage 생성됨
 ```python
 show_image(images[0])
 show_image(images[1])
-
 ```
 
 두 객체 모두 타입은 단순히 `Image`로 취급됩니다.
@@ -574,7 +541,6 @@ show_image(images[1])
 
 ```text
 Client ──> Proxy ──> Real Subject
-
 ```
 
 하지만 Proxy가 실제로 수행하는 역할(생성 지연, 접근 권한 검사, 원격 호출 변환, 캐싱, 수명 주기 관리, 동시성 동기화 등)을 더 추상적으로 표현하면 다음과 같습니다.
@@ -599,40 +565,34 @@ Client ──> Proxy ──> Real Subject
 
 ```text
 Proxy 생성 ──> (아직 Real Subject 없음) ──> 최초 method 호출 ──> Real Subject 생성
-
 ```
 
 이를 타입으로 직접 표현할 수 있습니다.
 
 ```text
 data Lazy[T] = Unevaluated(thunk: () -> T) | Evaluated(T)
-
 ```
 
 값을 지연 생성합니다.
 
 ```text
 image: Lazy[Image] = lazy { load_image("photo.jpg") }
-
 ```
 
 아직 `load_image()`는 실행되지 않습니다. 실제 값이 필요할 때 비로소 실행됩니다.
 
 ```python
 real_image = force(image)
-
 ```
 
 ```text
 Unevaluated ──(force() 호출)──> load_image() 실행 ──> Evaluated(Image)
-
 ```
 
 두 번째 호출부터는 기존 결과를 사용합니다.
 
 ```python
 again = force(image)
-
 ```
 
 고전적인 `VirtualProxy + RealSubject field` 구조를 `Lazy[T]`라는 일반적인 타입으로 표현한 것입니다.
@@ -645,12 +605,10 @@ again = force(image)
 
 ```text
 type Thunk[T] = () -> T
-
 ```
 
 ```python
 image: Thunk[Image] = lambda: load_image("photo.jpg")
-
 ```
 
 호출할 때마다 다시 계산할 수 있습니다 (`image()`, `image()`).
@@ -660,14 +618,12 @@ image: Thunk[Image] = lambda: load_image("photo.jpg")
 ```text
 첫 호출   : 생성
 이후 호출 : 재사용
-
 ```
 
 따라서 의미적으로는 단순 Thunk보다 **Memoized Lazy Value**에 가깝습니다.
 
 ```python
 type Lazy[T] = Memoized[Thunk[T]]
-
 ```
 
 $$\text{Virtual Proxy} \approx \text{Memoized Lazy}[T]$$
@@ -680,12 +636,10 @@ $$\text{Virtual Proxy} \approx \text{Memoized Lazy}[T]$$
 
 ```text
 Client ──> Protection Proxy ──(permission check)──> Real Subject
-
 ```
 
 ```python
 proxy.delete_user(user_id)
-
 ```
 
 호출 시 내부에서 현재 사용자 권한을 검사할 수 있습니다.
@@ -695,14 +649,12 @@ proxy.delete_user(user_id)
 ```text
 capability DeleteUser:
     def delete_user(id: UserId) -> Unit
-
 ```
 
 관리자에게만 Capability를 발급합니다.
 
 ```python
 admin_capability: DeleteUser
-
 ```
 
 함수는 해당 권한을 요구합니다.
@@ -710,14 +662,12 @@ admin_capability: DeleteUser
 ```text
 def remove_user(id: UserId, using permission: DeleteUser) -> Unit:
     permission.delete_user(id)
-
 ```
 
 이 가상 타입 시스템에서는 `DeleteUser` 인자를 공급하지 않은 호출을 정적 오류로 처리합니다.
 
 ```text
 Type Error: Missing capability: DeleteUser
-
 ```
 
 이 모델이 권한 경계가 되려면 Capability를 임의로 만들 수 없고, 실제 삭제 기능에 우회 접근할 수도 없어야 합니다. Capability의 발급 시점에는 사용자 권한을 확인해야 하며, 발급 이후 권한 취소나 만료를 지원한다면 호출 시점의 런타임 검사도 필요할 수 있습니다. 타입은 필요한 권한의 전달을 검사하지만, 변화하는 권한 정책 전체를 대신하지는 않습니다.
@@ -734,7 +684,6 @@ class UserRepository:
     def create(...)
     def update(...)
     def delete(...)
-
 ```
 
 Proxy를 하나 두고 역할별로 검사할 수도 있지만, Capability 시스템에서는 능력을 나눌 수 있습니다.
@@ -748,7 +697,6 @@ capability WriteUser:
 
 capability DeleteUser:
     def delete(id: UserId) -> Unit
-
 ```
 
 * **일반 사용자 서비스:** `ReadUser + WriteUser` 만 전달
@@ -768,12 +716,10 @@ Proxy에서 런타임 조건문으로 접근을 검사하는 대신, 타입 수�
 
 ```text
 opaque type RemoteHandle[T]
-
 ```
 
 ```python
 user_service: RemoteHandle[UserService]
-
 ```
 
 직접적인 메서드 호출 대신 Remote 연산을 사용합니다.
@@ -785,12 +731,10 @@ def call[T, Args, Result](
     args: Args,
 ) -> Async[Result[Result, RemoteError]]:
     ...
-
 ```
 
 ```python
 result = call(user_service, UserService.get_user, user_id)
-
 ```
 
 타입만 보아도 **원격 호출임 / 비동기일 수 있음 / 실패할 수 있음**을 명확히 알 수 있습니다. 고전적인 Transparent Remote Proxy보다 비용과 실패 모델을 더 정직하게 표현합니다.
@@ -817,7 +761,6 @@ result = call(user_service, UserService.get_user, user_id)
 ```text
 effect RemoteCall:
     def invoke[Request, Response](request: Request) -> Response
-
 ```
 
 비즈니스 로직:
@@ -825,7 +768,6 @@ effect RemoteCall:
 ```text
 def load_user(id: UserId) -> User ! RemoteCall:
     return perform invoke(GetUser(id))
-
 ```
 
 * **실제 네트워크 환경:** `handle RemoteCall with HttpRPCHandler`
@@ -842,7 +784,6 @@ Caching Proxy의 구조는 다음과 같습니다.
 ```text
 Client ──> Caching Proxy ──┬── Cache Hit  ──> Result
                           └── Cache Miss ──> Real Subject
-
 ```
 
 함수형 관점에서는 순수 함수의 Memoization으로 표현할 수 있습니다.
@@ -850,13 +791,11 @@ Client ──> Caching Proxy ──┬── Cache Hit  ──> Result
 ```text
 def memoize[A: Hashable, B](fn: A -> B) -> A -> B:
     ...
-
 ```
 
 ```text
 calculate_price : ItemId -> Money
 cached_price    : ItemId -> Money  # memoize(calculate_price)
-
 ```
 
 타입이 완전히 동일하므로, 순수한 계산의 Caching Proxy는 객체보다 고차 함수가 더 직접적인 표현이 될 수 있습니다.
@@ -870,7 +809,6 @@ cached_price    : ItemId -> Money  # memoize(calculate_price)
 ```text
 def get_balance(account: AccountId) -> Money ! Database:
     ...
-
 ```
 
 이 결과를 무조건 캐싱하면 실제 데이터베이스 값이 변경되어도 오래된 값을 반환할 수 있습니다. 즉 `Database Read`와 `Cached Database Read`는 의미적으로 동일하지 않습니다.
@@ -879,7 +817,6 @@ def get_balance(account: AccountId) -> Money ! Database:
 
 ```text
 handle DatabaseRead with Cache(ttl=30.seconds)
-
 ```
 
 따라서 Caching Proxy가 수행하는 의미 변경을 호출 타입이나 Effect Layer에 명시적으로 드러낼 수 있습니다.
@@ -907,21 +844,18 @@ handle DatabaseRead with Cache(ttl=30.seconds)
 ```text
 linear resource Connection:
     ...
-
 ```
 
 ```python
 connection = open_connection()
 query(connection, ...)
 close(connection)
-
 ```
 
 여기서는 `query`가 Connection을 잠시 빌리고, `close`가 소유권을 소비하며, 복제 가능한 별칭이 없다고 가정합니다. 이 규칙을 강제하는 타입 시스템에서는 닫은 뒤 같은 Connection을 다시 사용하는 코드를 거부합니다.
 
 ```text
 Type Error: connection has already been consumed.
-
 ```
 
 소유권 소비는 닫힌 자원의 재사용을 막고, Typestate는 상태별로 허용되는 연산을 표현합니다. 두 개념은 함께 사용할 수 있지만 같은 개념은 아닙니다. 예외나 취소 경로의 자원 정리, 외부 연결 종료의 성공 여부는 별도 실행 규칙이 필요합니다. Python에서는 컨텍스트 관리자와 런타임 상태 검사로 이러한 수명 규칙을 구현할 수 있습니다.
@@ -936,7 +870,6 @@ Type Error: connection has already been consumed.
 
 ```text
 Client ──> ThreadSafeProxy ──> Lock / Queue ──> RealSubject
-
 ```
 
 Actor 기반 모델에서는 객체 자체를 직접 공유하지 않고 Handle만 제공합니다.
@@ -948,17 +881,14 @@ actor Counter:
     message Get -> Int
 
 counter: ActorRef[Counter]
-
 ```
 
 ```python
 send(counter, Increment)
-
 ```
 
 ```text
 ActorRef ──(Message)──> Actor Mailbox ──> Actor State
-
 ```
 
 실제 객체의 내부 상태에 직접 접근할 수 없게 만드는 구조로, 동시성 접근을 통제하는 Proxy를 언어의 동시성 모델로 일반화한 형태입니다.
@@ -999,7 +929,6 @@ ActorRef ──(Message)──> Actor Mailbox ──> Actor State
 
 ```text
 Client Operation ──> Proxy Policy ──> Real Operation
-
 ```
 
 * **Caching Proxy:** $A \rightarrow B ! \text{Database} \quad \Longrightarrow \quad A \rightarrow B ! \text{Cache} + \text{Database}$
@@ -1016,7 +945,6 @@ Client Operation ──> Proxy Policy ──> Real Operation
 
 ```text
 Client ──> Indirect Reference ──> Access Policy ──> Resource
-
 ```
 
 접근 정책은 Lazy, Authorization, Remote, Cache, Weak, Synchronized, Transactional 등으로 달라질 수 있습니다.

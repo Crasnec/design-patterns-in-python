@@ -16,7 +16,6 @@
 3. 데이터 정제
 4. 데이터 분석
 5. 결과 저장
-
 ```
 
 하지만 처리하는 파일 형식에 따라 일부 세부 단계에 차이가 존재합니다.
@@ -29,7 +28,6 @@ CSV:
 JSON:
     JSON 읽기
     JSON 파싱
-
 ```
 
 ### 패턴을 적용하지 않은 예시
@@ -111,7 +109,6 @@ class CsvDataProcessor:
         result: dict[str, object],
     ) -> None:
         ...
-
 ```
 
 JSON Processor 또한 유사한 구조를 가집니다.
@@ -163,7 +160,6 @@ class JsonDataProcessor:
         self._save(
             result
         )
-
 ```
 
 두 클래스의 실질적인 차이는 일부 단계에 국한됩니다.
@@ -176,7 +172,6 @@ CsvDataProcessor:
 JsonDataProcessor:
     read_json()
     parse_json()
-
 ```
 
 그럼에도 불구하고 전체 `process()` 알고리즘의 제어 흐름이 두 클래스에 그대로 중복 구현되어 있습니다.
@@ -190,7 +185,6 @@ flowchart TD
     clean --> validate[Validate]
     validate --> analyze[Analyze]
     analyze --> save[Save]
-
 ```
 
 이 경우 CSV 및 JSON 클래스를 모두 일일이 수정해야 합니다.
@@ -207,7 +201,6 @@ validated = self._validate(
 result = self._analyze(
     validated
 )
-
 ```
 
 만약 XML, Excel, YAML Processor 등이 추가되어 있다면 동일한 수정 작업을 반복해야 합니다.
@@ -218,7 +211,6 @@ JsonDataProcessor.process()
 XmlDataProcessor.process()
 ExcelDataProcessor.process()
 YamlDataProcessor.process()
-
 ```
 
 즉, **알고리즘의 실행 순서가 여러 클래스에 중복되어 있으면 전체 알고리즘의 구조를 변경할 때 관련된 모든 구현을 함께 수정해야 하는 비효율이 발생**합니다.
@@ -248,7 +240,6 @@ flowchart TD
     hook --> step3[step3]
     concrete[ConcreteClass] -. 구현 .-> step1
     concrete -. 구현 .-> step2
-
 ```
 
 상위 클래스에서 전체 처리 순서를 고정하여 정의합니다.
@@ -287,7 +278,6 @@ class DataProcessor(ABC):
         self.save(
             result
         )
-
 ```
 
 여기서 `process()` 메서드가 바로 **Template Method** 역할을 수행하며, 전체 실행 순서는 이 메서드 내부에서 단일하게 고정됩니다.
@@ -304,7 +294,6 @@ before_analyze
 analyze
  ↓
 save
-
 ```
 
 파일 형식별로 다르게 동작해야 하는 단계는 추상 메서드로 선언합니다.
@@ -326,7 +315,6 @@ def parse(
     dict[str, object]
 ]:
     pass
-
 ```
 
 공통 로직 단계는 상위 클래스에서 직접 구체 구현을 작성할 수 있습니다.
@@ -346,7 +334,6 @@ def clean(
         for row in data
         if row
     ]
-
 ```
 
 필요에 따라 하위 클래스에서 선택적으로 재정의할 수 있는 Hook 메서드도 제공할 수 있습니다.
@@ -360,7 +347,6 @@ def before_analyze(
 ) -> None:
 
     pass
-
 ```
 
 CSV Processor는 고유한 세부 단계만 구현합니다.
@@ -393,7 +379,6 @@ class CsvDataProcessor(
         )
 
         ...
-
 ```
 
 JSON Processor도 마찬가지로 가변적인 단계만 재정의합니다.
@@ -426,7 +411,6 @@ class JsonDataProcessor(
         )
 
         ...
-
 ```
 
 클라이언트에서는 동일한 인터페이스로 메서드를 호출합니다.
@@ -435,7 +419,6 @@ class JsonDataProcessor(
 processor.process(
     "data.csv"
 )
-
 ```
 
 어떠한 하위 클래스를 사용하더라도 전체 알고리즘은 상위 클래스에서 지정한 일관된 순서에 따라 수행됩니다.
@@ -465,7 +448,6 @@ JsonDataProcessor
     analyze
         ↓
     save
-
 ```
 
 상위 클래스는 알고리즘의 불변 영역(Invariant Part)을 관할합니다.
@@ -474,7 +456,6 @@ JsonDataProcessor
 step order
 common steps
 overall control flow
-
 ```
 
 하위 클래스는 가변 영역(Variant Part)만을 구체화합니다.
@@ -483,7 +464,6 @@ overall control flow
 format-specific reading
 format-specific parsing
 optional hooks
-
 ```
 
 본 패턴의 핵심은 단순한 공통 코드의 상위 클래스 이관이 아닙니다.
@@ -505,7 +485,6 @@ optional hooks
 ```text
 "Don't call us,
  we'll call you."
-
 ```
 
 구조적 관점의 비교:
@@ -513,13 +492,11 @@ optional hooks
 ```text
 Subclass
     → framework flow를 직접 제어 (기존)
-
 ```
 
 ```text
 Framework / Base Class
     → Subclass Hook 호출 (할리우드 원칙 적용)
-
 ```
 
 * **공통 알고리즘 수정의 용이성:** 전체 과정에 새로운 공통 단계를 추가할 경우 Template Method만 수정하면 되므로 변경 여파가 최소화됩니다.
@@ -557,7 +534,6 @@ def parse(
     raw_data: str,
 ):
     ...
-
 ```
 
 해당 메서드를 구현하지 않으면 알고리즘이 성립되지 않습니다.
@@ -568,7 +544,6 @@ Template Method
 Required Step
     ↓
 Subclass must implement
-
 ```
 
 #### Hook (훅)
@@ -582,7 +557,6 @@ def before_analyze(
 ) -> None:
 
     pass
-
 ```
 
 특정 처리가 필요한 하위 클래스에서만 이를 재정의하여 사용합니다.
@@ -600,7 +574,6 @@ class AuditedProcessor(
         audit(
             data
         )
-
 ```
 
 요약하면 다음과 같습니다.
@@ -611,7 +584,6 @@ Primitive Operation:
 
 Hook:
     선택적으로 구현
-
 ```
 
 ---
@@ -630,7 +602,6 @@ Base Algorithm
       └─ hook
              ↑
           subclass
-
 ```
 
 Strategy는 **합성**을 활용합니다.
@@ -640,7 +611,6 @@ Context
    │
    ↓
 Strategy
-
 ```
 
 Template Method가 다루는 문제:
@@ -648,7 +618,6 @@ Template Method가 다루는 문제:
 ```text
 "전체 알고리즘은 유지하면서
 일부 단계만 어떻게 변경할 것인가?"
-
 ```
 
 Strategy가 다루는 문제:
@@ -656,7 +625,6 @@ Strategy가 다루는 문제:
 ```text
 "전체 알고리즘 중 어떤 구현을
 사용할 것인가?"
-
 ```
 
 핵심 차이 요약:
@@ -668,7 +636,6 @@ Template Method:
 
 Strategy:
     Algorithm 자체 교체
-
 ```
 
 또한 Template Method는 주로 클래스 정의 시점에 변형이 결정되는 반면, Strategy는 런타임에 동적으로 알고리즘을 교체하기 용이합니다.
@@ -691,7 +658,6 @@ def process(self):
     self.save(
         data
     )
-
 ```
 
 위 구조에서 `create_parser()`가 Factory Method 역할을 담당합니다.
@@ -705,7 +671,6 @@ Template Method
     │
     ├─ parse()
     └─ save()
-
 ```
 
 즉, Factory Method는 **객체 생성 단계에 특화된 확장 지점**이며, Template Method는 **전체 알고리즘 실행 골격에 대한 확장 구조**입니다.
@@ -722,7 +687,6 @@ Step A
 Step B
  ↓
 Step C
-
 ```
 
 State 패턴은 객체의 현재 상태(State)에 따라 수행할 행동을 결정합니다.
@@ -733,7 +697,6 @@ Pending
 Paid
    ↓
 Shipped
-
 ```
 
 차이점 비교:
@@ -744,7 +707,6 @@ Template Method:
 
 State:
     상태에 따른 행동 변화
-
 ```
 
 ---
@@ -756,7 +718,6 @@ Command 패턴은 연산 요청 자체를 독립된 객체로 캡슐화합니다
 ```text
 Command
     execute()
-
 ```
 
 Template Method는 단일 알고리즘 내부에서의 **단계와 실행 순서**를 규정합니다.
@@ -769,7 +730,6 @@ Step A
 Step B
    ↓
 Step C
-
 ```
 
 Command 객체의 `execute()` 내부에서 Template Method를 호출하는 방식으로 연계하여 사용할 수 있습니다.
@@ -806,7 +766,6 @@ class UserServiceTest(
 
     def tearDown(self):
         self.service.close()
-
 ```
 
 프레임워크 내부에서는 다음과 같은 단계를 거쳐 실행을 통제합니다.
@@ -822,7 +781,6 @@ TestCase.run()
       │
       ↓
   tearDown()
-
 ```
 
 `setUp()`은 테스트 메서드 수행 직전에 실행되며, `setUp()`이 성공하면 테스트의 성공/실패 여부와 관계없이 `tearDown()`이 호출되도록 흐름이 관리됩니다. `TestCase.run()` 메서드가 전체 실행 및 결과 수집 흐름을 관장하므로, 개발자는 전체 테스트 라이프사이클을 직접 제어할 필요 없이 필요한 단계만 작성합니다.
@@ -837,7 +795,6 @@ Hooks / Primitive Operations:
     setUp()
     test method
     tearDown()
-
 ```
 
 ---
@@ -869,7 +826,6 @@ class MyHandler(
         self.wfile.write(
             b"Hello"
         )
-
 ```
 
 내부 실행 처리 흐름:
@@ -884,7 +840,6 @@ request parsing
 HTTP Method dispatch
    ↓
 do_GET() / do_POST()
-
 ```
 
 사용자는 공통 HTTP 파싱 및 분기 알고리즘을 새로 작성하지 않고, 개별 HTTP 요청 처리 단계만 구현하면 됩니다. 이는 **상위 클래스가 제어하는 알고리즘 골격과 하위 클래스의 Hook 연동**이라는 템플릿 메서드의 특성을 잘 보여줍니다.
@@ -916,7 +871,6 @@ class HelloView(View):
         return HttpResponse(
             "Hello"
         )
-
 ```
 
 개념적 처리 순서:
@@ -929,7 +883,6 @@ setup()
 dispatch()
    ↓
 get() / post() / ...
-
 ```
 
 아울러 `TemplateView` 등 Generic CBV는 기본적인 라이프사이클 구조를 상속받은 상태에서 `get_context_data()`와 같은 특정 확장 지점만 오버라이드하여 동작을 커스터마이징할 수 있습니다.
@@ -970,7 +923,6 @@ classDiagram
     DataProcessor <|-- JsonDataProcessor
 
     Client --> DataProcessor : calls process()
-
 ```
 
 구성요소별 역할:
@@ -997,7 +949,6 @@ Hook:
 Concrete Classes:
     CsvDataProcessor
     JsonDataProcessor
-
 ```
 
 호출 및 오버라이딩 관계:
@@ -1018,7 +969,6 @@ DataProcessor.process()
         └─ save()           │
                             │
                Csv / Json ──┘
-
 ```
 
 하위 클래스는 실행 순서 결정에 관여하지 않습니다.
@@ -1026,7 +976,6 @@ DataProcessor.process()
 ```text
 Subclass:
     "내가 호출되는 시점과 순서는 상위 클래스가 결정한다."
-
 ```
 
 ---
@@ -1200,7 +1149,6 @@ invalid,-10
 processor.process(
     source
 )
-
 ```
 
 CSV 실행 시 호출되는 단계 순서:
@@ -1225,7 +1173,6 @@ DataProcessor.analyze()
        │
        ↓
 DataProcessor.save()
-
 ```
 
 JSON 실행 시 호출되는 단계 순서 (Hook 재정의 포함):
@@ -1250,7 +1197,6 @@ DataProcessor.analyze()
        │
        ↓
 DataProcessor.save()
-
 ```
 
 모든 하위 클래스는 알고리즘 전체를 제어하는 다음과 같은 코드를 직접 보유하지 않습니다.
@@ -1261,7 +1207,6 @@ data = self.parse(...)
 cleaned = self.clean(...)
 result = self.analyze(...)
 self.save(...)
-
 ```
 
 해당 제어 흐름은 오직 상위 클래스의 Template Method 내에만 존재합니다.
@@ -1280,7 +1225,6 @@ def process(
     source: str,
 ):
     ...
-
 ```
 
 상위 클래스가 보장해야 하는 전체 알고리즘의 제어 규약과 순서가 깨지게 됩니다.
@@ -1301,7 +1245,6 @@ class DataProcessor(ABC):
         source: str,
     ) -> AnalysisResult:
         ...
-
 ```
 
 이 방식을 통해 Template Method가 고정된 알고리즘 골격임을 코드상에 명확히 나타낼 수 있습니다.
@@ -1327,7 +1270,6 @@ Base Class
             ↑
 
         Subclass
-
 ```
 
 즉, 고정된 제어 흐름(Control Flow)과 재정의 가능한 연산(Operation)의 결합 방식입니다.
@@ -1358,7 +1300,6 @@ def process(self):
         self.analyze(cleaned)
 
     self.save(result)
-
 ```
 
 위 로직에서 가변적인 부분이 `read`와 `parse` 단계로 국한된다고 정의합니다.
@@ -1414,7 +1355,6 @@ def process[
     )
 
     return result
-
 ```
 
 전체 실행 제어 순서는 `process()` 고차 함수가 통제합니다.
@@ -1429,7 +1369,6 @@ clean
 analyze
  ↓
 save
-
 ```
 
 가변적인 세부 단계는 함수 타입의 인자로 외부에서 제공받습니다.
@@ -1447,7 +1386,6 @@ DataProcessor
      ↑
      ├─ CsvProcessor
      └─ JsonProcessor
-
 ```
 
 함수형 관점에서는 필요한 함수 조합을 전달하는 방식으로 표현합니다.
@@ -1459,7 +1397,6 @@ csv_processor =
         parse=parse_csv,
         ...
     )
-
 ```
 
 ```text
@@ -1469,7 +1406,6 @@ json_processor =
         parse=parse_json,
         ...
     )
-
 ```
 
 변환 관계:
@@ -1478,7 +1414,6 @@ json_processor =
 Inheritance (상속)
     ↓
 Parameterization (매개변수화)
-
 ```
 
 이를 통해 상속을 사용하지 않고도 **변화하는 단계를 확장 지점으로 분리한다**는 템플릿 메서드의 목적을 달성할 수 있습니다.
@@ -1499,7 +1434,6 @@ process(
     save,
     ...
 )
-
 ```
 
 관련된 단계들을 하나의 연산 레코드(Operations Record) 구조체로 그룹화합니다.
@@ -1525,7 +1459,6 @@ record ProcessingOps[
 
     save:
         Result -> Unit
-
 ```
 
 Template 함수 표기:
@@ -1560,7 +1493,6 @@ def process(
     ops.save(
         result
     )
-
 ```
 
 객체지향의 추상 클래스 역할이 **함수들의 레코드/사전(Record/Dictionary)** 개념으로 치환됩니다.
@@ -1577,7 +1509,6 @@ def before_analyze(
     data,
 ):
     pass
-
 ```
 
 함수형 타입 시스템에서는 이를 Optional 함수 타입으로 명시할 수 있습니다.
@@ -1587,7 +1518,6 @@ before_analyze:
     Option[
         Data -> Unit
     ]
-
 ```
 
 Template 처리 로직:
@@ -1602,7 +1532,6 @@ match before_analyze:
 
     case None:
         pass
-
 ```
 
 개념적 변화:
@@ -1611,7 +1540,6 @@ match before_analyze:
 Empty virtual method (가상 메서드)
     ↓
 Optional Function (선택적 함수 인자)
-
 ```
 
 선택적 확장 지점이라는 성격이 타입 정의 자체에 명시적으로 드러나게 됩니다.
@@ -1628,7 +1556,6 @@ Required:
 
 Optional:
     default method
-
 ```
 
 가상 타입 시스템에서는 레코드 분리를 통해 이를 표현합니다.
@@ -1641,7 +1568,6 @@ record ProcessingTemplate:
 
     hooks:
         OptionalHooks
-
 ```
 
 ```text
@@ -1652,7 +1578,6 @@ record RequiredSteps:
 
     parse:
         Raw -> Data
-
 ```
 
 ```text
@@ -1667,7 +1592,6 @@ record OptionalHooks:
         Option[
             Result -> Unit
         ]
-
 ```
 
 필수 구현 요구사항과 선택적 확장 지점이 정적 타입 수준에서 구분됩니다.
@@ -1681,7 +1605,6 @@ Template Method 패턴의 기본 전제:
 ```text
 알고리즘의 전체 실행 골격은
 외부나 하위 구현에서 변경할 수 없다.
-
 ```
 
 가상 타입 시스템에서의 선언 예시:
@@ -1692,7 +1615,6 @@ final def process(
     source: Source,
 ) -> Result:
     ...
-
 ```
 
 임의로 오버라이드를 시도할 경우 컴파일 타임에 오류가 발생합니다.
@@ -1700,13 +1622,11 @@ final def process(
 ```text
 override def process(...):
     ...
-
 ```
 
 ```text
 Type Error:
 process() is final and cannot be overridden.
-
 ```
 
 언어 차원에서 고정된 골격과 가변 단계를 엄격히 구분하게 됩니다.
@@ -1729,7 +1649,6 @@ sealed template DataProcessor:
     virtual def before_analyze(...)
 
     private def validate_internal(...)
-
 ```
 
 각 구성 요소의 변경 및 확장 가능 범위를 명확히 규정합니다.
@@ -1746,7 +1665,6 @@ virtual:
 
 private:
     외부 확장 불가능한 내부 로직
-
 ```
 
 ---
@@ -1758,7 +1676,6 @@ Template Method 내부에는 각 단계 간 실행 조건에 대한 암묵적 �
 ```text
 parse() 수행 결과는 구조화된 데이터 형태여야 함
 clean() 수행 결과는 유효하지 않은 데이터가 제거된 상태여야 함
-
 ```
 
 Refinement Type(정제 타입)을 적용한 표현:
@@ -1766,7 +1683,6 @@ Refinement Type(정제 타입)을 적용한 표현:
 ```text
 type RawData
 type ParsedData
-
 ```
 
 ```text
@@ -1774,7 +1690,6 @@ type CleanData =
     ParsedData
     where
         all_rows_valid
-
 ```
 
 단계별 함수 규약:
@@ -1784,7 +1699,6 @@ def clean(
     data: ParsedData,
 ) -> CleanData:
     ...
-
 ```
 
 분석 단계 함수:
@@ -1794,7 +1708,6 @@ def analyze(
     data: CleanData,
 ) -> Result:
     ...
-
 ```
 
 `analyze()`에 정제되지 않은 `ParsedData`를 전달할 경우 타입 오류가 발생합니다.
@@ -1807,7 +1720,6 @@ ParsedData
 CleanData
     ↓ analyze
 Result
-
 ```
 
 단계 간 전제 조건을 정적 타입 시스템으로 검증할 수 있습니다.
@@ -1820,7 +1732,6 @@ Result
 
 ```text
 Unloaded → Loaded → Parsed → Cleaned → Analyzed → Saved
-
 ```
 
 각 상태를 독립된 타입으로 선언합니다.
@@ -1832,7 +1743,6 @@ data Parsed
 data Cleaned
 data Analyzed
 data Saved
-
 ```
 
 상태를 포함하는 컨텍스트 레코드:
@@ -1843,7 +1753,6 @@ record Process[
     Data,
 ]:
     data: Data
-
 ```
 
 단계별 상태 전이 함수:
@@ -1860,7 +1769,6 @@ def read(
     RawData,
 ]:
     ...
-
 ```
 
 ```python
@@ -1875,7 +1783,6 @@ def parse(
     ParsedData,
 ]:
     ...
-
 ```
 
 ```python
@@ -1890,7 +1797,6 @@ def analyze(
     Result,
 ]:
     ...
-
 ```
 
 올바르지 않은 순서로 단계를 호출하면 정적 타입 에러가 발생합니다.
@@ -1899,14 +1805,12 @@ def analyze(
 analyze(
     loaded_data
 )
-
 ```
 
 ```text
 Type Error:
 analyze requires: Process[Cleaned, ...]
 found: Process[Loaded, ...]
-
 ```
 
 런타임에 보장되던 순서 제약 조건을 **Typestate 프로토콜**을 통해 컴파일 타임 안전성으로 강화한 형태입니다.
@@ -1924,7 +1828,6 @@ pipeline =
     >> clean
     >> analyze
     >> save
-
 ```
 
 파이프라인의 입출력 타입 흐름:
@@ -1941,7 +1844,6 @@ CleanData
 Result
   ↓ save
 Unit
-
 ```
 
 상위 클래스 제어 메서드 기반의 순서 고정이 **함수 합성 파이프라인 구조**로 전환됩니다.
@@ -1958,7 +1860,6 @@ data Step[
     Output,
 ] =
     ...
-
 ```
 
 ```python
@@ -1969,7 +1870,6 @@ pipeline = [
     AnalyzeStep,
     SaveStep,
 ]
-
 ```
 
 타입 검사기를 통해 각 연결 단계의 입출력 일치 여부를 검증합니다.
@@ -1977,7 +1877,6 @@ pipeline = [
 ```text
 Step[A, B] >> Step[B, C]  -->  Valid
 Step[A, B] >> Step[X, C]  -->  Invalid (B != X)
-
 ```
 
 메서드 내부에 은닉되어 있던 알고리즘 구조가 **검증 가능한 파이프라인 데이터**로 명시됩니다.
@@ -1994,7 +1893,6 @@ type Strategy[
     B,
 ] =
     A -> B
-
 ```
 
 즉, **알고리즘 전체 처리 함수** 하나를 교체하는 방식입니다.
@@ -2008,7 +1906,6 @@ def template(
     step3: C -> D,
 ) -> D:
     ...
-
 ```
 
 전체 조합 흐름은 고정된 상태에서 세부 구성 요소 함수들만 주입받습니다.
@@ -2021,7 +1918,6 @@ Strategy:
 
 Template Method:
     고정된 합성 구조 내 세부 함수 주입
-
 ```
 
 ---
@@ -2038,7 +1934,6 @@ Parse
 Analyze  (가변 전략 적용)
  ↓
 Save
-
 ```
 
 분석(Analyze) 단계에만 다양한 전략 구현체를 주입받도록 구성할 수 있습니다.
@@ -2059,7 +1954,6 @@ def process(
         )
 
     ...
-
 ```
 
 구조적 합성:
@@ -2071,7 +1965,6 @@ Template Method
     ├─ fixed parse
     ├─ Strategy analyze
     └─ fixed save
-
 ```
 
 ---
@@ -2086,7 +1979,6 @@ parse   → Pure
 clean   → Pure
 analyze → Database
 save    → File I/O
-
 ```
 
 Effect System 적용 예시:
@@ -2097,7 +1989,6 @@ def read(
 ) -> Raw
     ! FileSystem:
     ...
-
 ```
 
 ```python
@@ -2105,7 +1996,6 @@ def parse(
     raw: Raw,
 ) -> Data:
     ...
-
 ```
 
 ```text
@@ -2114,7 +2004,6 @@ def analyze(
 ) -> Result
     ! Database:
     ...
-
 ```
 
 Template의 전체 부수 효과는 세부 단계들의 효과 집합으로 합성됩니다.
@@ -2126,7 +2015,6 @@ def process(
     ! FileSystem
     + Database:
     ...
-
 ```
 
 알고리즘 수행 시 발생하는 외부 영향을 명시적인 타입 정보로 파악할 수 있습니다.
@@ -2144,7 +2032,6 @@ def process(
     ! Reader
     + Writer:
     ...
-
 ```
 
 운영 환경에서의 핸들러 바인딩:
@@ -2159,7 +2046,6 @@ with LocalFileSystem:
         process(
             source
         )
-
 ```
 
 테스트 환경에서의 핸들러 바인딩:
@@ -2174,7 +2060,6 @@ with InMemoryReader:
         process(
             source
         )
-
 ```
 
 Hook을 통한 세부 로직 변경뿐 아니라, **외부 환경과의 상호작용(Effect) 방식까지 분리하여 동적으로 주입**할 수 있습니다.
@@ -2190,7 +2075,6 @@ ReadError
 ParseError
 ValidationError
 SaveError
-
 ```
 
 단계별 예외/오류 반환 타입:
@@ -2202,7 +2086,6 @@ read:
             Raw,
             ReadError
         ]
-
 ```
 
 ```text
@@ -2212,7 +2095,6 @@ parse:
             Data,
             ParseError
         ]
-
 ```
 
 Template 내부의 모나딕(Monadic) 오류 제어 흐름:
@@ -2252,7 +2134,6 @@ def process(
     return Ok(
         result
     )
-
 ```
 
 개별 단계마다 반복되던 오류 처리 및 전파 제어 로직을 Template 수준으로 통합할 수 있습니다.
@@ -2281,7 +2162,6 @@ data ProcessingError =
   | SaveFailed(
         SaveError
     )
-
 ```
 
 전체 알고리즘의 예외 가능 범위를 단일 타입으로 표현합니다.
@@ -2291,7 +2171,6 @@ Template Method
 
     성공 시: Result
     실패 시: ProcessingError
-
 ```
 
 알고리즘의 정상 제어 흐름뿐만 아니라 **오류 제어 흐름(Error Flow)** 또한 Template 표준 구조에 포함됩니다.
@@ -2304,7 +2183,6 @@ Template Method
 
 ```text
 Open Resource → Use Resource → Close Resource
-
 ```
 
 실패 여부와 관계없이 자원을 해제해야 하는 구조를 고차 함수로 정의할 수 있습니다 (`bracket`).
@@ -2324,7 +2202,6 @@ def bracket[
         Resource -> Unit,
 ) -> Result:
     ...
-
 ```
 
 기본 자원 관리 골격:
@@ -2335,7 +2212,6 @@ acquire
 use
    ↓
 release
-
 ```
 
 사용자는 자원의 **획득, 사용, 해제 방식**에 관한 구체 로직만 인자로 제공합니다.
@@ -2358,7 +2234,6 @@ trait Resource[
     def release(
         value: R
     ) -> Unit
-
 ```
 
 구문 활용:
@@ -2367,7 +2242,6 @@ trait Resource[
 with resource():
 
     perform_work()
-
 ```
 
 내부 라이프사이클 통제:
@@ -2378,7 +2252,6 @@ Acquire
 Body (작업 수행)
    ↓
 Release
-
 ```
 
 호출자는 본문(Body) 로직만 제공하고 라이프사이클 관리는 프레임워크/문법이 담당하므로, 템플릿 메서드의 일반화된 적용례로 볼 수 있습니다.
@@ -2396,7 +2269,6 @@ before_clean()
 after_clean()
 before_analyze()
 after_analyze()
-
 ```
 
 각 처리 단계의 인자 및 반환 타입을 명확히 정의함으로써 순서 의존성을 정적 타입 수준에서 명시합니다.
@@ -2407,7 +2279,6 @@ before_analyze:
 
 after_analyze:
     Analyzed -> Analyzed
-
 ```
 
 각 Hook이 수용하고 반환하는 데이터 타입을 통해 수행 시점과 계약 관계가 명확해집니다.
@@ -2422,7 +2293,6 @@ after_analyze:
 Subclass
     ↓ (직접 접근)
 BaseClass protected fields
-
 ```
 
 필요한 권한/기능만을 Capability 객체 형태로 전달합니다.
@@ -2435,7 +2305,6 @@ capability ParseContext:
 
     def schema()
         -> Schema
-
 ```
 
 ```text
@@ -2443,7 +2312,6 @@ parse:
     Raw
         -> Data
     using ParseContext
-
 ```
 
 세부 단계 함수가 상위 클래스의 전체 컨텍스트에 의존하지 않고, 전달받은 Capability 인터페이스에만 의존하도록 결합도를 낮춥니다.
@@ -2478,7 +2346,6 @@ trait ProcessingAlgebra[
     def save(
         result: Result,
     ) -> F[Unit]
-
 ```
 
 Template은 선언된 대수 연산들의 실행 조합으로 프로그램을 구성합니다.
@@ -2516,7 +2383,6 @@ where ProcessingAlgebra[F]:
     )
 
     return result
-
 ```
 
 실행 순서는 프로그램 로직으로 고정되며, 각 연산의 실질적 의미는 해석기(Interpreter)의 구현에 따라 결정됩니다.
@@ -2531,7 +2397,6 @@ where ProcessingAlgebra[F]:
 Read: 실제 파일 읽기
 Parse: 실제 파서 연산
 Save: 실제 DB 저장
-
 ```
 
 테스트 환경용 해석기 (Test Interpreter):
@@ -2540,14 +2405,12 @@ Save: 실제 DB 저장
 Read: 메모리 데이터 제공
 Parse: 테스트용 Mock 파서
 Save: 저장 여부 기록
-
 ```
 
 추적용 해석기 (Tracing Interpreter):
 
 ```text
 모든 Step의 실행 로그 기록
-
 ```
 
 구조적 관계:
@@ -2558,7 +2421,6 @@ Fixed Algorithm Program
         ├─ Production Interpreter
         ├─ Test Interpreter
         └─ Trace Interpreter
-
 ```
 
 템플릿 메서드의 **"고정 골격과 가변 구현의 분리"** 개념이 Algebra와 Interpreter 패턴 구조로 상위 추상화된 형태입니다.
@@ -2577,7 +2439,6 @@ Application Code
     ├─ Library A 호출
     ├─ Library B 호출
     └─ Library C 호출
-
 ```
 
 애플리케이션 코드가 전체 실행 흐름을 통제합니다.
@@ -2590,7 +2451,6 @@ Framework
     ├─ Hook A 호출
     ├─ User Code 호출
     └─ Hook B 호출
-
 ```
 
 프레임워크가 실행 흐름 통제권을 소유하며, 필요 시점에 사용자 정의 코드를 호출합니다.
@@ -2603,7 +2463,6 @@ Library:
 
 Framework:
     프레임워크가 애플리케이션 코드를 호출
-
 ```
 
 템플릿 메서드는 이러한 제어 역전 원칙을 객체지향의 상속 메커니즘을 통해 구현한 대표적인 패턴입니다.
@@ -2616,7 +2475,6 @@ Framework:
 
 ```text
 Inheritance (상속) + Virtual Method (가상 메서드)
-
 ```
 
 그러나 현대적인 프로그래밍 언어 환경에서는 상속을 사용하지 않고도 동일한 설계 목적을 달성하는 다양한 기법이 존재합니다.
@@ -2630,7 +2488,6 @@ Pipeline Composition (파이프라인 합성)
 Typestate
 Effect Handler
 Algebra / Interpreter
-
 ```
 
 중요한 것은 상속 구문 자체의 사용 여부가 아니라, "전체 흐름 구조는 고정하고 일부 세부 단계만 확장할 수 있도록 개방한다"는 아키텍처적 원칙입니다.
@@ -2648,7 +2505,6 @@ Closed Control Flow (닫힌 제어 흐름)
 Open Extension Points (열린 확장 지점)
     Step B 구현체
     Step C 구현체
-
 ```
 
 즉, 전체 알고리즘 프레임워크는 변경에 닫혀 있고(Closed), 세부 구현 단계는 확장(Open)에 열려 있는 구조입니다.
@@ -2659,7 +2515,6 @@ Control Flow:
 
 Operations:
     Open (확장 가능)
-
 ```
 
 이 두 영역 간의 균형 유지가 설계의 핵심입니다.
@@ -2710,7 +2565,6 @@ flowchart TD
     step_a --> step_b[Step B: subclass override]
     step_b --> step_c[Step C]
     step_c --> step_d[Step D: optional hook]
-
 ```
 
 핵심 메커니즘:
@@ -2720,7 +2574,6 @@ flowchart LR
     base[상위 클래스] -->|실행 순서 통제| flow[알고리즘 골격]
     subclass[하위 클래스] -->|구체 구현 제공| steps[가변 단계]
     steps --> flow
-
 ```
 
 전략 패턴(Strategy)이 "어떤 알고리즘 전체를 사용할 것인가"를 다룬다면, 템플릿 메서드 패턴은 "전체 알고리즘 구조를 유지한 채 특정 단계만 어떻게 변경할 것인가"를 다룹니다.

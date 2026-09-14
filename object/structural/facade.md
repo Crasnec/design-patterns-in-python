@@ -58,7 +58,6 @@ class GameEngine:
 
     def start(self) -> None:
         print("게임 시작")
-
 ```
 
 클라이언트가 게임을 실행하려면 모든 서브시스템을 직접 조립해야 합니다.
@@ -83,7 +82,6 @@ audio_system.play_bgm()
 
 game_engine.initialize()
 game_engine.start()
-
 ```
 
 클라이언트는 단순히 "게임을 실행하고 싶다"는 목적만 가지고 있지만, 아래 세부 정보를 모두 파악해야 합니다.
@@ -106,7 +104,6 @@ def run_game_from_editor():
 
 def run_game_for_test():
     ...
-
 ```
 
 이 상황에서 서브시스템의 초기화 방법이나 순서가 변경되면 모든 클라이언트 코드를 수정해야 합니다.
@@ -134,7 +131,6 @@ flowchart TD
     facade --> subsystem_b[Subsystem B]
     facade --> subsystem_c[Subsystem C]
     facade --> subsystem_d[Subsystem D]
-
 ```
 
 앞선 게임 시스템에 `GameFacade`를 추가해 봅니다.
@@ -169,7 +165,6 @@ class GameFacade:
 
         self._game_engine.initialize()
         self._game_engine.start()
-
 ```
 
 클라이언트 측 코드는 다음과 같이 단순해집니다.
@@ -184,14 +179,12 @@ game = GameFacade(
 )
 
 game.start_game("game.json")
-
 ```
 
 클라이언트가 바라보는 인터페이스는 사실상 다음 하나뿐입니다.
 
 ```python
 GameFacade.start_game()
-
 ```
 
 내부에서는 여전히 여러 객체가 협력합니다.
@@ -207,7 +200,6 @@ flowchart TD
     audio_init --> bgm[AudioSystem.play_bgm]
     bgm --> engine_init[GameEngine.initialize]
     engine_init --> engine_start[GameEngine.start]
-
 ```
 
 하지만 클라이언트는 이 내부 구조를 알 필요가 없습니다.
@@ -221,7 +213,6 @@ renderer.initialize("3840x2160")
 
 # 일반적인 경우: Facade 사용
 game.start_game("game.json")
-
 ```
 
 파사드 패턴의 핵심은 단순히 여러 함수를 하나의 메서드에 모아두는 데 있지 않습니다. 복잡한 서브시스템의 일반적인 사용 시나리오를 상위 수준의 인터페이스로 표현함으로써, 클라이언트와 서브시스템 간의 결합도와 클라이언트가 떠안아야 할 인지 복잡성을 줄이는 것이 파사드 패턴의 본질입니다.
@@ -273,7 +264,6 @@ Client
    │        └────> Subsystem
    │
    └─────────────> Subsystem
-
 ```
 
 일반적인 클라이언트는 Facade를 사용하고, 고급 기능이 필요한 클라이언트는 서브시스템을 직접 활용할 수 있습니다. 즉, Facade의 목적은 "서브시스템을 완전히 숨겨 접근을 막는 것"이라기보다는 "대부분의 사용자가 서브시스템 전체를 이해하지 않아도 주요 작업을 쉽게 수행하도록 돕는 것"입니다.
@@ -296,7 +286,6 @@ result = subprocess.run(
     capture_output=True,
     text=True,
 )
-
 ```
 
 상위 API인 `subprocess.run()`은 내부적으로 `Popen`을 호출하여 더 세밀한 프로세스 관리를 수행합니다.
@@ -310,7 +299,6 @@ result = subprocess.run(
                      ├─ stdin/stdout/stderr
                      ├─ communicate()
                      └─ return code
-
 ```
 
 이처럼 일반 사용자에게는 자주 쓰는 시나리오를 고수준 함수 하나로 제공하고, 필요시 저수준 API(`Popen`)도 직접 쓸 수 있게 연 방식은 Facade의 개념과 유사합니다.
@@ -323,14 +311,12 @@ Python 표준 라이브러리의 `shutil`은 파일 및 파일 집합에 대한 
 import shutil
 
 shutil.copytree("source", "backup")
-
 ```
 
 클라이언트는 디렉터리 생성, 하위 디렉터리 탐색, 파일 반복, 개별 파일 복사, 메타데이터 및 오류 처리 과정을 직접 구현하지 않아도 됩니다.
 
 ```text
 복잡한 파일 시스템 연산 ──> shutil ──> 간단한 고수준 함수
-
 ```
 
 ### Django `django.shortcuts`
@@ -344,14 +330,12 @@ from django.shortcuts import render
 
 def my_view(request):
     return render(request, "index.html", {"name": "Aragorn"})
-
 ```
 
 이를 직접 작성할 경우 다음과 같은 저수준 단계를 거쳐야 합니다.
 
 ```text
 Template Loader ──> Template 조회 ──> Context 적용 ──> Template.render() ──> HttpResponse 생성
-
 ```
 
 `render()` 함수는 이를 목적 중심의 단일 API로 깔끔하게 단순화해 줍니다. 또한 `get_object_or_404()` 역시 ORM의 `get()` 호출과 `DoesNotExist` 예외 처리를 HTTP 404 응답과 매핑해 주는 전형적인 파사드 형태의 편의 함수입니다.
@@ -408,7 +392,6 @@ classDiagram
     GameFacade --> AudioSystem : Uses
     GameFacade --> Renderer : Uses
     GameFacade --> GameEngine : Uses
-
 ```
 
 ### 역할 분담
@@ -425,7 +408,6 @@ classDiagram
 Client ──> Facade ── AudioSystem
              ├─ Renderer
              └─ GameEngine
-
 ```
 
 클라이언트는 여러 서브시스템을 개별적으로 다룰 필요 없이, Facade를 통해 대표적인 시나리오를 간편하게 수행할 수 있습니다.
@@ -571,7 +553,6 @@ if __name__ == "__main__":
 [Renderer] 종료
 [Asset] 해제
 === 게임 종료 완료 ===
-
 ```
 
 클라이언트가 직접 접하는 코드는 아래처럼 매우 간단합니다.
@@ -579,7 +560,6 @@ if __name__ == "__main__":
 ```python
 facade.start_game("game.json")
 facade.shutdown_game()
-
 ```
 
 반면 Facade 내부에는 다음과 같은 복잡한 오케스트레이션이 숨겨져 있습니다.
@@ -596,7 +576,6 @@ start_game()
     ├─ start BGM
     ├─ initialize engine
     └─ start engine
-
 ```
 
 Facade는 복잡성 자체를 없앤 것이 아니라, 명확한 경계 뒤로 감추어 고수준 작업으로 재표현한 것입니다.
@@ -635,7 +614,6 @@ protocol GameRuntime:
 
 def make_runtime(system: GameSystem) -> GameRuntime:
     ...
-
 ```
 
 타입 관점에서 파사드는 **객체의 개수를 줄이는 것이 아니라, 클라이언트에 노출되는 능력의 표면적(Surface Area)을 줄이는 추상화**입니다.
@@ -652,7 +630,6 @@ facade.start("game.json")
 
 # 컴파일 에러: GameFacade에 선언되지 않은 기능
 facade.rebuild_shaders() 
-
 ```
 
 이 가상 언어에서는 공개된 타입 계약을 기준으로 호출을 검사합니다. Python의 `Protocol`도 정적 검사에 사용할 수 있지만, 타입을 좁혀 표시하는 것만으로 실제 객체의 다른 메서드가 사라지지는 않습니다. 따라서 좁은 타입은 API 사용 규약이며, 신뢰할 수 없는 코드에 대한 보안 경계로 간주해서는 안 됩니다.
@@ -668,7 +645,6 @@ capability GameRuntime:
 
 def launcher(using runtime: GameRuntime) -> Unit:
     runtime.start("game.json")
-
 ```
 
 클라이언트에 필요한 기능만 전달하면 의존 범위를 줄일 수 있습니다. 실제 권한 제한으로 사용하려면 Capability의 임의 생성과 우회 접근을 막아야 하며, 권한을 발급하는 쪽에서는 사용자와 실행 환경을 검사해야 합니다.
@@ -684,7 +660,6 @@ def start_game(path: ConfigPath, using subsystems...) -> RunningGame:
 
 # 클라이언트 호출
 game = start_game("game.json")
-
 ```
 
 ### 5. 여러 저수준 효과를 하나의 고수준 효과로 추상화하기
@@ -700,7 +675,6 @@ module Game:
     opaque Runtime
     def create() -> Runtime
     def start(runtime: Runtime, path: ConfigPath) -> Unit
-
 ```
 
 외부 클라이언트는 `runtime.renderer`와 같이 모듈 내부 필드에 접근할 수 없으며, 오직 공개된 모듈 함수(`Game.start`)만 사용할 수 있게 정적으로 강제됩니다.
@@ -718,7 +692,6 @@ created = create_facade()
 running = start(consume created, config)
 # start(consume created, config)  # 오류: created의 소유권은 이미 이동했습니다.
 stopped = stop(consume running)
-
 ```
 
 상태별 타입은 `Stopped` 객체를 `stop()`에 전달하는 실수를 검출합니다. **같은 객체를 두 번 시작하는 것까지 막으려면 이전 상태의 소유권을 소비하고, 재사용 가능한 별칭을 허용하지 않는 규칙도 필요합니다.** 반환 타입만 바꾸면 호출자가 보관한 `created` 참조로 다시 시작할 수 있습니다.

@@ -16,7 +16,6 @@ Standard
 Express
 
 International
-
 ```
 
 각 배송 방식은 동일한 주문 정보를 사용하지만 계산 규칙은 서로 다릅니다.
@@ -88,7 +87,6 @@ class BadShippingCalculator:
         raise ValueError(
             "지원하지 않는 배송 방식입니다."
         )
-
 ```
 
 현재는 알고리즘이 세 개뿐이지만 새로운 배송 정책이 추가된다고 가정합니다.
@@ -103,7 +101,6 @@ Economy
 PremiumMember
 
 HolidayExpress
-
 ```
 
 기존 `calculate()` 함수에는 계속 새로운 분기가 추가됩니다.
@@ -120,7 +117,6 @@ elif shipping_type == "economy":
 
 elif shipping_type == "holiday_express":
     ...
-
 ```
 
 알고리즘별 설정까지 늘어나면 조건문은 더 복잡해집니다.
@@ -139,7 +135,6 @@ if shipping_type == "express":
 
     if premium_member:
         ...
-
 ```
 
 또한 배송비 계산 외의 다른 코드에서도 배송 방식에 따라 다른 처리가 필요하다면 동일한 분기가 반복될 수 있습니다.
@@ -156,7 +151,6 @@ def estimate_arrival(
 
     elif shipping_type == "international":
         ...
-
 ```
 
 알고리즘의 종류를 나타내는 값과 실제 알고리즘 구현이 여러 위치에 퍼지기 시작합니다.
@@ -185,7 +179,6 @@ flowchart TD
     strategy --> concrete_a[ConcreteStrategy A]
     strategy --> concrete_b[ConcreteStrategy B]
     strategy --> concrete_c[ConcreteStrategy C]
-
 ```
 
 먼저 배송비 계산이라는 공통 인터페이스를 정의합니다.
@@ -202,7 +195,6 @@ class ShippingStrategy(ABC):
         order: Order,
     ) -> int:
         pass
-
 ```
 
 Standard 배송 알고리즘을 독립적인 Strategy로 분리합니다.
@@ -227,7 +219,6 @@ class StandardShipping(
             base
             + weight_fee
         )
-
 ```
 
 Express 역시 별도의 Strategy입니다.
@@ -257,7 +248,6 @@ class ExpressShipping(
             + weight_fee
             + distance_fee
         )
-
 ```
 
 Context는 구체적인 계산 방법을 알 필요가 없습니다.
@@ -286,7 +276,6 @@ class ShippingCalculator:
         return self._strategy.calculate(
             order
         )
-
 ```
 
 클라이언트가 사용할 알고리즘을 선택합니다.
@@ -295,7 +284,6 @@ class ShippingCalculator:
 calculator = ShippingCalculator(
     StandardShipping()
 )
-
 ```
 
 계산:
@@ -304,7 +292,6 @@ calculator = ShippingCalculator(
 cost = calculator.calculate(
     order
 )
-
 ```
 
 실행 중 Strategy를 교체할 수도 있습니다.
@@ -313,7 +300,6 @@ cost = calculator.calculate(
 calculator.set_strategy(
     ExpressShipping()
 )
-
 ```
 
 Context의 코드는 변경되지 않습니다.
@@ -324,7 +310,6 @@ flowchart TD
     strategy --> standard[StandardShipping]
     strategy --> express[ExpressShipping]
     strategy --> international[InternationalShipping]
-
 ```
 
 즉 기존의:
@@ -340,7 +325,6 @@ Context
 
     elif strategy == C:
         algorithm C
-
 ```
 
 가:
@@ -350,7 +334,6 @@ Context
    │
    ↓ delegation
 Strategy
-
 ```
 
 로 바뀝니다.
@@ -394,7 +377,6 @@ Configuration
 Strategy Factory
      ↓
 Context
-
 ```
 
 * **Strategy 선택과 Strategy 실행은 서로 다른 책임:** Strategy 패턴은 주로 알고리즘 실행을 추상화합니다. 어떤 알고리즘을 선택할지는 별도의 정책이 될 수 있습니다.
@@ -412,7 +394,6 @@ Context
    │
    ↓
 Strategy
-
 ```
 
 State:
@@ -422,7 +403,6 @@ Context
    │
    ↓
 State
-
 ```
 
 둘 다 Context가 다른 객체에 행동을 위임합니다.
@@ -434,7 +414,6 @@ Strategy는:
 ```text
 "같은 작업을
 어떤 알고리즘으로 수행할 것인가?"
-
 ```
 
 를 다룹니다.
@@ -447,7 +426,6 @@ Standard Shipping
 Express Shipping
 
 International Shipping
-
 ```
 
 State는:
@@ -455,7 +433,6 @@ State는:
 ```text
 "현재 객체가
 어떤 상태에 있는가?"
-
 ```
 
 를 다룹니다.
@@ -468,7 +445,6 @@ Pending
 Paid
 
 Shipped
-
 ```
 
 또한 Strategy는 일반적으로 클라이언트나 구성 영역에서 선택됩니다.
@@ -477,7 +453,6 @@ Shipped
 calculator.set_strategy(
     ExpressShipping()
 )
-
 ```
 
 State는 객체 내부 상태 전이에 의해 변경되는 경우가 많습니다.
@@ -486,7 +461,6 @@ State는 객체 내부 상태 전이에 의해 변경되는 경우가 많습니�
 Pending
    ↓ pay
 Paid
-
 ```
 
 단순화하면:
@@ -497,7 +471,6 @@ Strategy:
 
 State:
     변화하는 객체 상태
-
 ```
 
 입니다.
@@ -518,7 +491,6 @@ Base Algorithm
      └─ Hook
           ↑
         override
-
 ```
 
 Strategy는 **합성**을 이용합니다.
@@ -528,7 +500,6 @@ Context
    │
    ↓
 Strategy
-
 ```
 
 Template Method에서는 알고리즘의 전체 골격은 부모 클래스에 고정되고 일부 단계만 하위 클래스가 변경합니다.
@@ -545,7 +516,6 @@ Template Method:
 Strategy:
 
     Algorithm 자체 교체
-
 ```
 
 또한 Strategy는 런타임 교체가 자연스럽지만 Template Method는 일반적으로 객체의 클래스가 생성될 때 구현이 결정됩니다.
@@ -562,7 +532,6 @@ SaveDocumentCommand
 DeleteUserCommand
 
 SendEmailCommand
-
 ```
 
 Strategy는 **하나의 작업을 어떤 방식으로 수행할 것인가**를 캡슐화합니다.
@@ -573,7 +542,6 @@ QuickSort
 MergeSort
 
 HeapSort
-
 ```
 
 따라서:
@@ -584,7 +552,6 @@ Command:
 
 Strategy:
     How
-
 ```
 
 로 구분할 수 있습니다.
@@ -603,7 +570,6 @@ Bridge 역시 객체 합성을 통해 구현을 분리합니다.
 Abstraction
      ↓
 Implementation
-
 ```
 
 Strategy는 Context가 사용하는 **하나의 행동이나 알고리즘을 교체**하는 것이 목적입니다.
@@ -612,7 +578,6 @@ Strategy는 Context가 사용하는 **하나의 행동이나 알고리즘을 교
 Context
    ↓
 Strategy
-
 ```
 
 Bridge는 **서로 독립적으로 확장되는 두 클래스 계층을 분리**하는 것이 목적입니다.
@@ -621,7 +586,6 @@ Bridge는 **서로 독립적으로 확장되는 두 클래스 계층을 분리**
 Shape
     ×
 Renderer
-
 ```
 
 즉:
@@ -632,7 +596,6 @@ Strategy:
 
 Bridge:
     두 변화 축의 독립적인 확장
-
 ```
 
 이라고 볼 수 있습니다.
@@ -647,7 +610,6 @@ Strategy 객체는 흔히 생성자를 통해 주입됩니다.
 ShippingCalculator(
     ExpressShipping()
 )
-
 ```
 
 따라서 Dependency Injection처럼 보입니다.
@@ -659,7 +621,6 @@ Dependency Injection은:
 ```text
 객체가 필요로 하는
 의존성을 외부에서 제공
-
 ```
 
 하는 일반적인 의존성 관리 기법입니다.
@@ -669,7 +630,6 @@ Strategy는:
 ```text
 교체 가능한 알고리즘을
 공통 인터페이스로 캡슐화
-
 ```
 
 하는 디자인 패턴입니다.
@@ -697,7 +657,6 @@ future = executor.submit(
     calculate,
     value,
 )
-
 ```
 
 하지만 실제 실행 전략은 달라집니다.
@@ -713,7 +672,6 @@ Executor
    │
    └─ InterpreterPoolExecutor
           → Interpreter 기반
-
 ```
 
 예를 들어:
@@ -730,7 +688,6 @@ with ThreadPoolExecutor() as executor:
         calculate,
         value,
     )
-
 ```
 
 를:
@@ -747,7 +704,6 @@ with ProcessPoolExecutor() as executor:
         calculate,
         value,
     )
-
 ```
 
 로 교체해도 상위 사용 방식은 매우 유사합니다.
@@ -780,7 +736,6 @@ response = requests.get(
     "https://example.com/",
     auth=auth,
 )
-
 ```
 
 커스텀 인증 정책도 만들 수 있습니다.
@@ -796,7 +751,6 @@ class MyAuth(
     ):
         # 인증 정책
         return request
-
 ```
 
 상위 HTTP 요청 로직은 유지됩니다.
@@ -810,7 +764,6 @@ Authentication Strategy
    ├─ Basic Auth
    ├─ Digest Auth
    └─ Custom Auth
-
 ```
 
 인증 방식이라는 알고리즘/정책을 외부에서 교체할 수 있다는 점에서 Strategy와 매우 유사합니다.
@@ -835,7 +788,6 @@ Password Hasher
        ├─ Argon2
        ├─ BCrypt
        └─ Scrypt
-
 ```
 
 와 같은 구조입니다.
@@ -850,7 +802,6 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers."
     "PBKDF2PasswordHasher",
 ]
-
 ```
 
 이 사례는 단순한 런타임 객체 주입과 정확히 동일한 GoF 구현은 아니지만 **하나의 상위 비밀번호 처리 작업에서 알고리즘 구현을 설정을 통해 교체한다는 점에서 Strategy와 매우 가까운 정책 교체 구조**입니다.
@@ -897,7 +848,6 @@ classDiagram
 
     ShippingCalculator --> ShippingStrategy : delegates
     ShippingCalculator --> Order : Uses
-
 ```
 
 각 역할은 다음과 같습니다.
@@ -916,7 +866,6 @@ Context
 
 Input
     Order
-
 ```
 
 핵심 관계는 다음과 같습니다.
@@ -931,7 +880,6 @@ ShippingStrategy
         ├─ Standard
         ├─ Express
         └─ International
-
 ```
 
 클라이언트가 Strategy를 선택합니다.
@@ -942,7 +890,6 @@ Client
    ├─ StandardShipping
    │
    └────> ShippingCalculator
-
 ```
 
 필요하다면 실행 중 교체할 수도 있습니다.
@@ -951,7 +898,6 @@ Client
 Standard
    ↓ set_strategy()
 Express
-
 ```
 
 ---
@@ -1058,7 +1004,6 @@ if __name__ == "__main__":
 calculator.calculate(
     order
 )
-
 ```
 
 실제로 사용되는 알고리즘만 달라집니다.
@@ -1069,7 +1014,6 @@ StandardShipping.calculate()
 ExpressShipping.calculate()
 
 InternationalShipping.calculate()
-
 ```
 
 Context에는 다음과 같은 분기문이 없습니다.
@@ -1083,7 +1027,6 @@ elif shipping_type == "express":
 
 elif shipping_type == "international":
     ...
-
 ```
 
 새로운 당일 배송 Strategy를 추가하더라도:
@@ -1102,7 +1045,6 @@ class SameDayShipping(
             15_000
             + order.distance_km * 20
         )
-
 ```
 
 기존 `ShippingCalculator`는 수정하지 않습니다.
@@ -1111,7 +1053,6 @@ class SameDayShipping(
 calculator.set_strategy(
     SameDayShipping()
 )
-
 ```
 
 ---
@@ -1130,7 +1071,6 @@ ShippingStrategy = Callable[
     [Order],
     int,
 ]
-
 ```
 
 Standard Strategy:
@@ -1147,7 +1087,6 @@ def standard_shipping(
             * 500
         )
     )
-
 ```
 
 Express Strategy:
@@ -1165,7 +1104,6 @@ def express_shipping(
         )
         + order.distance_km * 10
     )
-
 ```
 
 Context:
@@ -1187,7 +1125,6 @@ class ShippingCalculator:
         return self._strategy(
             order
         )
-
 ```
 
 사용:
@@ -1196,7 +1133,6 @@ class ShippingCalculator:
 calculator = ShippingCalculator(
     standard_shipping
 )
-
 ```
 
 교체:
@@ -1205,7 +1141,6 @@ calculator = ShippingCalculator(
 calculator.set_strategy(
     express_shipping
 )
-
 ```
 
 Python에서는 이런 함수 기반 Strategy가 클래스 기반 구현보다 더 자연스러운 경우가 많습니다.
@@ -1227,7 +1162,6 @@ Strategy Interface
    ├─ Algorithm A
    ├─ Algorithm B
    └─ Algorithm C
-
 ```
 
 이를 더 추상적으로 바라보면 Strategy는 결국 다음과 같은 값입니다.
@@ -1238,7 +1172,6 @@ Input
 Algorithm
    ↓
 Output
-
 ```
 
 즉 하나의 함수입니다.
@@ -1258,7 +1191,6 @@ $$\text{Strategy} = \text{Input} \rightarrow \text{Output}$$
 ```text
 type ShippingStrategy =
     Order -> Money
-
 ```
 
 Standard:
@@ -1269,7 +1201,6 @@ def standard(
 ) -> Money:
 
     ...
-
 ```
 
 Express:
@@ -1280,7 +1211,6 @@ def express(
 ) -> Money:
 
     ...
-
 ```
 
 International:
@@ -1291,7 +1221,6 @@ def international(
 ) -> Money:
 
     ...
-
 ```
 
 상위 함수는 Strategy를 전달받습니다.
@@ -1305,7 +1234,6 @@ def calculate_shipping(
     return strategy(
         order
     )
-
 ```
 
 사용:
@@ -1316,21 +1244,18 @@ cost =
         order,
         express,
     )
-
 ```
 
 고전적인:
 
 ```text
 ConcreteStrategy 객체
-
 ```
 
 가:
 
 ```text
 함수 값
-
 ```
 
 으로 치환됩니다.
@@ -1347,7 +1272,6 @@ Strategy가 내부 상태를 가지지 않는다면 객체를 만들 이유가 �
 ShippingCalculator
     │
     └─ strategy
-
 ```
 
 하지만 Context의 역할이 단순히 Strategy를 호출하는 것뿐이라면 별도의 객체가 필요하지 않을 수도 있습니다.
@@ -1366,21 +1290,18 @@ def calculate[
     return strategy(
         value
     )
-
 ```
 
 즉:
 
 ```text
 Context Object
-
 ```
 
 가:
 
 ```text
 Higher-Order Function
-
 ```
 
 으로 축약될 수 있습니다.
@@ -1400,7 +1321,6 @@ InternationalShipping
 
     tax_rate
     exchange_rate
-
 ```
 
 함수형에서는 Closure를 만들 수 있습니다.
@@ -1423,7 +1343,6 @@ def international_shipping(
         )
 
     return strategy
-
 ```
 
 Strategy 생성:
@@ -1433,7 +1352,6 @@ korea_to_us =
     international_shipping(
         tax_rate=0.12
     )
-
 ```
 
 사용:
@@ -1443,7 +1361,6 @@ cost =
     korea_to_us(
         order
     )
-
 ```
 
 즉:
@@ -1452,14 +1369,12 @@ cost =
 Strategy Object
 +
 Configuration Fields
-
 ```
 
 를:
 
 ```text
 Closure
-
 ```
 
 로 표현할 수 있습니다.
@@ -1477,7 +1392,6 @@ def shipping_cost(
 ) -> Money:
 
     ...
-
 ```
 
 `policy`를 먼저 고정합니다.
@@ -1488,14 +1402,12 @@ express =
         shipping_cost,
         ExpressPolicy,
     )
-
 ```
 
 결과 타입:
 
 ```text
 Order -> Money
-
 ```
 
 즉:
@@ -1503,14 +1415,12 @@ Order -> Money
 ```text
 (Policy, Order)
       -> Money
-
 ```
 
 함수에서:
 
 ```text
 Order -> Money
-
 ```
 
 Strategy를 만들어 냅니다.
@@ -1529,7 +1439,6 @@ type Strategy[
     Output,
 ] =
     Input -> Output
-
 ```
 
 예:
@@ -1554,7 +1463,6 @@ Strategy[
     Password,
     PasswordHash
 ]
-
 ```
 
 Context도 일반화할 수 있습니다.
@@ -1576,7 +1484,6 @@ def execute[
     return strategy(
         input
     )
-
 ```
 
 Strategy의 객체지향 패턴을 **함수 타입의 parametric abstraction**으로 일반화한 것입니다.
@@ -1599,14 +1506,12 @@ trait Strategy[
         strategy: S,
         input: Input,
     ) -> Output
-
 ```
 
 배송 Strategy:
 
 ```text
 immutable record ExpressShipping
-
 ```
 
 ```text
@@ -1628,14 +1533,12 @@ impl Strategy[
     ) -> Money:
 
         ...
-
 ```
 
 압축 Strategy:
 
 ```text
 immutable record Gzip
-
 ```
 
 ```text
@@ -1655,7 +1558,6 @@ impl Strategy[
     ) -> CompressedBytes:
 
         ...
-
 ```
 
 컴파일러는 Strategy와 입출력의 관계를 보존합니다.
@@ -1672,7 +1574,6 @@ immutable record Standard
 immutable record Express
 
 immutable record International
-
 ```
 
 각 타입에 배송 계산 능력을 외부에서 부여합니다.
@@ -1686,7 +1587,6 @@ trait Shipping[
         strategy: S,
         order: Order,
     ) -> Money
-
 ```
 
 ```text
@@ -1700,7 +1600,6 @@ impl Shipping[
     ) -> Money:
 
         ...
-
 ```
 
 ```text
@@ -1714,7 +1613,6 @@ impl Shipping[
     ) -> Money:
 
         ...
-
 ```
 
 사용:
@@ -1732,7 +1630,6 @@ where Shipping[S]:
         strategy,
         order,
     )
-
 ```
 
 공통 부모 클래스를 만들 필요가 없습니다.
@@ -1748,7 +1645,6 @@ Context
     │
     ↓ interface
 Unknown Strategy
-
 ```
 
 예:
@@ -1758,7 +1654,6 @@ strategy =
     if config.fast
     then Express()
     else Standard()
-
 ```
 
 런타임에 결정됩니다.
@@ -1774,7 +1669,6 @@ record ShippingCalculator[
 where Shipping[S]:
 
     strategy: S
-
 ```
 
 ```text
@@ -1782,7 +1676,6 @@ calculator:
     ShippingCalculator[
         Express
     ]
-
 ```
 
 컴파일러가 실제 Strategy 타입을 알고 있습니다.
@@ -1796,7 +1689,6 @@ Dynamic Strategy:
 Static Strategy:
 
     Compile-time Dispatch
-
 ```
 
 이라는 선택이 가능합니다.
@@ -1811,28 +1703,24 @@ Static Strategy:
 Strategy Interface
       ↓ virtual dispatch
 Concrete Strategy
-
 ```
 
 정적 Generic Strategy에서는 컴파일러가 실제 구현을 알고 있습니다.
 
 ```text
 ShippingCalculator[Express]
-
 ```
 
 따라서 개념적으로:
 
 ```text
 execute(strategy, order)
-
 ```
 
 를:
 
 ```text
 express(order)
-
 ```
 
 로 특수화하거나 inline할 수 있습니다.
@@ -1853,7 +1741,6 @@ data ShippingMode =
   | Express
 
   | International
-
 ```
 
 함수:
@@ -1874,7 +1761,6 @@ def calculate(
 
         case International:
             ...
-
 ```
 
 새로운 종류가 추가되면 exhaustive checking이 누락된 처리를 알려줄 수 있습니다.
@@ -1883,7 +1769,6 @@ def calculate(
 data ShippingMode =
     ...
   | Drone
-
 ```
 
 ```text
@@ -1891,7 +1776,6 @@ Non-exhaustive match:
 
 Missing:
     Drone
-
 ```
 
 Strategy 클래스를 추가하는 open-world 방식과는 다른 장점이 있습니다.
@@ -1904,7 +1788,6 @@ Strategy 클래스를 추가하는 open-world 방식과는 다른 장점이 있�
 
 ```text
 Open World
-
 ```
 
 입니다.
@@ -1917,7 +1800,6 @@ Interface
 Type Class
 
 First-class Function
-
 ```
 
 이 자연스럽습니다.
@@ -1926,7 +1808,6 @@ First-class Function
 
 ```text
 Closed World
-
 ```
 
 이고:
@@ -1935,7 +1816,6 @@ Closed World
 ADT
 +
 Pattern Matching
-
 ```
 
 이 더 단순할 수 있습니다.
@@ -1948,7 +1828,6 @@ Pattern Matching
 
 알고리즘 종류가 닫힘
     → ADT
-
 ```
 
 이라는 선택 기준을 가질 수 있습니다.
@@ -1968,7 +1847,6 @@ Pattern Matching
 
 해외 주소
     → International
-
 ```
 
 Strategy Selector를 별도로 정의할 수 있습니다.
@@ -1979,7 +1857,6 @@ type StrategySelector[
     Strategy,
 ] =
     Context -> Strategy
-
 ```
 
 예:
@@ -1999,7 +1876,6 @@ def select_shipping(
         return express
 
     return standard
-
 ```
 
 전체 계산:
@@ -2014,7 +1890,6 @@ cost =
     strategy(
         request.order
     )
-
 ```
 
 즉:
@@ -2025,7 +1900,6 @@ Strategy Selection
 과
 
 Strategy Execution
-
 ```
 
 을 분리합니다.
@@ -2049,7 +1923,6 @@ data ShippingPolicy =
         per_kg: Money,
         per_km: Money,
     )
-
 ```
 
 Interpreter:
@@ -2061,7 +1934,6 @@ def calculate(
 ) -> Money:
 
     ...
-
 ```
 
 이 경우 Strategy를 객체가 아니라 **정책 데이터 + Interpreter**로 표현합니다.
@@ -2074,7 +1946,6 @@ JSON Config
 ShippingPolicy
     ↓
 Interpreter
-
 ```
 
 ---
@@ -2087,7 +1958,6 @@ Interpreter
 base_fee = 3000
 
 per_kg = 500
-
 ```
 
 다른 Strategy는 복잡한 코드가 필요합니다.
@@ -2098,7 +1968,6 @@ per_kg = 500
 ML Prediction
 
 최적화 Algorithm
-
 ```
 
 모든 것을 Concrete Strategy 클래스로 만들 필요는 없습니다.
@@ -2115,7 +1984,6 @@ Code-driven Strategy
 
     Function
     / Type Class
-
 ```
 
 으로 분리할 수 있습니다.
@@ -2136,7 +2004,6 @@ Code-driven Strategy
 회원 할인
 
 휴일 할증
-
 ```
 
 하나의 거대한 Strategy로 만들 수도 있지만 각 정책을 독립적인 함수로 만들 수 있습니다.
@@ -2148,7 +2015,6 @@ type PricingRule =
         Money,
     )
         -> Money
-
 ```
 
 Rule:
@@ -2159,7 +2025,6 @@ def weight_fee(
     cost: Money,
 ) -> Money:
     ...
-
 ```
 
 ```python
@@ -2168,7 +2033,6 @@ def holiday_fee(
     cost: Money,
 ) -> Money:
     ...
-
 ```
 
 ```python
@@ -2177,7 +2041,6 @@ def premium_discount(
     cost: Money,
 ) -> Money:
     ...
-
 ```
 
 Strategy를 조합합니다.
@@ -2190,7 +2053,6 @@ express =
         distance_fee,
         holiday_fee,
     )
-
 ```
 
 Strategy가 하나의 거대한 객체가 아니라 **작은 정책들의 합성**으로 표현됩니다.
@@ -2209,7 +2071,6 @@ vs
 
 3000원 쿠폰 후
 20% 할인
-
 ```
 
 일반적으로:
@@ -2225,7 +2086,6 @@ policy = [
     percentage_discount,
     fixed_coupon,
 ]
-
 ```
 
 와:
@@ -2235,7 +2095,6 @@ policy = [
     fixed_coupon,
     percentage_discount,
 ]
-
 ```
 
 는 서로 다른 Strategy가 될 수 있습니다.
@@ -2252,7 +2111,6 @@ policy = [
 무게 제한 초과
 
 주소 검증 실패
-
 ```
 
 가상의 결과 타입:
@@ -2265,7 +2123,6 @@ data ShippingError =
   | WeightLimitExceeded
 
   | InvalidAddress
-
 ```
 
 Strategy 타입:
@@ -2278,7 +2135,6 @@ type ShippingStrategy =
             Money,
             ShippingError,
         ]
-
 ```
 
 상위 Context는 실패를 명시적으로 처리해야 합니다.
@@ -2291,7 +2147,6 @@ match strategy(order):
 
     case Err(error):
         ...
-
 ```
 
 Strategy의 실패 가능성이 인터페이스 일부가 됩니다.
@@ -2304,14 +2159,12 @@ International Strategy:
 
 ```text
 CustomsError
-
 ```
 
 Drone Strategy:
 
 ```text
 WeatherError
-
 ```
 
 같은 차이가 있다고 가정합니다.
@@ -2332,7 +2185,6 @@ trait Strategy[
         Output,
         Error,
     ]
-
 ```
 
 각 Strategy가 자신만의 Error Type을 가질 수 있습니다.
@@ -2347,7 +2199,6 @@ trait Strategy[
 
 ```text
 Order -> Money
-
 ```
 
 과 외부 API를 사용하는 배송 계산은 의미가 다릅니다.
@@ -2358,7 +2209,6 @@ Order
 Carrier API
    ↓
 Money
-
 ```
 
 가상의 효과 타입:
@@ -2372,7 +2222,6 @@ def calculate(
 ]
     ! Network:
     ...
-
 ```
 
 Strategy의 일반형:
@@ -2391,7 +2240,6 @@ type Strategy[
             Error,
         ]
         ! Effects
-
 ```
 
 알고리즘 교체 시 **어떤 부수효과까지 바뀌는지** 타입으로 추적할 수 있습니다.
@@ -2407,7 +2255,6 @@ def local_shipping(
     order: Order,
 ) -> Money:
     ...
-
 ```
 
 ```text
@@ -2417,7 +2264,6 @@ def realtime_shipping(
 ) -> Money:
 
     ...
-
 ```
 
 Capability를 통해 Strategy가 실제로 필요한 외부 능력만 요구하도록 만들 수 있습니다.
@@ -2428,7 +2274,6 @@ Local Strategy:
 
 Realtime Strategy:
     CarrierRates Capability
-
 ```
 
 Context가 거대한 Service Container 전체를 Strategy에게 전달할 필요가 없습니다.
@@ -2448,7 +2293,6 @@ def drone_shipping(
 
     if order.weight > 5:
         raise ...
-
 ```
 
 Refinement Type을 지원한다면:
@@ -2458,7 +2302,6 @@ type DroneOrder =
     Order
     where
         weight_kg <= 5
-
 ```
 
 Strategy:
@@ -2469,21 +2312,18 @@ def drone_shipping(
 ) -> Money:
 
     ...
-
 ```
 
 잘못된 입력은 호출 전에 거부됩니다.
 
 ```text
 Strategy 내부 런타임 검사
-
 ```
 
 가:
 
 ```text
 입력 타입 제약
-
 ```
 
 으로 이동합니다.
@@ -2499,14 +2339,12 @@ class ShippingStrategy:
 
     def calculate(...):
         ...
-
 ```
 
 보다 강력한 함수형 언어에서는:
 
 ```text
 Strategy Dictionary
-
 ```
 
 를 명시적으로 전달할 수도 있습니다.
@@ -2516,7 +2354,6 @@ record ShippingOps:
 
     calculate:
         Order -> Money
-
 ```
 
 Context:
@@ -2530,7 +2367,6 @@ def checkout(
     return ops.calculate(
         order
     )
-
 ```
 
 여러 연산이 필요한 Strategy라면 함수 하나보다 함수 레코드(Dictionary of Operations)가 자연스러울 수 있습니다.
@@ -2547,7 +2383,6 @@ def checkout(
 예상 배송일 계산
 
 배송 가능 여부
-
 ```
 
 각각을 독립적으로 교체하면 서로 호환되지 않는 조합이 만들어질 수 있습니다.
@@ -2563,7 +2398,6 @@ record ShippingStrategy:
 
     estimate_delivery:
         Order -> Duration
-
 ```
 
 즉 Strategy 하나가 **서로 일관되어야 하는 여러 관련 알고리즘의 묶음**이 될 수 있습니다.
@@ -2582,7 +2416,6 @@ Order Feature
 Selector
    ↓
 Best Strategy
-
 ```
 
 예를 들어:
@@ -2596,7 +2429,6 @@ def choose_strategy(
     return optimizer.best(
         context
     )
-
 ```
 
 Strategy 패턴에서 중요한 것은 **어떻게 선택하는가가 아니라 선택된 알고리즘을 사용하는 코드와 구체 알고리즘을 분리한다는 것**입니다.
@@ -2617,7 +2449,6 @@ Strategy Object
    │
    ↓
 Algorithm
-
 ```
 
 하지만 더 추상적으로 보면 다음 구조입니다.
@@ -2628,7 +2459,6 @@ Context Logic
     +
 
 Algorithm Parameter
-
 ```
 
 즉 **프로그램의 일부 계산 방법을 고정하지 않고 매개변수로 남겨두는 것**입니다.
@@ -2639,7 +2469,6 @@ Algorithm Parameter
 Strategy Interface
 +
 Concrete Strategy
-
 ```
 
 로 표현합니다.
@@ -2648,7 +2477,6 @@ Concrete Strategy
 
 ```text
 Higher-Order Function
-
 ```
 
 으로 표현합니다.
@@ -2657,7 +2485,6 @@ Higher-Order Function
 
 ```text
 Generic / Type Class
-
 ```
 
 로 표현할 수 있습니다.
@@ -2666,7 +2493,6 @@ Generic / Type Class
 
 ```text
 ADT + Pattern Matching
-
 ```
 
 으로 표현할 수 있습니다.
@@ -2675,7 +2501,6 @@ ADT + Pattern Matching
 
 ```text
 Policy Data + Interpreter
-
 ```
 
 로 표현할 수 있습니다.
@@ -2684,7 +2509,6 @@ Policy Data + Interpreter
 
 ```text
 Effect-polymorphic Strategy
-
 ```
 
 로 표현할 수 있습니다.
@@ -2732,7 +2556,6 @@ Strategy
    ├─ Strategy A
    ├─ Strategy B
    └─ Strategy C
-
 ```
 
 Context의 호출 방식은 동일합니다.
@@ -2741,7 +2564,6 @@ Context의 호출 방식은 동일합니다.
 calculator.calculate(
     order
 )
-
 ```
 
 실제로 사용되는 계산 방법만 변경됩니다.
@@ -2752,7 +2574,6 @@ Standard
 Express
 
 International
-
 ```
 
 State 패턴이:
@@ -2760,7 +2581,6 @@ State 패턴이:
 ```text
 현재 상태에 따라
 행동이 바뀐다
-
 ```
 
 를 모델링한다면 Strategy는:
@@ -2768,7 +2588,6 @@ State 패턴이:
 ```text
 같은 문제를 해결하는
 계산 방법을 선택한다
-
 ```
 
 를 모델링합니다.

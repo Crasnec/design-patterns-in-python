@@ -65,7 +65,6 @@ hero = BadHero(
     "북부의 순찰자",
     None,
 )
-
 ```
 
 또한 여러 위치에서 동일한 종류의 캐릭터를 생성하는 경우, 생성 규칙 자체가 클라이언트 코드로 파편화되기 쉽습니다.
@@ -94,7 +93,6 @@ hero2 = BadHero(
     armor="PlateArmor",
     skills=["Slash", "Guard"],
 )
-
 ```
 
 ### 이 방식이 가진 단점
@@ -126,7 +124,6 @@ hero = (
     .add_skill("Guard")
     .build()
 )
-
 ```
 
 클라이언트 관점에서는 생성자의 세부 인자 배치보다 "캐릭터를 어떤 단계로 구성하는가"가 코드상에 명확히 드러납니다.
@@ -136,7 +133,6 @@ hero = (
 ```python
 warrior = director.construct_warrior(builder, "아라곤")
 mage = director.construct_mage(builder, "간달프")
-
 ```
 
 핵심은 빌더가 단순히 생성자를 여러 메서드로 나누는 것에 그치지 않는다는 점입니다. **Builder가 객체의 구성 중간 상태를 보관하고, 여러 생성 단계를 하나의 완성 과정으로 캡슐화한다**는 것이 빌더 패턴의 본질입니다.
@@ -186,7 +182,6 @@ stmt = (
     .where(User.active == True)
     .order_by(User.name)
 )
-
 ```
 
 ### Django (QuerySet)
@@ -200,7 +195,6 @@ users = (
     .exclude(status="banned")
     .order_by("-created_at")
 )
-
 ```
 
 ### 표준 라이브러리 argparse.ArgumentParser
@@ -215,7 +209,6 @@ parser.add_argument("--verbose", action="store_true")
 parser.add_argument("--count", type=int, default=1)
 
 args = parser.parse_args()
-
 ```
 
 ---
@@ -271,7 +264,6 @@ classDiagram
     CharacterBuilder <|.. DefaultHeroBuilder
     DefaultHeroBuilder ..> Hero : Builds
     HeroDirector --> CharacterBuilder : Uses
-
 ```
 
 ---
@@ -472,7 +464,6 @@ Builder
  ├─ 스탯 없음
  ├─ 장비 없음
  └─ build() 호출 가능
-
 ```
 
 따라서 일반적인 객체지향 언어에서는 `build()` 실행 시 필수 필드의 존재 여부를 런타임에 재검사해야 합니다.
@@ -489,7 +480,6 @@ Builder
 ```python
 if self._name is None:
     raise ValueError(...)
-
 ```
 
 하지만 강력한 타입 시스템에서는 "이름이 설정되었는가?"라는 상태 자체를 타입 매개변수로 명시할 수 있습니다.
@@ -509,7 +499,6 @@ record HeroDraft[
     stats: StatState
     equipment: EquipmentState
     skills: Vector[Skill]
-
 ```
 
 초기 상태는 모든 필수 값이 누락된 상태입니다.
@@ -523,7 +512,6 @@ def empty_hero() -> HeroDraft[Missing, Missing, Missing, Missing]:
         equipment=Missing,
         skills=[],
     )
-
 ```
 
 이름을 설정하는 함수는 단순히 내부 필드를 변경하는 것이 아니라 타입 상태 자체를 전환합니다.
@@ -534,7 +522,6 @@ def set_name[J, S, E](
     name: NonEmptyStr,
 ) -> HeroDraft[Set[str], J, S, E]:
     return draft with { name = Set(name) }
-
 ```
 
 `set_name()` 호출 전과 후는 타입 수준에서 완전히 다른 값으로 취급됩니다.
@@ -563,7 +550,6 @@ def build(
         equipment=draft.equipment.value,
         skills=draft.skills,
     )
-
 ```
 
 이 함수에는 모든 필드가 `Set` 상태인 값만 전달할 수 있습니다. 따라서 아래 코드는 타입 컴파일 에러를 발생시킵니다.
@@ -576,7 +562,6 @@ draft = (
 )
 
 hero = build(draft)
-
 ```
 
 컴파일러는 다음과 같이 에러를 감지합니다.
@@ -585,7 +570,6 @@ hero = build(draft)
 Type Error:
 expected: HeroDraft[Set[str], Set[Job], Set[Stats], Set[Equipment]]
 found:    HeroDraft[Set[str], Set[Job], Missing, Missing]
-
 ```
 
 이 구조에서는 `if self._weapon is None:`과 같은 런타임 검사가 필요하지 않습니다. 불완전한 객체를 완성된 객체로 변환하는 연산 자체가 타입 수준에서 불가능하기 때문입니다.
@@ -612,7 +596,6 @@ record HeroDraft[J, NameState, StatState, EquipmentState]:
     stats: StatState
     equipment: EquipmentState
     skills: Vector[Skill]
-
 ```
 
 장비 설정 함수는 선택된 직업 `J`에 부합하는 장비만 허용합니다.
@@ -623,7 +606,6 @@ def equip[J, N, S](
     equipment: EquipmentFor[J],
 ) -> HeroDraft[J, N, S, Set[EquipmentFor[J]]]:
     return draft with { equipment = Set(equipment) }
-
 ```
 
 전사 `HeroDraft`에는 오직 `EquipmentFor[Warrior]` 타입만 들어갈 수 있으므로, 잘못된 조합은 컴파일 시점에 즉시 차단됩니다.
@@ -636,14 +618,12 @@ warrior = equip(warrior, WarriorEquipment(Sword(), ChainMail()))
 
 # 타입 오류 발생
 warrior = equip(warrior, MageEquipment(Wand(), Robe()))
-
 ```
 
 ```text
 Type Error:
 expected: EquipmentFor[Warrior]
 found:    EquipmentFor[Mage]
-
 ```
 
 "전사에게 마법사 장비를 장착할 수 없다"는 도메인 규칙이 조건문이나 주석이 아닌 **타입 시스템 자체**로 보장됩니다.
@@ -661,20 +641,17 @@ record Stats:
     level: Level
     strength: StatPoint
     intelligence: StatPoint
-
 ```
 
 부적절한 값은 인스턴스 생성 시점에 정적으로 거부됩니다.
 
 ```python
 Stats(level=-10, strength=-500, intelligence=20)
-
 ```
 
 ```text
 Type Error:
 -10 does not satisfy refinement: 1 <= value <= 100
-
 ```
 
 기존 Builder의 `build()` 메서드가 담당하던 검증 책임 상당 부분이 타입을 정의하는 시점으로 이동합니다.
@@ -689,7 +666,6 @@ def add_skill[J, N, S, E](
     skill: Skill,
 ) -> HeroDraft[J, N, S, E]:
     return draft with { skills = draft.skills.append(skill) }
-
 ```
 
 파이프 연산자(`|>`)와 조합하면 다음과 같이 작성할 수 있습니다.
@@ -705,7 +681,6 @@ hero = (
     |> add_skill(Guard)
     |> build
 )
-
 ```
 
 겉보기에는 Fluent Builder와 유사하지만, 내부 동작 방식은 크게 다릅니다.
@@ -746,7 +721,6 @@ def mage_recipe(name: NonEmptyStr) -> Hero:
 
 aragorn = warrior_recipe("아라곤")
 gandalf = mage_recipe("간달프")
-
 ```
 
 별도의 `HeroDirector` 인스턴스나 재사용 시 초기화해야 하는 Builder 객체 없이, 생성 절차 그 자체를 독립적인 함수로 정의하여 재사용합니다.
@@ -764,21 +738,18 @@ def choose_job(draft: HeroDraft[Named], job: J) -> HeroDraft[JobSelected[J]]: ..
 def set_stats[J](draft: HeroDraft[JobSelected[J]], stats: Stats) -> HeroDraft[StatsConfigured[J]]: ...
 def equip[J](draft: HeroDraft[StatsConfigured[J]], equipment: EquipmentFor[J]) -> HeroDraft[Equipped[J]]: ...
 def build[J](draft: HeroDraft[Ready[J]]) -> Hero[J]: ...
-
 ```
 
 올바르지 않은 순서로 함수를 호출할 경우 런타임 오류가 아닌 타입 검사 오류로 차단됩니다.
 
 ```text
 empty_hero() |> equip(WarriorEquipment(Sword(), ChainMail()))
-
 ```
 
 ```text
 Type Error:
 equip requires: HeroDraft[StatsConfigured[J]]
 but received:  HeroDraft[Empty]
-
 ```
 
 ### 8. 잘못된 상태를 검사하는 것과 표현하지 못하게 하는 것
@@ -800,7 +771,6 @@ data ReadyHero[J]:
         equipment: EquipmentFor[J],
         skills: Vector[SkillFor[J]],
     )
-
 ```
 
 이 구조에서는 전사에게 마법사 장비가 할당된 `ReadyHero` 데이터 타입 구조 자체를 조합하는 것이 언어적으로 불가능해집니다.

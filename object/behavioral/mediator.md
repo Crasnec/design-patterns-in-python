@@ -14,7 +14,6 @@ PasswordField
 RememberMeCheckbox
 LoginButton
 StatusLabel
-
 ```
 
 로그인 버튼의 활성화 여부는 아이디와 비밀번호 입력 상태에 따라 달라지고, 로그인 버튼을 누르면 입력값을 읽어 인증을 수행한 뒤 결과를 `StatusLabel`에 표시해야 합니다.
@@ -91,7 +90,6 @@ class LoginButton:
             self.status_label.text = (
                 "로그인 실패"
             )
-
 ```
 
 각 객체가 서로 필요한 객체를 직접 참조하게 됩니다.
@@ -120,7 +118,6 @@ GuestLoginButton
 PasswordResetButton
 
 LoginHistoryPanel
-
 ```
 
 새로운 UI 컴포넌트가 추가될 때마다 기존 객체들의 참조 관계와 이벤트 처리 코드도 함께 수정될 수 있습니다.
@@ -133,7 +130,6 @@ self.login_button.enabled = bool(
     and self.password_field.value
     and self.captcha_field.valid
 )
-
 ```
 
 같은 규칙이 여러 컴포넌트로 퍼질 수 있습니다.
@@ -177,7 +173,6 @@ class Component:
         mediator: Mediator,
     ):
         self._mediator = mediator
-
 ```
 
 예를 들어 사용자 이름이 변경되면:
@@ -194,7 +189,6 @@ def set_value(
         self,
         "changed",
     )
-
 ```
 
 비밀번호 역시 같은 방식입니다.
@@ -211,7 +205,6 @@ def set_value(
         self,
         "changed",
     )
-
 ```
 
 Mediator가 전체 협력 규칙을 알고 있습니다.
@@ -238,7 +231,6 @@ class LoginDialogMediator(
             and event == "click"
         ):
             self._login()
-
 ```
 
 로그인 버튼 활성화 규칙도 한곳에 모입니다.
@@ -252,7 +244,6 @@ def _update_login_button(
         self.username.value
         and self.password.value
     )
-
 ```
 
 로그인 처리 역시 Mediator가 Component들을 조정합니다.
@@ -270,7 +261,6 @@ def _login(self) -> None:
         if success
         else "로그인 실패"
     )
-
 ```
 
 구조가 다음과 같이 바뀝니다.
@@ -350,7 +340,6 @@ LoginMediator
 SearchMediator
 
 CheckoutMediator
-
 ```
 
 * **Mediator는 비즈니스 객체 자체를 대체하지 않음:** 각 Component의 고유 동작은 해당 Component가 유지하고, 여러 객체에 걸친 협력 규칙만 Mediator로 이동시키는 것이 자연스럽습니다.
@@ -378,7 +367,6 @@ Subject는 상태 변화가 발생했음을 여러 Observer에게 알립니다.
 
 ```text
 "누가 이 변경을 관찰하고 있는가?"
-
 ```
 
 입니다.
@@ -398,7 +386,6 @@ Mediator가 여러 객체의 상호작용 규칙을 알고 조정합니다.
 
 ```text
 "이 객체들이 어떻게 협력해야 하는가?"
-
 ```
 
 입니다.
@@ -411,7 +398,6 @@ Observer:
 
 Mediator:
     객체 협력의 조정
-
 ```
 
 입니다.
@@ -456,7 +442,6 @@ Facade:
 Mediator:
     내부 객체 사이의
     협력 규칙
-
 ```
 
 에 가깝습니다.
@@ -490,7 +475,6 @@ Chain of Responsibility:
 
 Mediator:
     객체들이 어떻게 협력할 것인가?
-
 ```
 
 라고 구분할 수 있습니다.
@@ -570,7 +554,6 @@ await channel_layer.group_send(
         "text": "Hello",
     },
 )
-
 ```
 
 Channel Layer가 Group에 속한 Channel들로 메시지를 전달합니다. (Channels documentation)
@@ -669,7 +652,6 @@ classDiagram
     LoginDialogMediator --> RememberMeCheckbox : coordinates
     LoginDialogMediator --> LoginButton : coordinates
     LoginDialogMediator --> StatusLabel : coordinates
-
 ```
 
 각 역할은 다음과 같습니다.
@@ -687,7 +669,6 @@ Colleagues
     RememberMeCheckbox
     LoginButton
     StatusLabel
-
 ```
 
 핵심 구조는 다음과 같습니다.
@@ -925,14 +906,12 @@ LoginButton
 StatusLabel
 
 AuthService
-
 ```
 
 `UsernameField`가 알고 있는 협력 상대는 오직:
 
 ```text
 Mediator
-
 ```
 
 뿐입니다.
@@ -977,7 +956,6 @@ flowchart LR
 ```python
 # 고전적 방식: 오타 발생 시 컴파일 타임에 감지 불가
 mediator.notify(self, "chnaged")
-
 ```
 
 대수적 데이터 타입(ADT)을 활용하면 잘못된 Event 표현 자체가 불가능해집니다.
@@ -995,7 +973,6 @@ emit(UsernameChanged(value))
 # Mediator: 명확한 입력 타입
 def handle(event: LoginEvent) -> Unit:
     ...
-
 ```
 
 ---
@@ -1011,7 +988,6 @@ if sender is self.username: ...
 # 개선: Event 타입 자체로 식별
 UsernameChanged(value="aragorn")
 PasswordChanged(value="anduril")
-
 ```
 
 `(sender, "changed")` 형태의 동적 표현이 `UsernameChanged(value)`와 같은 **정적이고 의미 있는 표현**으로 전환됩니다.
@@ -1037,7 +1013,6 @@ initial = LoginState(
     login_enabled=False,
     status=Idle,
 )
-
 ```
 
 ---
@@ -1063,7 +1038,6 @@ def reduce(state: LoginState, event: LoginEvent) -> LoginState:
 
         case RememberChanged(checked):
             return state with { remember = checked }
-
 ```
 
 ```mermaid
@@ -1100,7 +1074,6 @@ def reduce(state: LoginState, event: LoginEvent) -> (LoginState, Vector[LoginEff
                 state with { status = Loading },
                 [Authenticate(state.username, state.password)]
             )
-
 ```
 
 ```mermaid
@@ -1143,7 +1116,6 @@ def route(message: Message) -> Unit:
         case LoginMessage(event): login_mediator.handle(event)
         case SearchMessage(event): search_mediator.handle(event)
         case WindowMessage(event): window_mediator.handle(event)
-
 ```
 
 ```mermaid
@@ -1167,7 +1139,6 @@ data Request[Result] =
 
 # 사용 시 컴파일러가 'result'의 타입을 AuthResult로 추론
 result = await request(Authenticate(username, password))
-
 ```
 
 ---
@@ -1180,7 +1151,6 @@ result = await request(Authenticate(username, password))
 actor LoginCoordinator:
     on LoginClicked:
         send(auth_actor, Authenticate(...))
-
 ```
 
 ```mermaid
@@ -1225,7 +1195,6 @@ flowchart LR
 ```text
 login_enabled = combine_latest(username, password)
     |> map(lambda pair: bool(pair.username and pair.password))
-
 ```
 
 ```mermaid
@@ -1245,7 +1214,6 @@ FRP 환경에서는 명시적인 Mediator 객체가 사라지고 반응형 의�
 ```text
 login_enabled = username.non_empty AND password.non_empty
 status = login_result |> map(lambda r: "성공" if r.success else "실패")
-
 ```
 
 ---
@@ -1262,7 +1230,6 @@ effect LoginUI:
 def login_flow(username: str, password: str) -> Unit ! LoginUI + Authentication:
     result = perform Login(username, password)
     perform SetStatus(LoggedIn if result.success else Failed)
-
 ```
 
 ---
@@ -1278,7 +1245,6 @@ capability LoginView:
 
 def coordinate_login(state: LoginState, using view: LoginView, auth: Auth) -> Unit:
     ...
-
 ```
 
 ---
@@ -1293,7 +1259,6 @@ app_reducer = combine_reducers(
     search_reducer,
     settings_reducer,
 )
-
 ```
 
 ---
@@ -1308,7 +1273,6 @@ data LoginState =
   | Authenticating
   | LoggedIn(user: User)
   | Failed(reason: AuthError)
-
 ```
 
 ```mermaid
@@ -1360,7 +1324,6 @@ data LoginInteraction =
 
 def interpret(interaction: LoginInteraction, state: LoginState) -> (LoginState, Vector[Effect]):
     ...
-
 ```
 
 ---
@@ -1418,7 +1381,6 @@ Component들은:
 
 ```text
 "내 상태가 바뀌었다."
-
 ```
 
 는 사실만 Mediator에 전달하고,
@@ -1429,7 +1391,6 @@ Mediator는:
 "그 변화에 따라
 어떤 다른 객체가
 어떻게 동작해야 하는가?"
-
 ```
 
 를 결정합니다.

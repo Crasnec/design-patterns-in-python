@@ -10,7 +10,6 @@
 
 ```text
 10 + x * 2
-
 ```
 
 지원하는 문법 요소는 다음과 같습니다.
@@ -20,7 +19,6 @@
 변수
 덧셈
 곱셈
-
 ```
 
 이를 별도의 표현 구조 없이 처리하면 다음과 같은 코드가 작성됩니다.
@@ -51,7 +49,6 @@ def evaluate(expression, context: dict[str, int]) -> int:
         return left * right
 
     raise ValueError(f"알 수 없는 표현식입니다: {kind}")
-
 ```
 
 표현식은 다음과 같이 튜플(Tuple) 구조로 작성합니다.
@@ -66,7 +63,6 @@ expression = (
         ("number", 2),
     ),
 )
-
 ```
 
 실행:
@@ -75,7 +71,6 @@ expression = (
 result = evaluate(expression, {"x": 5})
 print(result)
 # 20
-
 ```
 
 이 코드는 이미 튜플로 표현한 구문 트리를 평가하는 작은 인터프리터입니다. 문자열을 읽는 Parser는 포함하지 않습니다. 단일 평가 함수도 문법이 작고 고정되어 있다면 적절하며, 여기서는 이를 GoF의 클래스 기반 구조로 바꾸었을 때의 차이를 살펴봅니다.
@@ -92,7 +87,6 @@ print(result)
 함수 호출
 조건식
 변수 할당
-
 ```
 
 그러면 기존 함수에는 계속해서 새로운 분기문이 추가됩니다.
@@ -110,7 +104,6 @@ elif kind == "call":
     ...
 elif kind == "if":
     ...
-
 ```
 
 또한, 각 표현식이 어떤 데이터를 가져야 하는지도 튜플의 위치 인덱스에 암묵적으로 의존하게 됩니다.
@@ -121,7 +114,6 @@ elif kind == "if":
 ("add", left, right)
 ("call", name, arguments)
 ("if", condition, then, else)
-
 ```
 
 이로 인해 다음과 같이 구조적으로 잘못된 표현식도 쉽게 생성될 수 있습니다.
@@ -132,7 +124,6 @@ bad_expression = (
     "hello",
     123,
 )
-
 ```
 
 이러한 형태는 해석 함수가 실제로 실행되기 전까지 구조적 오류를 발견하기 어렵습니다.
@@ -169,7 +160,6 @@ bad_expression = (
 Expression ::= Term ("+" Term)*
 Term       ::= Atom ("*" Atom)*
 Atom       ::= Number | Variable | "(" Expression ")"
-
 ```
 
 곱셈은 덧셈보다 먼저 묶고, 같은 연산은 왼쪽부터 묶는 문법입니다. 괄호는 묶이는 구조를 지정합니다. 아래 코드는 Parser 없이 구문 트리를 직접 만들므로, 실제 평가 순서는 문자열이 아니라 조립한 트리의 모양으로 결정됩니다.
@@ -182,7 +172,6 @@ flowchart TD
     expression --> variable[VariableExpression]
     expression --> add[AddExpression]
     expression --> multiply[MultiplyExpression]
-
 ```
 
 모든 표현식은 동일한 인터페이스를 구현합니다.
@@ -193,7 +182,6 @@ class Expression(ABC):
     @abstractmethod
     def interpret(self, context: dict[str, int]) -> int:
         pass
-
 ```
 
 숫자는 더 이상 분해되지 않는 가장 단순한 단말 표현식(Terminal Expression)입니다.
@@ -206,7 +194,6 @@ class NumberExpression(Expression):
 
     def interpret(self, context: dict[str, int]) -> int:
         return self._value
-
 ```
 
 변수 역시 단말 표현식(Terminal Expression)입니다.
@@ -219,7 +206,6 @@ class VariableExpression(Expression):
 
     def interpret(self, context: dict[str, int]) -> int:
         return context[self._name]
-
 ```
 
 덧셈은 다른 Expression 두 개를 조합하는 비단말 표현식(Nonterminal Expression)입니다.
@@ -233,7 +219,6 @@ class AddExpression(Expression):
 
     def interpret(self, context: dict[str, int]) -> int:
         return self._left.interpret(context) + self._right.interpret(context)
-
 ```
 
 곱셈 역시 다른 Expression들을 조합하는 비단말 표현식입니다.
@@ -247,7 +232,6 @@ class MultiplyExpression(Expression):
 
     def interpret(self, context: dict[str, int]) -> int:
         return self._left.interpret(context) * self._right.interpret(context)
-
 ```
 
 이제 `10 + x * 2`라는 표현식을 객체 구조로 조립할 수 있습니다.
@@ -260,7 +244,6 @@ expression = AddExpression(
         NumberExpression(2),
     ),
 )
-
 ```
 
 생성된 객체 트리의 구조는 다음과 같습니다.
@@ -271,14 +254,12 @@ expression = AddExpression(
      10   Multiply
            /    \
           x      2
-
 ```
 
 해석할 때 Context(문맥 정보)를 함께 전달합니다.
 
 ```python
 result = expression.interpret({"x": 5})
-
 ```
 
 각 Expression은 자신의 역할에 맞는 해석 규칙만 수행합니다.
@@ -289,7 +270,6 @@ flowchart LR
     variable[Variable] --> variable_rule[Context에서 변수명을 조회]
     add[Add] --> add_rule[좌우 표현식을 해석한 뒤 덧셈]
     multiply[Multiply] --> multiply_rule[좌우 표현식을 해석한 뒤 곱셈]
-
 ```
 
 클라이언트가 전체 트리를 직접 순회하지 않아도 재귀적으로 해석이 진행됩니다.
@@ -303,7 +283,6 @@ Add.interpret()
              │
              ├─ Variable.interpret()
              └─ Number.interpret()
-
 ```
 
 인터프리터 패턴의 핵심은 단순히 `if-elif` 문을 여러 클래스로 분산시키는 것에 그치지 않습니다.
@@ -347,7 +326,6 @@ Expression Tree
  Interpreter
     ↓
   Result
-
 ```
 
 * **반복 실행 환경의 최적화:** 표현식 트리를 매번 해석하는 대신, 실행 성능이 중요한 경우 중간 표현식이나 바이트코드로 미리 컴파일하여 재사용하는 전략을 취할 수 있습니다.
@@ -368,7 +346,6 @@ Expression Tree
 10
 x
 true
-
 ```
 
 코드 예시:
@@ -376,7 +353,6 @@ true
 ```text
 NumberExpression
 VariableExpression
-
 ```
 
 #### Nonterminal Expression (비단말 표현식)
@@ -389,7 +365,6 @@ VariableExpression
 x + 10
 a * b
 x + y * 2
-
 ```
 
 코드 예시:
@@ -397,7 +372,6 @@ x + y * 2
 ```text
 AddExpression
 MultiplyExpression
-
 ```
 
 구조적인 측면에서 보면 컴포지트 패턴(Composite Pattern)과 유사합니다.
@@ -410,7 +384,6 @@ Expression
    └─ Composite-like Nonterminal
             │
             └─ Expression*
-
 ```
 
 차이점은 컴포지트 패턴이 **'부분과 전체의 관계를 동일시하는 구조'** 자체에 집중한다면, 인터프리터 패턴은 '각 노드가 갖는 문법적 의미의 해석(Behavior)'에 초점을 맞춘다는 점입니다.
@@ -430,7 +403,6 @@ AddExpression
 
 MultiplyExpression
     interpret()
-
 ```
 
 방문자 패턴(Visitor Pattern)은 연산을 별도 Visitor로 옮깁니다. 다만 Visitor는 지원하는 노드 종류와 필드를 알아야 하므로 두 구조의 의존성이 사라지는 것은 아닙니다.
@@ -441,7 +413,6 @@ Expression Tree
 EvaluationVisitor
 PrettyPrintVisitor
 TypeCheckVisitor
-
 ```
 
 따라서 다음과 같은 설계 선택의 기준이 적용됩니다.
@@ -452,7 +423,6 @@ TypeCheckVisitor
 
 데이터 구조는 고정되어 있고, 새로운 연산(기능)이 자주 추가되는 구조
     → Visitor 패턴 유효
-
 ```
 
 ---
@@ -464,7 +434,6 @@ TypeCheckVisitor
 ```text
 CompressionStrategy
 SortingStrategy
-
 ```
 
 인터프리터 패턴은 **언어를 구성하는 여러 문법 규칙과 그 조합의 의미**를 표현합니다.
@@ -474,7 +443,6 @@ Number
 Variable
 Add
 Multiply
-
 ```
 
 정리하자면 다음과 같이 구분할 수 있습니다.
@@ -485,7 +453,6 @@ Strategy Pattern:
 
 Interpreter Pattern:
     하나의 언어를 구성하는 수많은 문법 규칙의 체계적인 결합
-
 ```
 
 ---
@@ -507,7 +474,6 @@ import ast
 
 tree = ast.parse("10 + x * 2", mode="eval")
 print(ast.dump(tree, indent=4))
-
 ```
 
 개념적 구조:
@@ -523,7 +489,6 @@ BinOp(+)
          │
          ├─ Name(x)
          └─ Constant(2)
-
 ```
 
 이는 우리가 앞서 구현한 구조와 매우 유사한 **재귀적 문법 트리 구조**입니다.
@@ -532,7 +497,6 @@ BinOp(+)
 AddExpression
     ├─ NumberExpression
     └─ MultiplyExpression
-
 ```
 
 파이썬 내부 엔진은 단순 GoF `interpret()` 메서드 호출보다 훨씬 고도화된 컴파일러 및 가상 머신 구조를 이용하지만, 문법을 타입화된 객체 트리를 통해 다룬다는 점에서 인터프리터 개념을 가장 잘 보여주는 사례입니다.
@@ -545,7 +509,6 @@ AddExpression
 
 ```python
 r"[A-Za-z]+\d*"
-
 ```
 
 여기에는 다음과 같은 문법 규칙들이 존재합니다.
@@ -556,7 +519,6 @@ Concatenation (연결)
 Quantifier +, * (수량자)
 Alternation | (선택)
 Grouping () (그룹화)
-
 ```
 
 파이썬 `re.compile()`은 정규식 문자열을 파싱하여 내부 정규식 객체로 컴파일한 뒤, `match()`, `search()` 등의 실행 함수를 통해 입력 텍스트를 평가합니다.
@@ -566,7 +528,6 @@ import re
 
 pattern = re.compile(r"[A-Za-z]+\d*")
 result = pattern.fullmatch("Player100")
-
 ```
 
 개념적 평가 흐름:
@@ -581,7 +542,6 @@ Compiled Pattern Object
       match
         ↓
      Result
-
 ```
 
 실제 내부 구현은 성능에 최적화된 바이트코드 엔진으로 작동하지만, **특정 언어 규칙을 해석 가능한 객체 표현으로 변환한 후 입력 데이터에 대해 의미를 평가한다는 본질**은 구문과 실행을 분리한다는 점에서 인터프리터와 비교할 수 있습니다. 각 노드가 `interpret()`를 갖는 GoF 구현과 같은 구조는 아닙니다.
@@ -600,7 +560,6 @@ Jinja는 HTML 및 텍스트 생성을 위해 사용하는 템플릿 DSL(Domain S
         {{ user.name }}
     {% endfor %}
 {% endif %}
-
 ```
 
 구문 요소:
@@ -610,14 +569,12 @@ If Statement
 For Statement
 Variable Expression
 Attribute Access
-
 ```
 
 Context 전달 및 평가:
 
 ```python
 {"users": [...]}
-
 ```
 
 개념적 프로세스:
@@ -632,7 +589,6 @@ Template Representation (Tree)
  Render(Context)
       ↓
  Output Text
-
 ```
 
 Jinja는 실제 구문 해석 시 컴파일 단계를 거치는 고도화된 템플릿 엔진이지만, **도메인 전용 언어 구문과 실행 Context를 분리하여 평가한다**는 측면에서 구문과 실행 환경을 분리하는 유사 설계로 볼 수 있습니다.
@@ -689,7 +645,6 @@ classDiagram
 
     Client --> Expression : Builds / Interprets
     Client --> Context : Provides
-
 ```
 
 역할별 분류:
@@ -711,7 +666,6 @@ Context
 
 Client
     Expression Tree를 조립하고 interpret()를 최초 호출하는 주체
-
 ```
 
 핵심 재귀 구조:
@@ -725,7 +679,6 @@ Expression
           │
           ├─ Expression
           └─ Expression
-
 ```
 
 ---
@@ -877,7 +830,6 @@ AddExpression
             ├─ VariableExpression("x")
             │
             └─ NumberExpression(2)
-
 ```
 
 해석 진행 단계(재귀 평가 과정):
@@ -904,7 +856,6 @@ Multiply 연산:
 
 Add 연산:
     10 + 10 = 20
-
 ```
 
 만약 새로운 **뺄셈(Subtract)** 문법을 추가하려면 기존 클래스를 수정할 필요 없이 새 클래스를 정의하면 됩니다.
@@ -917,7 +868,6 @@ class SubtractExpression(Expression):
 
     def interpret(self, context: Context) -> int:
         return self.left.interpret(context) - self.right.interpret(context)
-
 ```
 
 사용 예시:
@@ -928,7 +878,6 @@ expression = SubtractExpression(
     VariableExpression("x"),
 )
 print(expression.interpret(Context(variables={"x": 5})))
-
 ```
 
 **실행 결과:**
@@ -952,7 +901,6 @@ NotExpression
 IfExpression
 CallExpression
 ...
-
 ```
 
 문법 노드 종류에 따라 클래스가 늘어나는 것이 이 표현 방식의 비용입니다. 각 규칙에 클래스 하나를 두는 경우 증가량은 대체로 규칙 수에 비례하며, 표현식을 조합할 때마다 새 클래스가 필요한 것은 아닙니다.

@@ -74,7 +74,6 @@ class RasterRectangle(Shape):
 
     def draw(self) -> None:
         print("[Raster] Rectangle")
-
 ```
 
 현재 필요한 클래스 조합은 다음과 같습니다.
@@ -85,7 +84,6 @@ flowchart TD
     circle --> raster_circle[RasterCircle]
     rectangle[Rectangle] --> vector_rectangle[VectorRectangle]
     rectangle --> raster_rectangle[RasterRectangle]
-
 ```
 
 여기에 새로운 도형 `Triangle`이 추가되면 `VectorTriangle`, `RasterTriangle` 두 클래스가 추가됩니다.
@@ -126,14 +124,12 @@ flowchart LR
     end
 
     shape -. Bridge .-> renderer
-
 ```
 
 그리고 `Shape`가 `Renderer`를 상속하는 대신 참조하도록 구성합니다.
 
 ```text
 Shape ──── has-a ────> Renderer
-
 ```
 
 `Renderer`는 도형을 실제로 출력하기 위한 연산을 제공합니다.
@@ -159,7 +155,6 @@ class Renderer(ABC):
         height: int,
     ) -> None:
         pass
-
 ```
 
 도형은 자신이 어떤 렌더러를 사용하는지만 알고 있습니다.
@@ -198,7 +193,6 @@ class Circle(Shape):
             self.y,
             self.radius,
         )
-
 ```
 
 `Vector`와 `Raster`의 차이는 `Renderer` 구현에서 처리합니다.
@@ -230,7 +224,6 @@ class RasterRenderer(Renderer):
             "[Raster] "
             f"Circle({x}, {y}, {radius})"
         )
-
 ```
 
 이제 조합을 위해 별도의 클래스가 필요하지 않습니다.
@@ -249,7 +242,6 @@ raster_circle = Circle(
     y=20,
     radius=5,
 )
-
 ```
 
 같은 `Circle` 클래스가 서로 다른 `Renderer` 구현과 조합됩니다.
@@ -258,7 +250,6 @@ raster_circle = Circle(
              ┌── VectorRenderer
 Circle ──────┤
              └── RasterRenderer
-
 ```
 
 마찬가지로 같은 `Renderer`를 여러 `Abstraction`이 공유할 수 있습니다.
@@ -269,7 +260,6 @@ Circle ───────────┐
              VectorRenderer
                   ↑
 Rectangle ────────┘
-
 ```
 
 핵심은 단순히 객체 하나를 다른 객체에 주입하는 것이 아닙니다.
@@ -324,7 +314,6 @@ FigureCanvas / Renderer
      ┌────┼─────┐
      ↓    ↓     ↓
     Agg   SVG   PDF
-
 ```
 
 동일한 Plot 코드를 유지하면서 `QtAgg`, `TkAgg`, `SVG`, `PDF` 등의 렌더링 백엔드를 독립적으로 결합할 수 있으며, 이는 상위 그래픽 모델과 실제 출력 기술이라는 두 변화 축을 분리한다는 점에서 Bridge 패턴의 대표적 사례입니다.
@@ -343,7 +332,6 @@ SQLAlchemy Engine
    ┌────┼──────┬──────┐
    ↓    ↓      ↓      ↓
 Postgres MySQL SQLite Oracle
-
 ```
 
 상위 `Engine` API 및 쿼리 구성 로직과 실제 DBAPI별 SQL 변환 및 통신 로직(`Dialect`)이 별도의 축으로 분리되어 독립적으로 진화합니다.
@@ -362,7 +350,6 @@ Logger
         ├─ FileHandler
         ├─ SocketHandler
         └─ SMTPHandler
-
 ```
 
 `Logger` 계층과 출력 `Handler` 계층이 독립적으로 구성 및 확장 가능하다는 점에서 Bridge와 유사한 구조를 보여줍니다.
@@ -417,7 +404,6 @@ classDiagram
     Renderer <|.. RasterRenderer
 
     Shape --> Renderer : Bridge
-
 ```
 
 각 역할은 다음과 같습니다.
@@ -569,7 +555,6 @@ data Renderer =
 record Drawing:
     shape: Shape
     renderer: Renderer
-
 ```
 
 조합마다 클래스를 만드는 선언적 복잡성 대신, 독립된 두 차원의 값을 합성하는 구조로 변환됩니다.
@@ -598,7 +583,6 @@ where Renderer[R]:
     x: Int
     y: Int
     radius: Int
-
 ```
 
 이 경우 `Circle[VectorRenderer]` 및 `Circle[RasterRenderer]`와 같이 별도의 클래스 작성 없이 매개변수화된 단일 타입 생성자 `Circle[R]`로 해결할 수 있습니다.
@@ -628,7 +612,6 @@ def select_renderer(
 
         case RasterMode:
             return RasterRenderer()
-
 ```
 
 ---
@@ -661,7 +644,6 @@ where Renderer[R]:
 
         case Rectangle(x, y, width, height):
             ...
-
 ```
 
 ---
@@ -687,7 +669,6 @@ trait DrawingAlgebra[R]:
         a: R,
         b: R,
     ) -> R
-
 ```
 
 도형은 구체적인 출력이 아닌 추상 연산(Algebra)만을 사용하여 로직을 기술하며, 실제 그리기 동작은 이를 다르게 해석하는 **Interpreter**(SVG Interpreter, Raster Interpreter 등)가 수행합니다.
@@ -700,7 +681,6 @@ trait DrawingAlgebra[R]:
 
 ```text
 Shape  ──(describe)──>  DrawCommand (IR)  ──(render)──>  [ SVG / Raster / GPU ]
-
 ```
 
 ```text
@@ -719,7 +699,6 @@ def render_svg(
     commands: Vector[DrawCommand],
 ) -> SVG:
     ...
-
 ```
 
 중간 표현을 두면 도형을 명령으로 바꾸는 단계와 명령을 출력하는 단계를 따로 검증할 수 있습니다. 예를 들어 `describe(circle)`이 원 명령을 만드는지 먼저 검사하고, 같은 명령을 SVG와 Raster 구현에 전달할 수 있습니다.
@@ -752,7 +731,6 @@ where
     BasicRenderer[R]
     + BezierRenderer[R]:
     ...
-
 ```
 
 Abstraction은 요구하는 최소한의 Capability만 타입 제약으로 선언하므로 Implementor 인터페이스의 비대화를 방지합니다.
@@ -768,14 +746,12 @@ draw_svg =
     describe >> render_svg
 draw_png =
     describe >> render_png
-
 ```
 
 ```text
                 ┌─ render_svg
 describe ───────┼─ render_png
                 └─ render_terminal
-
 ```
 
 객체 간 참조 대신 변환 함수를 연결합니다. `describe`와 SVG 문자열 생성은 순수 함수로 작성할 수 있지만, 파일 저장이나 화면 출력까지 수행하는 Renderer는 부수효과를 가집니다. 함수로 표현했다는 이유만으로 계산이 순수해지지는 않습니다.

@@ -12,7 +12,6 @@
 City
 Forest
 Mine
-
 ```
 
 각 요소는 자신만의 데이터를 보유합니다.
@@ -38,7 +37,6 @@ class Mine:
     name: str
     mineral: str
     production: int
-
 ```
 
 초기에는 게임 로직 내부에서만 사용되므로 아무런 문제가 없습니다.
@@ -52,7 +50,6 @@ JSON Export
 디버그 출력
 밸런스 검증
 지도 렌더링 정보 생성
-
 ```
 
 ### 패턴을 적용하지 않은 예시 1: 클래스 내부에 연산 직접 추가
@@ -77,7 +74,6 @@ class City:
 
     def create_report(self) -> str:
         return f"도시 {self.name}: 인구 {self.population}"
-
 ```
 
 `Forest`와 `Mine` 클래스에도 동일한 목적의 연산 메서드들을 추가합니다.
@@ -116,7 +112,6 @@ class Mine:
 
     def create_report(self) -> str:
         ...
-
 ```
 
 문제는 이 기능들이 `City`, `Forest`, `Mine`의 핵심 도메인 역할과 직접적인 관련이 없다는 점입니다.
@@ -128,7 +123,6 @@ class Mine:
 건물 관리
 경제 상태 관리
 주민 상태 관리
-
 ```
 
 그러나 시간이 흘러 기능이 늘어나면서 도메인 객체 내부에 부가 기능들이 계속 축적됩니다.
@@ -141,7 +135,6 @@ Debug Dump
 Validation
 Migration
 AI Feature Extraction
-
 ```
 
 그 결과 단일 도메인 클래스가 여러 외부 요구 때문에 함께 변경되며, 단일 책임 원칙(SRP)을 지키기 어려워집니다.
@@ -174,7 +167,6 @@ def export_json(element) -> dict[str, object]:
             "production": element.production,
         }
     raise TypeError("지원하지 않는 타입입니다.")
-
 ```
 
 통계 계산과 보고서 생성 함수 역시 동일한 타입 검사 구조를 반복하게 됩니다.
@@ -196,7 +188,6 @@ def create_report(element) -> str:
         ...
     elif isinstance(element, Mine):
         ...
-
 ```
 
 이 방식은 동일한 타입 분기 로직이 새로운 연산이 추가될 때마다 분산되어 중복 발생합니다.
@@ -215,7 +206,6 @@ flowchart LR
     validate[validate] --> city
     validate --> forest
     validate --> mine
-
 ```
 
 객체 종류는 안정적인 반면 **연산이 빈번하게 추가되는 구조**라면, 이러한 조건문 중복은 코드 전반으로 확산됩니다.
@@ -243,7 +233,6 @@ flowchart TD
     element_a[Element A] -->|accept| visit_a
     element_b[Element B] -->|accept| visit_b
     element_c[Element C] -->|accept| visit_c
-
 ```
 
 먼저 Element 공통 인터페이스를 정의합니다.
@@ -257,7 +246,6 @@ class WorldElement(ABC):
     @abstractmethod
     def accept(self, visitor: WorldVisitor) -> None:
         pass
-
 ```
 
 각 Element는 `accept()` 메서드 내에서 자신의 구체 타입에 맞는 Visitor 메서드를 호출합니다.
@@ -289,7 +277,6 @@ class Mine(WorldElement):
 
     def accept(self, visitor: WorldVisitor) -> None:
         visitor.visit_mine(self)
-
 ```
 
 Visitor 인터페이스는 모든 Element 종류별 방문 메서드를 선언합니다.
@@ -308,7 +295,6 @@ class WorldVisitor(ABC):
     @abstractmethod
     def visit_mine(self, mine: Mine) -> None:
         pass
-
 ```
 
 이 구조를 이용하면 "JSON Export"라는 하나의 관심사를 단일 Visitor 클래스로 응집할 수 있습니다.
@@ -324,7 +310,6 @@ class JsonExportVisitor(WorldVisitor):
 
     def visit_mine(self, mine: Mine) -> None:
         ...
-
 ```
 
 통계 집계 연산 역시 구체적인 Visitor 클래스로 분리됩니다.
@@ -340,7 +325,6 @@ class StatisticsVisitor(WorldVisitor):
 
     def visit_mine(self, mine: Mine) -> None:
         ...
-
 ```
 
 클라이언트는 객체 구조 변경 없이 Visitor 구현체만 교체하여 실행합니다.
@@ -361,7 +345,6 @@ for element in elements:
 stats_visitor = StatisticsVisitor()
 for element in elements:
     element.accept(stats_visitor)
-
 ```
 
 구조는 다음과 같이 전환됩니다.
@@ -377,7 +360,6 @@ City, Forest, Mine  ──> accept(visitor)
 
 JsonExportVisitor   ──> visit_city(), visit_forest(), visit_mine()
 StatisticsVisitor   ──> visit_city(), visit_forest(), visit_mine()
-
 ```
 
 즉, 코드의 구조화 방향이 "Element 기준의 연산 파편화"에서 "Operation 기준의 타입별 처리 응집"으로 변경됩니다.
@@ -394,7 +376,6 @@ StatisticsVisitor   ──> visit_city(), visit_forest(), visit_mine()
 
 ```python
 element.accept(visitor)
-
 ```
 
 1. **첫 번째 Dispatch (Element 타입 결정):**
@@ -414,7 +395,6 @@ $$\text{Element Type} \times \text{Visitor Type}$$
 ```text
 City × JsonExportVisitor      → City 객체의 JSON 변환
 Mine × StatisticsVisitor     → Mine 객체의 통계 집계
-
 ```
 
 이 이중 디스패치 구조 덕분에 타입 분기 조건문 없이도 정교한 다형성 처리가 가능해집니다.
@@ -509,7 +489,6 @@ def world():
 visitor = FunctionCounter()
 visitor.visit(tree)
 print(visitor.count)  # 출력: 2
-
 ```
 
 ---
@@ -528,7 +507,6 @@ class RenameVariable(ast.NodeTransformer):
         if node.id == "old_name":
             return ast.Name(id="new_name", ctx=node.ctx)
         return node
-
 ```
 
 ---
@@ -604,7 +582,6 @@ classDiagram
     City ..> WorldVisitor : accept
     Forest ..> WorldVisitor : accept
     Mine ..> WorldVisitor : accept
-
 ```
 
 ---
@@ -774,7 +751,6 @@ WorldElement                     WorldElement =
     ├─ City                         City(name, population)
     ├─ Forest                     | Forest(name, area)
     └─ Mine                       | Mine(name, mineral, production)
-
 ```
 
 ---
@@ -792,7 +768,6 @@ def export_json(element: WorldElement) -> JsonValue:
             return {"type": "forest", "name": name, "area": area}
         case Mine(name, mineral, production):
             return {"type": "mine", "name": name, "mineral": mineral, "production": production}
-
 ```
 
 별도의 `accept()` 인터페이스나 Visitor 클래스를 작성하지 않고, 패턴 매칭 함수가 Visitor와 같은 연산 분배 역할을 맡습니다.
@@ -805,7 +780,6 @@ def export_json(element: WorldElement) -> JsonValue:
 
 ```text
 Non-exhaustive pattern match: Missing case 'River'
-
 ```
 
 이 조건을 만족하면 Visitor 인터페이스를 일괄 수정해 얻던 연산의 타입별 커버리지 검사를 패턴 매칭에서도 유지할 수 있습니다.

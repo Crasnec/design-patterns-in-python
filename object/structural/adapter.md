@@ -10,7 +10,6 @@
 
 ```python
 gateway.pay(money)
-
 ```
 
 하지만 이미 사용 중인 레거시 결제 SDK는 전혀 다른 인터페이스를 제공합니다.
@@ -74,7 +73,6 @@ class BadCheckoutService:
             transaction_id=str(response["tx_id"]),
             approved=response["result_code"] == "00",
         )
-
 ```
 
 이 경우 `CheckoutService`는 단순히 결제를 요청하는 것뿐 아니라 다음과 같은 레거시 시스템의 세부 사항까지 알아야 합니다.
@@ -121,7 +119,6 @@ class RefundService:
             transaction_id=str(response["tx_id"]),
             approved=response["result_code"] == "00",
         )
-
 ```
 
 레거시 SDK의 응답 코드나 호출 방식이 변경되면 이러한 코드들을 모두 찾아 수정해야 합니다.
@@ -147,7 +144,6 @@ flowchart TD
     client[Client] --> target[Target interface]
     adapter[Adapter] -->|implements| target
     adapter -->|delegates| adaptee[Adaptee]
-
 ```
 
 먼저 애플리케이션이 사용하고 싶은 인터페이스를 정의합니다.
@@ -161,7 +157,6 @@ class PaymentGateway(ABC):
         money: Money,
     ) -> PaymentResult:
         pass
-
 ```
 
 기존 레거시 SDK의 인터페이스는 변경하지 않습니다.
@@ -175,7 +170,6 @@ class LegacyPaymentClient:
         currency_code: str,
     ) -> dict[str, object]:
         ...
-
 ```
 
 대신 두 인터페이스 사이에 Adapter를 둡니다.
@@ -203,7 +197,6 @@ class LegacyPaymentAdapter(PaymentGateway):
             transaction_id=str(response["tx_id"]),
             approved=response["result_code"] == "00",
         )
-
 ```
 
 클라이언트는 이제 레거시 SDK의 존재를 알 필요가 없습니다.
@@ -223,7 +216,6 @@ class CheckoutService:
     ) -> PaymentResult:
 
         return self.gateway.pay(money)
-
 ```
 
 클라이언트의 관점에서는 다음 인터페이스만 존재합니다.
@@ -232,7 +224,6 @@ class CheckoutService:
 flowchart LR
     money[Money] -->|input| pay[PaymentGateway.pay]
     pay -->|returns| result[PaymentResult]
-
 ```
 
 Adapter 내부에서는 실제로 다음 변환이 수행됩니다.
@@ -247,7 +238,6 @@ LegacyPaymentClient.request_payment()
 레거시 응답 dict
   ↓
 PaymentResult
-
 ```
 
 핵심은 단순히 메서드 이름을 바꾸는 래퍼를 만드는 데 있지 않습니다.
@@ -301,7 +291,6 @@ flowchart TD
     session[Requests Session] --> interface[Transport Adapter interface]
     interface --> adapter[HTTPAdapter]
     adapter --> urllib3[urllib3]
-
 ```
 
 사용자는 Adapter를 특정 URL prefix에 연결할 수도 있습니다.
@@ -319,7 +308,6 @@ session.mount(
     "https://",
     adapter,
 )
-
 ```
 
 즉 상위 `Session`은 HTTP 연결 구현의 세부 사항을 직접 다루지 않고 Adapter 인터페이스를 통해 통신합니다.
@@ -346,7 +334,6 @@ adapter = logging.LoggerAdapter(
 adapter.info(
     "로그인 성공"
 )
-
 ```
 
 구조적으로 보면 다음과 같습니다.
@@ -356,7 +343,6 @@ flowchart TD
     client[Client] --> interface[Logger compatible interface]
     interface --> adapter[LoggerAdapter]
     adapter --> logger[Logger]
-
 ```
 
 기존 `Logger`를 수정하지 않고 추가적인 호출 문맥을 제공한다는 점에서 Adapter와 매우 유사한 구조입니다.
@@ -380,14 +366,12 @@ def load_user():
 async_load_user = sync_to_async(
     load_user
 )
-
 ```
 
 클라이언트는 결과 함수를 다음과 같이 사용할 수 있습니다.
 
 ```python
 user = await async_load_user()
-
 ```
 
 구조적으로 보면 다음과 같습니다.
@@ -397,7 +381,6 @@ flowchart TD
     client[Async client] --> async_fn[Async callable]
     async_fn --> adapter[sync_to_async]
     adapter --> sync_fn[Sync callable]
-
 ```
 
 클래스 기반 GoF Adapter는 아니지만 서로 호환되지 않는 호출 프로토콜을 변환한다는 Adapter의 핵심 아이디어를 함수 수준에 적용한 사례로 볼 수 있습니다.
@@ -432,7 +415,6 @@ classDiagram
     LegacyPaymentAdapter --> LegacyPaymentClient : Adapts
 
     CheckoutService --> PaymentGateway : Uses
-
 ```
 
 각 역할은 다음과 같습니다.
@@ -560,7 +542,6 @@ CheckoutService(
         LegacyPaymentClient()
     )
 )
-
 ```
 
 와
@@ -569,7 +550,6 @@ CheckoutService(
 CheckoutService(
     ModernPaymentGateway()
 )
-
 ```
 
 모두 동일한 `PaymentGateway` 인터페이스를 통해 사용됩니다.
@@ -586,7 +566,6 @@ PaymentGateway
                   │
                   ↓
           LegacyPaymentClient
-
 ```
 
 외부 SDK의 호출 방식이나 반환 구조가 변경되더라도 해당 차이는 `LegacyPaymentAdapter` 내부에 격리할 수 있습니다.
@@ -607,7 +586,6 @@ Target
 Adapter
    ↓
 Adaptee
-
 ```
 
 이를 더 추상적으로 바라보면 Adapter가 수행하는 작업은 다음과 같습니다.
@@ -626,7 +604,6 @@ Adaptee
          변환
            ↓
 클라이언트가 이해하는 결과
-
 ```
 
 즉 핵심 문제는 다음과 같습니다.
@@ -652,7 +629,6 @@ interface PaymentGateway:
     def pay(
         money: Money,
     ) -> PaymentResult
-
 ```
 
 다음 타입이 이미 동일한 메서드를 가지고 있어도:
@@ -664,7 +640,6 @@ class ExternalGateway:
         money: Money,
     ) -> PaymentResult:
         ...
-
 ```
 
 명목적 타입 시스템에서는 `PaymentGateway`를 구현한다고 명시하지 않았다면 직접 사용할 수 없는 경우가 있습니다.
@@ -677,7 +652,6 @@ protocol PaymentGateway:
     def pay(
         money: Money,
     ) -> PaymentResult
-
 ```
 
 `ExternalGateway`가 동일한 시그니처를 제공한다면:
@@ -685,7 +659,6 @@ protocol PaymentGateway:
 ```text
 gateway: PaymentGateway =
     ExternalGateway()
-
 ```
 
 별도의 Adapter가 필요하지 않습니다.
@@ -696,14 +669,12 @@ gateway: PaymentGateway =
 
 ```text
 pay(Money) -> PaymentResult
-
 ```
 
 와
 
 ```text
 request_payment(Int, str) -> LegacyResponse
-
 ```
 
 구조적 타이핑만으로는 해결할 수 없습니다. 명목적 차이는 사라질 수 있지만 의미적·구조적 인터페이스 차이는 여전히 변환이 필요합니다.
@@ -717,7 +688,6 @@ request_payment(Int, str) -> LegacyResponse
 ```text
 type Adapter[A, B] =
     A -> B
-
 ```
 
 예를 들어 레거시 응답을 새로운 도메인 결과로 변환합니다.
@@ -734,7 +704,6 @@ def adapt_response(
             == SuccessCode
         ),
     )
-
 ```
 
 타입은 다음과 같습니다.
@@ -745,7 +714,6 @@ LegacyPaymentResponse
     Adapter
         ↓
 PaymentResult
-
 ```
 
 객체를 별도로 만들 필요가 없습니다.
@@ -755,7 +723,6 @@ result =
     adapt_response(
         legacy_response
     )
-
 ```
 
 단순한 데이터 표현 차이라면 Adapter 객체보다 변환 함수가 더 직접적인 추상화가 될 수 있습니다.
@@ -770,14 +737,12 @@ result =
 
 ```text
 LegacyRequest → LegacyResponse
-
 ```
 
 새로운 시스템은 다음 타입을 원합니다.
 
 ```text
 PaymentRequest → PaymentResult
-
 ```
 
 두 개의 변환 함수를 정의합니다.
@@ -793,7 +758,6 @@ def from_legacy(
     response: LegacyResponse,
 ) -> PaymentResult:
     ...
-
 ```
 
 이제 일반적인 Adapter 고차 함수를 정의할 수 있습니다.
@@ -810,7 +774,6 @@ def adapt[A, B, C, D](
         |> before
         |> service
         |> after
-
 ```
 
 레거시 결제 함수에 적용합니다.
@@ -822,14 +785,12 @@ pay =
         legacy_request_payment,
         from_legacy,
     )
-
 ```
 
 `pay`의 타입은 다음과 같이 추론됩니다.
 
 ```text
 PaymentRequest → PaymentResult
-
 ```
 
 내부에서는 여전히 레거시 시스템을 사용합니다.
@@ -842,7 +803,6 @@ LegacyRequest
 LegacyResponse
       ↓ from_legacy
 PaymentResult
-
 ```
 
 고전적인 Object Adapter의
@@ -851,7 +811,6 @@ PaymentResult
 Adapter 객체
     │
     └─ Adaptee 객체 보관
-
 ```
 
 구조가 함수형 관점에서는 "입력 변환 함수 + 기존 함수 + 출력 변환 함수"의 합성으로 바뀝니다.
@@ -870,7 +829,6 @@ external class LegacyPaymentClient:
         currency: str,
     ) -> LegacyResponse:
         ...
-
 ```
 
 고전적인 객체지향에서는 Wrapper Adapter를 만듭니다.
@@ -879,7 +837,6 @@ external class LegacyPaymentClient:
 LegacyPaymentAdapter
         ↓
 LegacyPaymentClient
-
 ```
 
 하지만 Retroactive Conformance를 지원하는 타입클래스 시스템에서는 기존 타입에 새로운 인터페이스 구현을 외부에서 부여할 수 있습니다.
@@ -891,7 +848,6 @@ trait PaymentGateway[T]:
         gateway: T,
         money: Money,
     ) -> PaymentResult
-
 ```
 
 서드파티 클래스 자체를 수정하지 않고 구현을 추가합니다.
@@ -919,7 +875,6 @@ impl PaymentGateway[
                 == "00"
             ),
         )
-
 ```
 
 이후 일반적인 함수에서 사용할 수 있습니다.
@@ -935,7 +890,6 @@ where PaymentGateway[G]:
         gateway,
         money,
     )
-
 ```
 
 고전적인 Wrapper Object 대신 "기존 타입 + 외부에서 추가한 인터페이스 구현"으로 Adapter 역할을 표현하는 것입니다.
@@ -950,7 +904,6 @@ Adapter는 단순히 메서드 이름만 변환하는 것이 아니라 같은 �
 
 ```python
 100
-
 ```
 
 하지만 한쪽은 원 단위이고 다른 쪽은 센트 단위라면 두 값은 같은 타입으로 취급해서는 안 됩니다.
@@ -958,7 +911,6 @@ Adapter는 단순히 메서드 이름만 변환하는 것이 아니라 같은 �
 ```text
 newtype Won = Int
 newtype Cent = Int
-
 ```
 
 환율 또는 변환 규칙을 가진 명시적인 Adapter를 정의합니다.
@@ -969,7 +921,6 @@ def won_to_cent(
     rate: ExchangeRate,
 ) -> Cent:
     ...
-
 ```
 
 잘못된 호출은 정적으로 차단됩니다.
@@ -978,14 +929,12 @@ def won_to_cent(
 legacy_client.request_payment(
     money.won
 )
-
 ```
 
 ```text
 Type Error:
 expected: Cent
 found: Won
-
 ```
 
 반드시 변환을 거쳐야 합니다.
@@ -997,7 +946,6 @@ legacy_client.request_payment(
         exchange_rate,
     )
 )
-
 ```
 
 이 구조에서는 Adapter의 중요한 역할인 의미적 변환을 타입 시스템이 강제합니다.
@@ -1014,7 +962,6 @@ legacy_client.request_payment(
 record Iso[A, B]:
     to: A -> B
     from: B -> A
-
 ```
 
 다음 법칙을 만족한다고 가정합니다.
@@ -1022,7 +969,6 @@ record Iso[A, B]:
 ```text
 from(to(a)) == a
 to(from(b)) == b
-
 ```
 
 이러한 Adapter는 정보 손실이 없는 동형(Isomorphism)에 가깝습니다.
@@ -1034,7 +980,6 @@ data LegacyStatus =
     Approved
   | Declined
   | ManualReview
-
 ```
 
 새로운 도메인이 두 상태만 지원한다면:
@@ -1043,7 +988,6 @@ data LegacyStatus =
 data PaymentStatus =
     Success
   | Failure
-
 ```
 
 변환 과정에서 정보가 사라집니다.
@@ -1063,7 +1007,6 @@ def adapt_status(
 
         case ManualReview:
             return Failure
-
 ```
 
 이 변환은 역변환할 수 없습니다.
@@ -1072,7 +1015,6 @@ def adapt_status(
 Failure
    ↓
 Declined인지 ManualReview인지 알 수 없음
-
 ```
 
 따라서 현대 타입 설계에서는 단순히 "Adapter가 있다"에서 끝나는 것이 아니라 다음 사항들을 명확히 구분할 수 있습니다.
@@ -1093,21 +1035,18 @@ Declined인지 ManualReview인지 알 수 없음
 ```text
 record LegacyResponse:
     amount: str
-
 ```
 
 다음 값은 정상적으로 변환할 수 있습니다.
 
 ```python
 "10000"
-
 ```
 
 하지만 다음 값은 그렇지 않습니다.
 
 ```python
 "UNKNOWN"
-
 ```
 
 가상의 ADT를 사용합니다.
@@ -1116,7 +1055,6 @@ record LegacyResponse:
 data Result[T, E] =
     Ok(T)
   | Err(E)
-
 ```
 
 Adapter의 타입을 다음과 같이 정의할 수 있습니다.
@@ -1124,7 +1062,6 @@ Adapter의 타입을 다음과 같이 정의할 수 있습니다.
 ```text
 type Adapter[A, B, E] =
     A -> Result[B, E]
-
 ```
 
 실제 변환 함수:
@@ -1148,7 +1085,6 @@ def adapt_amount(
             return Err(
                 InvalidAmount(value)
             )
-
 ```
 
 Adapter 자체의 실패 가능성이 타입에 나타납니다.
@@ -1159,7 +1095,6 @@ Legacy Value
 Adapter
       ↓
 Result[Domain Value, Conversion Error]
-
 ```
 
 ---
@@ -1175,7 +1110,6 @@ data LegacyError =
     ConnectionLost
   | Code(Int)
   | InvalidPayload
-
 ```
 
 애플리케이션 내부에서는 다음 오류만 다루고 싶습니다.
@@ -1185,7 +1119,6 @@ data PaymentError =
     NetworkFailure
   | PaymentDeclined
   | InvalidGatewayResponse
-
 ```
 
 Adapter가 오류를 변환합니다.
@@ -1208,7 +1141,6 @@ def adapt_error(
 
         case InvalidPayload:
             return InvalidGatewayResponse
-
 ```
 
 Pattern Matching이 exhaustive하다면 새로운 `LegacyError`가 추가되었을 때 Adapter 수정 누락도 정적으로 확인할 수 있습니다.
@@ -1216,7 +1148,6 @@ Pattern Matching이 exhaustive하다면 새로운 `LegacyError`가 추가되었�
 ```text
 Non-exhaustive pattern match:
 Missing case: AuthenticationExpired
-
 ```
 
 즉 Adapter는 외부 시스템의 오류 어휘를 내부 도메인의 오류 어휘로 번역하는 Anti-Corruption Boundary 역할도 수행할 수 있습니다.
@@ -1235,7 +1166,6 @@ def load_user(
 ) -> User
     ! BlockingIO:
     ...
-
 ```
 
 새로운 시스템은 비동기 인터페이스를 요구합니다.
@@ -1245,7 +1175,6 @@ def load_user(
     id: UserId,
 ) -> Async[User]:
     ...
-
 ```
 
 고전적인 방식에서는 `SyncToAsyncAdapter`와 같은 Wrapper를 만들 수 있습니다.
@@ -1257,7 +1186,6 @@ handler blocking_to_async:
     BlockingIO[A]
         ->
     Async[A]
-
 ```
 
 적용하면:
@@ -1266,7 +1194,6 @@ handler blocking_to_async:
 async_load_user =
     handle load_user
     with blocking_to_async
-
 ```
 
 타입은 다음과 같이 바뀝니다.
@@ -1288,7 +1215,6 @@ Target
 Adapter
   ↓
 Adaptee
-
 ```
 
 하지만 더 추상적으로 보면 Adapter의 본질은 시스템 경계에서 서로 다른 표현을 변환하는 것입니다.
@@ -1299,7 +1225,6 @@ External Representation
        Adapter
           ↓
 Internal Representation
-
 ```
 
 이 변환 대상은 여러 종류가 될 수 있습니다.

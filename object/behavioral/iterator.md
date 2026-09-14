@@ -33,7 +33,6 @@ class Party:
         self.members.append(
             hero
         )
-
 ```
 
 클라이언트는 다음과 같이 내부 리스트에 직접 접근하여 탐색합니다.
@@ -67,7 +66,6 @@ for hero in party.members:
     print(
         hero.name
     )
-
 ```
 
 지금은 별문제가 없어 보이지만, Party의 내부 자료구조를 변경해야 하는 상황을 가정해 봅니다.
@@ -82,7 +80,6 @@ class Party:
             str,
             Hero,
         ] = {}
-
 ```
 
 기존 클라이언트는 리스트라는 내부 구조에 직접 의존하고 있었으므로, 아래와 같이 코드를 수정해야 합니다.
@@ -92,7 +89,6 @@ for hero in party.members.values():
     print(
         hero.name
     )
-
 ```
 
 만약 파티를 트리 구조로 관리하게 된다면 문제는 더 커집니다.
@@ -106,7 +102,6 @@ flowchart TD
     knight --> soldier_b[Soldier]
     mage --> apprentice_a[Apprentice]
     mage --> apprentice_b[Apprentice]
-
 ```
 
 클라이언트가 모든 구성원을 탐색하려면 트리 탐색 알고리즘을 직접 작성해야 합니다.
@@ -124,7 +119,6 @@ def traverse(
         traverse(
             child
         )
-
 ```
 
 또한 탐색 순서를 바꾸고 싶다면 그에 맞는 알고리즘을 매번 새로 구현해야 합니다.
@@ -158,7 +152,6 @@ flowchart TD
     client[Client] --> aggregate[Aggregate]
     aggregate -->|create_iterator| iterator[Iterator]
     iterator --> data[Collection data]
-
 ```
 
 이를 통해 컬렉션과 Iterator의 역할을 명확히 분리합니다.
@@ -198,7 +191,6 @@ class Iterator(ABC, Generic[T]):
         self,
     ) -> T:
         pass
-
 ```
 
 Party 클래스는 내부 자료구조를 외부에 직접 공개하지 않는 대신 Iterator를 생성하여 제공합니다.
@@ -229,7 +221,6 @@ class Party:
         return PartyIterator(
             self._members
         )
-
 ```
 
 Iterator 객체는 현재 탐색 위치를 독립적으로 관리합니다.
@@ -269,7 +260,6 @@ class PartyIterator(
         self._index += 1
 
         return hero
-
 ```
 
 이제 클라이언트는 컬렉션의 내부 구조를 몰라도 요소를 순회할 수 있습니다.
@@ -286,7 +276,6 @@ while iterator.has_next():
     print(
         hero.name
     )
-
 ```
 
 클라이언트가 의존하는 요소는 오직 다음 메서드뿐입니다.
@@ -305,7 +294,6 @@ Party
   ├─ create_reverse_iterator()
   │
   └─ create_level_iterator()
-
 ```
 
 이터레이터 패턴의 본질은 단순히 순회 로직을 다른 클래스로 옮기는 것이 아닙니다.
@@ -341,7 +329,6 @@ Party
 ```python
 tree.depth_first()
 tree.breadth_first()
-
 ```
 
 
@@ -360,7 +347,6 @@ iterator = iter(collection)
 
 item = next(iterator)
 item = next(iterator)
-
 ```
 
 제어 흐름:
@@ -371,7 +357,6 @@ Client
 next()
    ↓
 Iterator
-
 ```
 
 클라이언트가 다음 값을 요청하는 시점을 직접 결정합니다.
@@ -385,7 +370,6 @@ collection.for_each(
     lambda item:
         print(item)
 )
-
 ```
 
 제어 흐름:
@@ -396,7 +380,6 @@ Collection
 Iteration
    ↓
 Callback
-
 ```
 
 함수형 프로그래밍 언어의 map, fold, for_each 등이 Internal Iterator의 대표적인 예시입니다.
@@ -409,7 +392,6 @@ Composite 패턴은 트리 형태의 부분-전체 구조를 표현하는 데 �
 Composite
    ├─ Leaf
    └─ Composite
-
 ```
 
 반면 Iterator 패턴은 이러한 구조를 어떤 순서와 방식으로 탐색할 것인지를 분리하여 다룹니다.
@@ -419,7 +401,6 @@ Composite Tree
        │
        ├─ DFS Iterator
        └─ BFS Iterator
-
 ```
 
 따라서 두 패턴은 서로 대립하지 않고 함께 조합하여 자주 사용됩니다.
@@ -447,7 +428,6 @@ for item in collection:
     print(
         item
     )
-
 ```
 
 이 코드는 내부적으로 다음과 같은 이터레이터 프로토콜 동작을 수행합니다.
@@ -470,7 +450,6 @@ while True:
     print(
         item
     )
-
 ```
 
 Python 튜토리얼에서도 `for` 문이 컨테이너에 `iter()`를 호출한 뒤, 반환된 Iterator의 `__next__()`를 순차적으로 호출하다가 `StopIteration`이 발생하면 반복을 종료한다고 설명합니다.
@@ -498,7 +477,6 @@ def countdown(
         yield current
 
         current -= 1
-
 ```
 
 사용 예시:
@@ -509,7 +487,6 @@ for value in countdown(3):
     print(
         value
     )
-
 ```
 
 Generator 내부의 현재 실행 위치, 지역 변수, 재개 위치 정보가 Iterator의 탐색 상태 역할을 대신합니다.
@@ -531,7 +508,6 @@ for user in (
     process(
         user
     )
-
 ```
 
 동작 메커니즘은 다음과 같습니다.
@@ -542,7 +518,6 @@ flowchart TD
     iterator -->|next| row_1[row]
     row_1 -->|next| row_2[row]
     row_2 -. 반복 .-> more[...]
-
 ```
 
 QuerySet 수준의 전체 결과 캐시를 생략하고 필요한 결과를 순차 소비한다는 점에서 Lazy Iterator의 실용적인 사례입니다.
@@ -558,7 +533,6 @@ async for message in stream:
     process(
         message
     )
-
 ```
 
 동작 흐름:
@@ -567,7 +541,6 @@ async for message in stream:
 flowchart TD
     stream[Async stream] --> anext[__anext__]
     anext -->|await| value[Next value]
-
 ```
 
 네트워크 스트림처럼 다음 값이 들어오는 데 시간이 걸리는 비동기 환경으로 이터레이터 개념이 확장된 형태입니다.
@@ -621,7 +594,6 @@ classDiagram
 
     Client --> Party : Uses
     Client --> HeroIterator : Iterates
-
 ```
 
 각 구성 요소의 역할은 다음과 같습니다.
@@ -644,7 +616,6 @@ Party
   └─ create_reverse_iterator()
           ↓
       ReversePartyIterator
-
 ```
 
 ---
@@ -753,7 +724,6 @@ if __name__ == "__main__":
 김리
 레골라스
 김리
-
 ```
 
 클라이언트가 정방향 순회를 수행할 때:
@@ -761,7 +731,6 @@ if __name__ == "__main__":
 ```python
 for hero in party:
     ...
-
 ```
 
 내부적으로는 다음과 같이 동작합니다.
@@ -774,7 +743,6 @@ PartyIterator
 __next__()
       ↓
 Hero
-
 ```
 
 역방향 순회 시에는 다음 흐름을 거칩니다.
@@ -787,7 +755,6 @@ ReversePartyIterator
 __next__()
       ↓
 Hero
-
 ```
 
 이처럼 클라이언트는 Party의 내부 저장 구조가 어떻게 변경되는지 전혀 신경 쓸 필요가 없습니다.
@@ -830,7 +797,6 @@ class Party:
             self._members
         ):
             yield member
-
 ```
 
 `yield` 구문이 순회 상태를 스스로 보존하므로 인덱스 필드(`_index`)나 `__next__()` 메서드를 명시적으로 작성하지 않아도 됩니다. GoF 이터레이터 패턴의 핵심 개념이 언어 차원의 Generator 기능으로 자연스럽게 녹아든 예시입니다.
@@ -854,7 +820,6 @@ Iterator
          │
          ↓
       다음 상태
-
 ```
 
 즉, Iterator는 "현재 순회 상태"와 "다음 값을 구하는 연산"을 하나의 값으로 캡슐화한 것입니다.
@@ -870,7 +835,6 @@ Iterator
 
 ```python
 iterator._index += 1
-
 ```
 
 이를 상태 변화 관점에서 나타내면 다음과 같습니다.
@@ -891,7 +855,6 @@ data Step[
         value: Value,
         next: State,
     )
-
 ```
 
 이때 Iterator는 상태를 입력받아 다음 단계(Step)를 반환하는 함수로 정의됩니다.
@@ -906,7 +869,6 @@ type Iterator[
             State,
             Value,
         ]
-
 ```
 
 예를 들어 리스트를 순회하는 Iterator의 상태는 현재 인덱스 위치가 됩니다.
@@ -917,7 +879,6 @@ record ListState[
 ]:
     values: Vector[T]
     index: Int
-
 ```
 
 다음 단계 전이 함수는 아래와 같이 작성할 수 있습니다.
@@ -948,7 +909,6 @@ def next[
                 state.index + 1
         },
     )
-
 ```
 
 가변 상태 객체가 명시적인 순수 상태 전이 함수 형태로 대체되는 것을 확인할 수 있습니다.
@@ -962,7 +922,6 @@ Iterator[
     ListState[T],
     T
 ]
-
 ```
 
 하지만 클라이언트는 Iterator 내부에서 인덱스를 사용하는지, 스택을 사용하는지 알 필요가 없습니다. 실존 타입(Existential Type)을 활용해 이러한 상태 타입을 숨길 수 있습니다.
@@ -979,7 +938,6 @@ type Iterator[T] =
                         T,
                     ]
         )
-
 ```
 
 클라이언트에게 보여지는 부분은 아래 내용이 전부입니다.
@@ -1004,7 +962,6 @@ data Stream[T] =
             Stream[T]
         ],
     )
-
 ```
 
 구조 예시:
@@ -1017,14 +974,12 @@ data Stream[T] =
 3
  ↓
 Lazy Tail
-
 ```
 
 첫 번째 값은 즉시 평가되어 존재하지만, 나머지 연산은 필요한 시점까지 미루어집니다.
 
 ```python
 head(stream)
-
 ```
 
 다음 값이 필요한 경우 계산을 강제 실행(force)합니다.
@@ -1034,7 +989,6 @@ tail =
     force(
         stream.tail
     )
-
 ```
 
 기존 'Iterator 객체 + `next()` 메서드' 조합이 '지연 재귀 데이터 구조'로 전환된 형태입니다.
@@ -1058,14 +1012,12 @@ def naturals(
             )
         },
     )
-
 ```
 
 구조:
 
 ```text
 0 → 1 → 2 → 3 → 4 → ...
-
 ```
 
 전체 데이터를 메모리에 올리는 것은 불가능하지만, 필요한 개수만큼만 가져와 소비할 수 있습니다.
@@ -1074,7 +1026,6 @@ def naturals(
 first_ten =
     naturals(0)
     |> take(10)
-
 ```
 
 이를 통해 데이터를 필요할 때 하나씩 생산해내는 Lazy Production이라는 Iterator의 본질이 명확해집니다.
@@ -1085,7 +1036,6 @@ Generator에서 아래 코드가 실행될 때:
 
 ```python
 yield value
-
 ```
 
 함수의 실행이 완전히 끝나지 않고 다음과 같은 상태 정보가 보존됩니다.
@@ -1106,7 +1056,6 @@ data Yield[
         value: T,
         resume: () -> R,
     )
-
 ```
 
 상태를 객체의 필드에 직접 보관하던 방식에서, 함수 실행 Continuation 자체를 유지하는 방식으로 전환한 것입니다. 이러한 특징 덕분에 Generator를 사용하면 복잡한 Iterator 로직을 간결하게 작성할 수 있습니다.
@@ -1121,7 +1070,6 @@ while iterator.has_next():
     item = iterator.next()
 
     ...
-
 ```
 
 반면 함수형 방식에서는 컬렉션이 스스로 순회를 주도하며, 소비자는 각 요소를 어떻게 처리할지에 대한 결합 함수만 전달합니다.
@@ -1133,7 +1081,6 @@ result =
         initial,
         combine,
     )
-
 ```
 
 합계를 구하는 예시:
@@ -1146,7 +1093,6 @@ total =
         lambda total, value:
             total + value,
     )
-
 ```
 
 두 방식의 구조적 차이:
@@ -1156,7 +1102,6 @@ total =
 Client
   ↓ next
 Iterator
-
 ```
 
 
@@ -1165,7 +1110,6 @@ Iterator
 Collection
   ↓
 Consumer Function
-
 ```
 
 
@@ -1190,7 +1134,6 @@ trait Foldable[
         combine:
             (B, A) -> B,
     ) -> B
-
 ```
 
 List 구현:
@@ -1200,7 +1143,6 @@ impl Foldable[
     List
 ]:
     ...
-
 ```
 
 Tree 구현:
@@ -1210,7 +1152,6 @@ impl Foldable[
     Tree
 ]:
     ...
-
 ```
 
 클라이언트는 구체적인 자료구조를 몰라도 다음과 같이 범용적인 연산을 작성할 수 있습니다.
@@ -1219,7 +1160,6 @@ impl Foldable[
 sum(
     values
 )
-
 ```
 
 기존 이터레이터의 공통 `next()` 프로토콜이 공통 `fold` 프로토콜로 확장·일반화된 형태입니다.
@@ -1238,7 +1178,6 @@ map
 take
   ↓
 Consumer
-
 ```
 
 Iterator 조합기 타입 예시:
@@ -1260,7 +1199,6 @@ def filter[
         A -> Bool,
 ) -> Iterator[A]:
     ...
-
 ```
 
 사용 예시:
@@ -1277,7 +1215,6 @@ result =
             n * n
     )
     |> take(5)
-
 ```
 
 중간 과정에서 전체 리스트를 생성하지 않으며, 최종 소비자가 요구하는 순간에 맞춰 필요한 만큼만 소스 데이터를 계산해 나갑니다.
@@ -1294,7 +1231,6 @@ FilterIterator
 MapIterator
       ↓
 TakeIterator
-
 ```
 
 개념적으로는 훌륭하지만, 성능이 중요한 시스템에서는 이러한 단계를 거칠 때 생기는 간접 호출 비용이 부담될 수 있습니다.
@@ -1304,7 +1240,6 @@ TakeIterator
 source
     |> filter(p)
     |> map(f)
-
 ```
 
 내부적으로 인라인화하여 단일 루프 형태로 합성해 냅니다.
@@ -1315,7 +1250,6 @@ for x in source:
     if p(x):
 
         yield f(x)
-
 ```
 
 이로써 높은 수준의 추상화를 유지하면서도 중간 객체 생성에 따른 오버헤드를 최적화 단계에서 제거할 수 있게 됩니다.
@@ -1330,7 +1264,6 @@ Consumer
    │ next?
    ↓
 Producer
-
 ```
 
 * **Pull 기반:** 소비자가 생산 속도를 주도합니다.
@@ -1343,7 +1276,6 @@ Producer
    │ value!
    ↓
 Consumer
-
 ```
 
 * **Push 기반:** 생산자가 데이터 제공 시점을 주도합니다.
@@ -1359,7 +1291,6 @@ type Pull[
     T
 ] =
     () -> Option[T]
-
 ```
 
 호출 방식:
@@ -1372,7 +1303,6 @@ match next_value():
 
     case None:
         ...
-
 ```
 
 단, 이 시그니처만으로는 호출할 때마다 내부 상태가 어떻게 변하는지 표현하기 어려우므로, 상태를 클로저 내부에 숨기거나 앞서 언급한 상태 머신 타입을 조합하여 사용합니다.
@@ -1386,7 +1316,6 @@ type Consumer[
     T
 ] =
     T -> Unit
-
 ```
 
 Producer 타입:
@@ -1397,7 +1326,6 @@ type Producer[
 ] =
     Consumer[T]
         -> Unit
-
 ```
 
 즉 "Consumer 함수를 전달받아 모든 요소를 Push해 주는 함수"입니다.
@@ -1411,7 +1339,6 @@ def produce_numbers(
     consumer(1)
     consumer(2)
     consumer(3)
-
 ```
 
 이 구조는 앞서 다룬 Internal Iterator와 거의 유사한 개념입니다.
@@ -1431,7 +1358,6 @@ def to_push[
 ) -> Producer[T]:
 
     ...
-
 ```
 
 반대로 Push 방식을 Pull 방식으로 바꿀 때에는 중간에 버퍼링 처리가 필요할 수 있습니다.
@@ -1442,7 +1368,6 @@ Push Producer
 Buffer / Queue
       ↓
 Pull Iterator
-
 ```
 
 이러한 특성 차이는 비동기 스트림 처리 및 배후 압력(Backpressure) 조절을 다룰 때 매우 중요한 개념이 됩니다.
@@ -1455,7 +1380,6 @@ Pull Iterator
 next
   ↓
 Option[T]
-
 ```
 
 비동기 Iterator의 요소 추출:
@@ -1466,7 +1390,6 @@ next
 Async[
     Option[T]
 ]
-
 ```
 
 가상 타입 정의:
@@ -1478,7 +1401,6 @@ type AsyncIterator[
     () -> Async[
         Option[T]
     ]
-
 ```
 
 네트워크 패킷을 다루는 경우처럼 다음 데이터를 받아오기까지 대기 시간이 발생하는 상황에 적용됩니다.
@@ -1489,7 +1411,6 @@ next()
 await
    ↓
 message
-
 ```
 
 기존의 순수한 값 생산 연산이 Side-effect를 동반하는 비동기 연산으로 확장된 형태입니다.
@@ -1507,7 +1428,6 @@ type Iterator[
         Option[T],
         E,
     ]
-
 ```
 
 이 구성을 통해 세 가지 상태를 명확히 다룹니다.
@@ -1527,7 +1447,6 @@ iterator = iter(values)
 
 next(iterator)
 next(iterator)
-
 ```
 
 만약 동일한 Iterator 객체를 서로 다른 두 함수에서 동시에 접근하면 예기치 못한 문제가 생길 수 있습니다.
@@ -1536,14 +1455,12 @@ next(iterator)
 consumer_a(iterator)
 
 consumer_b(iterator)
-
 ```
 
 선형 타입(Linear Type)을 도입하면 이러한 오용을 컴파일 타임에 방지할 수 있습니다.
 
 ```text
 linear type Iterator[T]
-
 ```
 
 Iterator를 특정 함수에 전달하는 순간 소유권이 이동하므로:
@@ -1552,7 +1469,6 @@ Iterator를 특정 함수에 전달하는 순간 소유권이 이동하므로:
 consume(
     iterator
 )
-
 ```
 
 이후 다시 동일한 객체에 접근하려 할 때 컴파일 오류를 발생시킵니다.
@@ -1561,13 +1477,11 @@ consume(
 next(
     iterator
 )
-
 ```
 
 ```text
 Type Error:
 Iterator has already been consumed.
-
 ```
 
 "Iterator는 일회성으로 소비되는 상태 객체"라는 본질적 제약 조건을 타입 시스템에 직접 반영한 예시입니다.
@@ -1587,7 +1501,6 @@ iterator1 =
 
 iterator2 =
     iterable.iterator()
-
 ```
 
 반면 `Iterator[T]`는 특정 탐색 시점의 위치 상태를 나타내는 단일 객체입니다.
@@ -1595,7 +1508,6 @@ iterator2 =
 ```text
 type Iterable[T] =
     () -> Iterator[T]
-
 ```
 
 즉, Iterable은 Iterator를 생성해 내는 팩토리(Factory)로 이해할 수 있습니다.
@@ -1628,7 +1540,6 @@ trait Traversable[
     ) -> G[
         F[B]
     ]
-
 ```
 
 단순 순회 개념이 구조 보존 및 Effect 조합 메커니즘으로 한 단계 확장된 모습입니다.
@@ -1649,7 +1560,6 @@ resource Cursor[
     T
 ]:
     ...
-
 ```
 
 사용 예시:
@@ -1659,7 +1569,6 @@ with cursor(query) as rows:
 
     for row in rows:
         ...
-
 ```
 
 단순한 순회 종료를 넘어 외부 자원 해제 작업과 Iterator의 수명주기가 긴밀하게 연결되는 경우입니다.
@@ -1675,7 +1584,6 @@ Iterator
    │
    ├─ 현재 상태
    └─ next()
-
 ```
 
 이를 더욱 넓은 시각으로 바라보면 다음과 같습니다.
@@ -1695,7 +1603,6 @@ Iterator
 List
   ↓
 Iterator
-
 ```
 
 그러나 오늘날 Iterator의 데이터 원본은 훨씬 다양합니다.
@@ -1714,7 +1621,6 @@ Source
    ↓
 시간 흐름에 따른
 순차적 값 생산
-
 ```
 
 결국 현대적 관점에서의 Iterator는 단순한 컬렉션 순회 패턴을 넘어, '시간의 흐름에 따라 점진적으로 스트림 데이터를 소비하는 추상화 기법'으로 정의할 수 있습니다.
@@ -1757,7 +1663,6 @@ flowchart TD
     aggregate[Aggregate] -->|create_iterator| iterator[Iterator]
     iterator --> position[현재 위치 관리]
     iterator --> next[next]
-
 ```
 
 하나의 컬렉션은 목적에 따라 여러 탐색 방식을 자유롭게 제공할 수 있습니다.
@@ -1768,7 +1673,6 @@ flowchart TD
     collection --> reverse[Reverse Iterator]
     collection --> dfs[DFS Iterator]
     collection --> bfs[BFS Iterator]
-
 ```
 
 Python에서는 이러한 아이디어가 `__iter__()`와 `__next__()` 프로토콜, Generator 형태로 언어에 내장되어 있습니다.

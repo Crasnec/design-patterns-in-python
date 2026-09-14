@@ -29,7 +29,6 @@ print(battle_config.difficulty)
 
 print(ui_config.difficulty)
 # normal
-
 ```
 
 두 객체는 동일한 "게임 설정"이라는 개념을 나타내지만, 서로 독립적인 인스턴스이므로 상태가 일치하지 않는 문제가 발생합니다.
@@ -47,7 +46,6 @@ class DatabaseManager:
 service_a = DatabaseManager()
 service_b = DatabaseManager()
 service_c = DatabaseManager()
-
 ```
 
 실제로 하나의 Connection Pool만 필요하더라도 여러 객체가 각각 별도의 자원을 중복으로 초기화하게 됩니다.
@@ -60,7 +58,6 @@ config = GameConfig()
 battle_service = BattleService(config)
 ui_service = UIService(config)
 audio_service = AudioService(config)
-
 ```
 
 이 방식 자체는 잘못된 것이 아니며, 오히려 의존성을 명시적으로 전달한다는 중요한 장점을 가집니다.
@@ -91,7 +88,6 @@ flowchart LR
     caller_a[Caller A] --> config[GameConfig]
     caller_b[Caller B] --> config
     config --> instance[Shared instance A]
-
 ```
 
 따라서 다음 두 값은 완전히 동일한 객체를 가리키게 됩니다.
@@ -101,7 +97,6 @@ config1 = GameConfig()
 config2 = GameConfig()
 
 assert config1 is config2
-
 ```
 
 이로써 한쪽에서 상태를 변경하면 다른 쪽에서도 동일한 변경 사항을 즉시 확인할 수 있습니다.
@@ -111,7 +106,6 @@ config1.difficulty = "hard"
 
 print(config2.difficulty)
 # hard
-
 ```
 
 싱글턴 패턴에는 일반적으로 두 가지 중요한 성격이 함께 존재합니다.
@@ -159,7 +153,6 @@ app = Application(
     battle=BattleService(config),
     ui=UIService(config),
 )
-
 ```
 
 이 경우 애플리케이션 내 인스턴스는 하나만 존재하지만, 클래스 자체는 Singleton에 직접 결합되지 않습니다.
@@ -173,7 +166,6 @@ flowchart LR
     registry[Logger registry] --> database[database instance]
     registry --> network[network instance]
     registry --> game[game instance]
-
 ```
 
 * **프로세스 단위와 시스템 단위의 구분:** Python 프로세스 내부에서 객체 유일성을 보장하더라도, 여러 프로세스나 분산 서버/컨테이너 환경 전체에서 유일한 인스턴스가 되는 것은 아닙니다.
@@ -199,7 +191,6 @@ logger1 = logging.getLogger("game")
 logger2 = logging.getLogger("game")
 
 assert logger1 is logger2
-
 ```
 
 다만 모든 이름이 단 하나의 `Logger`를 공유하는 것은 아닙니다.
@@ -207,7 +198,6 @@ assert logger1 is logger2
 ```python
 game_logger = logging.getLogger("game")
 db_logger = logging.getLogger("database")
-
 ```
 
 따라서 단일 전역 Singleton이라기보다는 **이름 키별로 하나의 인스턴스를 유지하는 Registry / Multiton 구조**에 더 가깝습니다.
@@ -225,7 +215,6 @@ from django.conf import settings
 
 if settings.DEBUG:
     ...
-
 ```
 
 Django 공식 문서에서는 `django.conf.settings`가 모듈이 아니라 기본 설정과 프로젝트 설정을 하나의 인터페이스로 추상화한 객체라고 설명합니다. 또한 실행 중 설정을 임의로 바꾸지 말 것을 권장합니다.
@@ -236,7 +225,6 @@ flowchart LR
     reusable[Reusable app] --> settings
     settings --> defaults[Default settings]
     settings --> project[Project settings]
-
 ```
 
 또한 수동 구성 시 `settings.configure()`는 한 번만 호출할 수 있으며, 이미 설정에 접근한 뒤 다시 구성해도 오류가 발생합니다.
@@ -254,7 +242,6 @@ Python의 `import` 시스템은 모듈을 처음 불러올 때 모듈 객체를 
 ```python
 # config.py
 difficulty = "normal"
-
 ```
 
 여러 파일에서 불러오더라도 일반적인 흐름에서는 동일한 모듈 객체를 참조합니다.
@@ -265,7 +252,6 @@ import config
 
 # ui.py
 import config
-
 ```
 
 개념상 구조는 다음과 같습니다.
@@ -274,7 +260,6 @@ import config
 flowchart LR
     battle[battle.py] --> config[sys.modules: config]
     ui[ui.py] --> config
-
 ```
 
 이러한 언어적 특성 덕분에 Python에서는 단순 전역 상태나 서비스 구현 시 별도의 Singleton 클래스를 정의하는 대신 **모듈 자체를 Singleton과 유사한 네임스페이스로 활용하는 방식**이 널리 쓰입니다.
@@ -310,7 +295,6 @@ classDiagram
     UIService --> GameConfig : Uses
 
     GameConfig --> GameConfig : Single instance
-
 ```
 
 ---
@@ -401,7 +385,6 @@ True
 
 [전투 시스템] 난이도=hard
 [UI 시스템] 볼륨=50
-
 ```
 
 `GameConfig()`를 여러 번 호출했지만 실제로는 동일한 객체가 반환됩니다.
@@ -411,7 +394,6 @@ config1 = GameConfig()
 config2 = GameConfig()
 
 assert config1 is config2
-
 ```
 
 이 구현에서는 `GameConfig.__init__()` 역시 실제 객체가 최초 생성될 때만 단 한 번 호출됩니다.
@@ -429,7 +411,6 @@ Process B
 
 Process C
     └─ GameConfig instance C
-
 ```
 
 각 프로세스마다 독립된 Singleton 인스턴스가 존재할 수 있습니다.
@@ -458,7 +439,6 @@ Singleton Class
       ├─ 상태 보관
       ├─ 수명 관리
       └─ 전역 접근
-
 ```
 
 반면 현대적인 타입 시스템과 함수형 패러다임에서는 이 요구사항들을 서로 분리하여 훨씬 명확하게 모델링할 수 있습니다.
@@ -473,7 +453,6 @@ Singleton Class
 immutable record GameConfig:
     difficulty: Difficulty
     sound_volume: Volume
-
 ```
 
 객체가 완전히 불변이라면 애플리케이션 내 여러 위치에서 동일한 설정값을 사용하는 데 굳이 Singleton 객체라는 장치가 필수적이지 않습니다.
@@ -483,7 +462,6 @@ config = GameConfig(
     difficulty=Hard,
     sound_volume=80,
 )
-
 ```
 
 이 값을 필요한 함수들에 순수하게 전달합니다.
@@ -499,7 +477,6 @@ def calculate_damage(
             ...
         case Hard:
             ...
-
 ```
 
 다른 연산에도 동일한 설정 값을 바인딩해 줍니다.
@@ -514,7 +491,6 @@ screen = render_ui(
     player,
     config,
 )
-
 ```
 
 여기서 본질적인 핵심은 "GameConfig 메모리 인스턴스가 시스템 내에 정확히 단 하나만 존재하는가?"가 아닙니다.
@@ -537,14 +513,12 @@ def calculate_damage(
     config = GameConfig.instance()
 
     ...
-
 ```
 
 이 경우 함수 시그니처만 봐서는 내부에서 `GameConfig`를 사용하는지 알 수 없습니다.
 
 ```text
 calculate_damage : Hero -> Damage
-
 ```
 
 타입 시그니처 뒤에 숨겨진 전역 의존성이 형성되어 있는 것입니다.
@@ -553,7 +527,6 @@ calculate_damage : Hero -> Damage
 calculate_damage
       │
       └── GameConfig Singleton
-
 ```
 
 Capability 개념을 지원하는 가상의 타입 시스템에서는 필요한 권한과 기능을 시그니처에 명시적으로 선언할 수 있습니다.
@@ -564,7 +537,6 @@ capability GameSettings:
     def difficulty() -> Difficulty
 
     def sound_volume() -> Volume
-
 ```
 
 함수는 이 Capability가 필요함을 명확히 요구합니다.
@@ -579,7 +551,6 @@ def calculate_damage(
         settings.difficulty()
 
     ...
-
 ```
 
 호출 시 해당 Capability 구현체를 넘겨줍니다.
@@ -589,7 +560,6 @@ damage = calculate_damage(
     hero,
     using settings,
 )
-
 ```
 
 이로써 암묵적인 Singleton 의존성이 **타입 시스템으로 검증 가능한 명시적 Capability 의존성**으로 전환됩니다.
@@ -606,7 +576,6 @@ damage = calculate_damage(
     hero,
     using test_settings,
 )
-
 ```
 
 더 이상 Singleton 전역 인스턴스의 상태를 테스트 전후로 복구하거나 초기화하기 위해 번거로운 작업을 수행할 필요가 없습니다.
@@ -623,7 +592,6 @@ load_user(id, database, logger, config)
 calculate_damage(hero, logger, config)
 
 save_result(result, database, logger, config)
-
 ```
 
 이를 해결하기 위해 실행 환경을 추상화한 가상의 Environment 타입을 정의해 봅니다.
@@ -633,7 +601,6 @@ environment AppEnv:
     config: GameConfig
     database: Database
     logger: Logger
-
 ```
 
 각 함수는 자신에게 필요한 환경 구성 요소만 선택적으로 선언합니다.
@@ -647,7 +614,6 @@ requires AppEnv.config:
     config = env.config
 
     ...
-
 ```
 
 ```text
@@ -657,7 +623,6 @@ def load_user(
 requires AppEnv.database:
 
     return env.database.find(id)
-
 ```
 
 애플리케이션 실행 경계(Entry Point)에서 환경을 한 번 바인딩해 줍니다.
@@ -670,7 +635,6 @@ with environment AppEnv(
 ):
 
     run_game()
-
 ```
 
 테스트 시에는 테스트용 환경으로 손쉽게 대체할 수 있습니다.
@@ -683,7 +647,6 @@ with environment AppEnv(
 ):
 
     run_tests()
-
 ```
 
 이 방식은 얼핏 보기에는 Singleton처럼 여러 위치에서 공통 서비스에 접근하는 것처럼 보이지만, 결정적인 차이가 존재합니다.
@@ -704,7 +667,6 @@ effect ConfigRead:
 
     def get_difficulty()
         -> Difficulty
-
 ```
 
 함수는 연산 수행 중 발생할 수 있는 Effect를 선언합니다.
@@ -719,7 +681,6 @@ def calculate_damage(
         perform get_difficulty()
 
     ...
-
 ```
 
 운영 환경에서는 실제 프로덕션 설정 기반의 Handler로 해당 Effect를 처리합니다.
@@ -729,7 +690,6 @@ handle ConfigRead
 with ProductionConfig:
 
     run_game()
-
 ```
 
 테스트 환경에서는 고정된 가짜 데이터를 반환하는 Handler를 적용할 수 있습니다.
@@ -739,7 +699,6 @@ handle ConfigRead
 with FixedConfig(Hard):
 
     test_damage()
-
 ```
 
 이로써 고전적인 Singleton의 "어디서나 단일 객체에 직접 접근"하던 구조가, "함수가 필요한 Effect를 선언하고 최상위 실행 경계에서 해당 Effect의 구현체를 공급"하는 깔끔한 구조로 분리됩니다. 함수 내부에는 전역 객체 참조가 완전히 사라집니다.
@@ -755,7 +714,6 @@ with FixedConfig(Hard):
 ```text
 linear resource GPUDevice:
     handle: NativeGPUHandle
-
 ```
 
 프로그램 실행 시 단 하나의 GPU 제어권을 획득합니다.
@@ -763,7 +721,6 @@ linear resource GPUDevice:
 ```text
 gpu =
     acquire_gpu()
-
 ```
 
 선형 타입(Linear Type)으로 지정된 자원은 일반적인 값처럼 복사되거나 임의로 재할당될 수 없습니다.
@@ -774,7 +731,6 @@ gpu1 =
 
 gpu2 =
     gpu1
-
 ```
 
 이 경우 컴파일러 단계에서 오류가 발생합니다.
@@ -786,7 +742,6 @@ GPUDevice is linear.
 
 Ownership of gpu1 was moved to gpu2.
 gpu1 can no longer be used.
-
 ```
 
 명시적인 복제 역시 차단됩니다.
@@ -794,14 +749,12 @@ gpu1 can no longer be used.
 ```text
 gpu2 =
     clone(gpu1)
-
 ```
 
 ```text
 Type Error:
 
 GPUDevice does not implement Clone.
-
 ```
 
 고전적인 Singleton이 "생성자를 통제하여 인스턴스를 하나만 만들도록 제한하는 방식"이었다면, Linear Type은 "자원에 대한 소유권 토큰 자체를 물리적으로 복제할 수 없게 막는 방식"으로 접근합니다.
@@ -819,7 +772,6 @@ DB Connection Pool 같은 자원은 단 하나의 관리 주체가 유일 소유
 ```text
 linear resource DatabasePool:
     ...
-
 ```
 
 프로그램 시작 시 자원의 단일 유일 소유권을 생성합니다.
@@ -827,7 +779,6 @@ linear resource DatabasePool:
 ```text
 pool: Unique[DatabasePool] =
     DatabasePool.open(config)
-
 ```
 
 애플리케이션 각 서비스에는 Pool 자체의 유일 소유권을 넘기는 대신, 제약된 공유 접근 권한만을 생성하여 넘겨줍니다.
@@ -837,7 +788,6 @@ database_access:
     Shared[DatabaseAccess]
         =
     pool.share_access()
-
 ```
 
 각 서비스 연산은 접근 Capability만을 전달받아 사용합니다.
@@ -849,7 +799,6 @@ def load_user(
 ) -> User:
 
     return db.find_user(id)
-
 ```
 
 이 구조에서는 두 개념이 투명하게 분리됩니다.
@@ -883,7 +832,6 @@ scope Process
 scope Request
 scope Session
 scope Tenant[TenantId]
-
 ```
 
 프로세스 범위의 단일 캐시는 다음과 같이 명시 선언합니다.
@@ -892,7 +840,6 @@ scope Tenant[TenantId]
 resource[
     scope=Process
 ] GlobalCache
-
 ```
 
 Request당 단 하나 존재해야 하는 객체는 다음과 같이 표현합니다.
@@ -901,7 +848,6 @@ Request당 단 하나 존재해야 하는 객체는 다음과 같이 표현합�
 resource[
     scope=Request
 ] RequestContext
-
 ```
 
 Tenant별로 하나씩 지정되어야 하는 설정은 다음과 같습니다.
@@ -910,7 +856,6 @@ Tenant별로 하나씩 지정되어야 하는 설정은 다음과 같습니다.
 resource[
     scope=Tenant[T]
 ] TenantConfig[T]
-
 ```
 
 이로써 기존 Singleton의 모호했던 "시스템 전체에서 하나"라는 전제가 "특정 Scope 안에서 유일함"이라는 정교한 제약 조건으로 명확해집니다.
@@ -925,7 +870,6 @@ resource[
 "game"     → Logger A
 "database" → Logger B
 "network"  → Logger C
-
 ```
 
 타입 매개변수에 Key를 포함할 수 있는 가상의 구조를 정의해 봅니다.
@@ -934,7 +878,6 @@ resource[
 resource Logger[
     Name: Symbol
 ]
-
 ```
 
 ```text
@@ -949,7 +892,6 @@ database_logger:
         Process,
         Logger["database"]
     ]
-
 ```
 
 이 구조를 사용하면 단순 Singleton이 아닌 **Keyed Singleton(Multiton)** 형태로 동작함을 타입 정의 자체에서 명확히 드러낼 수 있습니다.
@@ -986,7 +928,6 @@ Singleton Class
               │
               ↓
            Clients
-
 ```
 
 그러나 현대적인 관점에서는 이 패턴을 여러 구성 축으로 정밀하게 분해하여 다룰 수 있습니다.

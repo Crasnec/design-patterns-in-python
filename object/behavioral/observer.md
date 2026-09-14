@@ -13,7 +13,6 @@ HealthBar
 LowHealthWarning
 BattleLogger
 AchievementTracker
-
 ```
 
 ### 패턴을 적용하지 않은 예시
@@ -100,7 +99,6 @@ class Player:
         self.logger.log_hp_changed(
             self.hp
         )
-
 ```
 
 이제 새로운 기능으로 `AchievementTracker`를 추가한다고 가정합니다.
@@ -119,7 +117,6 @@ class AchievementTracker:
                 "[Achievement] "
                 "기적의 생존!"
             )
-
 ```
 
 단순히 새로운 객체를 추가하는 것만으로 끝나지 않습니다. `Player`도 수정해야 합니다.
@@ -131,7 +128,6 @@ class Player:
         achievement_tracker: AchievementTracker,
     ) -> None:
         self.achievement_tracker = achievement_tracker
-
 ```
 
 상태 변경 코드에도 새로운 호출이 추가됩니다.
@@ -141,7 +137,6 @@ self.achievement_tracker.check(
     self.hp,
     self.max_hp,
 )
-
 ```
 
 추가 기능이 계속 늘어나면 `Player`가 점점 더 많은 외부 객체를 알아야 합니다.
@@ -155,7 +150,6 @@ flowchart LR
     player --> sound[SoundEffectSystem]
     player --> analytics[Analytics]
     player --> quest[QuestTracker]
-
 ```
 
 특히 일부 기능만 특정 화면에서 필요하다면 `Player` 생성 과정도 복잡해질 수 있습니다.
@@ -181,7 +175,6 @@ flowchart LR
     subject[Subject] --> observer_a[Observer A]
     subject --> observer_b[Observer B]
     subject --> observer_c[Observer C]
-
 ```
 
 먼저 Observer 인터페이스를 정의합니다.
@@ -198,7 +191,6 @@ class PlayerObserver(ABC):
         player: "Player",
     ) -> None:
         pass
-
 ```
 
 Subject는 Observer 인터페이스만 알고 있습니다.
@@ -241,7 +233,6 @@ class Player:
             observer.update(
                 self
             )
-
 ```
 
 상태가 변경되면 Observer들에게 알리기만 합니다.
@@ -258,7 +249,6 @@ def take_damage(
     )
 
     self._notify()
-
 ```
 
 Subject는 구체적으로 누가 알림을 받고 있는지 알 필요가 없습니다.
@@ -267,7 +257,6 @@ Subject는 구체적으로 누가 알림을 받고 있는지 알 필요가 없�
 Player
    │
    └─ knows only: PlayerObserver
-
 ```
 
 HealthBar는 Observer가 됩니다.
@@ -286,7 +275,6 @@ class HealthBar(
             f"[UI] "
             f"HP: {player.hp}/{player.max_hp}"
         )
-
 ```
 
 Warning도 같은 인터페이스를 구현합니다.
@@ -309,7 +297,6 @@ class LowHealthWarning(
                 "[Warning] "
                 "체력이 위험합니다!"
             )
-
 ```
 
 클라이언트가 필요한 Observer만 등록합니다.
@@ -326,7 +313,6 @@ player.attach(
 player.attach(
     LowHealthWarning()
 )
-
 ```
 
 나중에 Observer를 추가할 수도 있습니다.
@@ -335,7 +321,6 @@ player.attach(
 player.attach(
     BattleLogger()
 )
-
 ```
 
 또는 더 이상 필요하지 않은 Observer를 제거할 수도 있습니다.
@@ -344,7 +329,6 @@ player.attach(
 player.detach(
     health_bar
 )
-
 ```
 
 새로운 Observer를 추가해도 `Player.take_damage()`는 변경되지 않습니다.
@@ -364,7 +348,6 @@ flowchart LR
         observer --> warning_after[Warning]
         observer --> achievement[AchievementTracker]
     end
-
 ```
 
 핵심은 단순히 callback list를 만드는 것에 있지 않습니다.
@@ -415,7 +398,6 @@ Subject 자신을 전달합니다.
 observer.update(
     subject
 )
-
 ```
 
 Observer가 필요한 데이터를 Subject에서 직접 가져옵니다.
@@ -427,7 +409,6 @@ def update(
 ) -> None:
 
     hp = player.hp
-
 ```
 
 장점은 Subject가 어떤 데이터를 Observer가 필요로 하는지 알 필요가 없다는 것입니다. 하지만 Observer가 Subject의 여러 속성에 의존하게 될 수 있습니다.
@@ -444,7 +425,6 @@ observer.update(
         max_hp=100,
     )
 )
-
 ```
 
 Observer는 Subject 자체를 알 필요가 없습니다.
@@ -459,7 +439,6 @@ flowchart LR
     subgraph push[Push model]
         push_subject[Subject] -->|Event data 전달| push_observer[Observer]
     end
-
 ```
 
 현대적인 이벤트 시스템에서는 Push Model이 자주 사용됩니다.
@@ -478,7 +457,6 @@ Subject
    ├─ Observer A
    ├─ Observer B
    └─ Observer C
-
 ```
 
 Subject가 **어떤 변화가 발생했다는 사실을 알리는 것**이 핵심입니다.
@@ -489,7 +467,6 @@ Mediator에서는:
 Component A ─┐
 Component B ─┼──> Mediator
 Component C ─┘
-
 ```
 
 Mediator가 **여러 객체가 어떤 방식으로 협력해야 하는지를 조정**합니다.
@@ -499,7 +476,6 @@ Mediator가 **여러 객체가 어떤 방식으로 협력해야 하는지를 조
 ```text
 Observer:  변화의 전파 (Broadcasting)
 Mediator:  협력의 조정 (Centralized Interaction)
-
 ```
 
 입니다. Mediator 내부에서 Observer나 Event Bus를 사용할 수도 있습니다.
@@ -517,7 +493,6 @@ Subject
    │
    ├─ Observer A
    └─ Observer B
-
 ```
 
 Publish/Subscribe에서는 중간에 Broker 또는 Event Bus가 존재할 수 있습니다.
@@ -525,7 +500,6 @@ Publish/Subscribe에서는 중간에 Broker 또는 Event Bus가 존재할 수 �
 ```text
 Publisher ───> Event Bus ───┬───> Subscriber A
                             └───> Subscriber B
-
 ```
 
 따라서 Publisher와 Subscriber는 서로의 존재뿐 아니라 직접적인 구독 목록조차 모를 수 있습니다.
@@ -533,7 +507,6 @@ Publisher ───> Event Bus ───┬───> Subscriber A
 ```text
 Observer: Subject와 Observer 사이의 직접적인 구독 관계
 Pub/Sub:  Broker / Topic을 통한 간접적인 메시지 관계
-
 ```
 
 Pub/Sub는 Observer 아이디어를 보다 분산된 메시징 구조로 확장한 형태로 볼 수 있습니다.
@@ -549,14 +522,12 @@ Event
   ├─ Observer A
   ├─ Observer B
   └─ Observer C
-
 ```
 
 Chain of Responsibility는 일반적으로 요청을 처리할 후보를 순서대로 탐색합니다.
 
 ```text
 Request ───> Handler A ───(Pass)───> Handler B ───(Handle)───> 처리 완료
-
 ```
 
 즉:
@@ -564,7 +535,6 @@ Request ───> Handler A ───(Pass)───> Handler B ───(Handl
 ```text
 Observer: 1 → N Broadcast
 Chain:    1 → 후보 순차 탐색 (1개 수신자 처리)
-
 ```
 
 이라고 볼 수 있습니다.
@@ -582,7 +552,6 @@ Event는 **무슨 일이 발생했는지를 나타내는 데이터**입니다.
 ```text
 Subject ───> Event ───┬───> Observer A
                       └───> Observer B
-
 ```
 
 예:
@@ -591,7 +560,6 @@ Subject ───> Event ───┬───> Observer A
 PlayerHealthChanged
 OrderPlaced
 FileModified
-
 ```
 
 Event를 사용하면 Observer가 Subject의 전체 객체에 의존하지 않고 자신에게 필요한 정보만 받을 수 있습니다.
@@ -630,7 +598,6 @@ def on_request_finished(
 request_finished.connect(
     on_request_finished
 )
-
 ```
 
 구조는 다음과 같습니다.
@@ -641,7 +608,6 @@ Signal
    ├─ Receiver A
    ├─ Receiver B
    └─ Receiver C
-
 ```
 
 Signal이 전송되면 등록된 Receiver들이 호출됩니다. Django 문서는 동기 `send()`뿐 아니라 `asend()` 기반 비동기 Signal 전송도 지원하며, Receiver는 기본적으로 등록된 순서에 따라 호출된다고 설명합니다. 또한 Django 자체가 Signal이 코드를 이해하고 디버깅하기 어렵게 만들 수 있으므로 같은 프로젝트 내부에서 명시적 호출이 가능하다면 직접 호출을 고려하라고 경고합니다.
@@ -669,7 +635,6 @@ def on_done(
 future.add_done_callback(
     on_done
 )
-
 ```
 
 구조적으로:
@@ -678,7 +643,6 @@ future.add_done_callback(
 Future ───(completed)───> Callbacks ───┬───> Callback A
                                         ├───> Callback B
                                         └───> Callback C
-
 ```
 
 라고 볼 수 있습니다.
@@ -703,7 +667,6 @@ logger.addHandler(
 logger.addHandler(
     file_handler
 )
-
 ```
 
 이후:
@@ -712,7 +675,6 @@ logger.addHandler(
 logger.error(
     "서버 연결 실패"
 )
-
 ```
 
 가 발생하면 여러 Handler가 같은 LogRecord에 반응할 수 있습니다.
@@ -720,7 +682,6 @@ logger.error(
 ```text
 Logger ───> LogRecord ───┬───> ConsoleHandler
                          └───> FileHandler
-
 ```
 
 정확히 GoF Observer만으로 설명되는 구조는 아니지만, **하나의 이벤트를 여러 등록된 처리 객체에 전달한다는 점에서 Observer와 유사한 이벤트 통지 구조**를 확인할 수 있습니다.
@@ -770,7 +731,6 @@ classDiagram
     PlayerObserver <|.. AchievementTracker
 
     Player --> PlayerObserver : notifies
-
 ```
 
 각 역할은 다음과 같습니다.
@@ -787,7 +747,6 @@ Concrete Observers
     LowHealthWarning
     BattleLogger
     AchievementTracker
-
 ```
 
 `Player`가 실제로 알고 있는 타입은 `PlayerObserver` 인터페이스 하나뿐입니다.
@@ -913,7 +872,6 @@ Player.take_damage() ───> HealthChanged ───┬───> HealthBar
                                             ├───> LowHealthWarning
                                             ├───> BattleLogger
                                             └───> AchievementTracker
-
 ```
 
 `Player`에는 다음과 같은 하드코딩된 호출이 없습니다.
@@ -922,7 +880,6 @@ Player.take_damage() ───> HealthChanged ───┬───> HealthBar
 self.health_bar.update(...)
 self.logger.log(...)
 self.warning.check(...)
-
 ```
 
 새로운 Observer를 추가할 때도 `Player`는 변경하지 않습니다.
@@ -941,7 +898,6 @@ class SoundEffectObserver(
             play_sound(
                 "damage.wav"
             )
-
 ```
 
 등록만 하면 됩니다.
@@ -950,7 +906,6 @@ class SoundEffectObserver(
 player.attach(
     SoundEffectObserver()
 )
-
 ```
 
 ---
@@ -963,14 +918,12 @@ Observer 구현에서는 구독 해제도 중요합니다.
 player.attach(
     health_bar
 )
-
 ```
 
 Subject가 `health_bar`를 강하게 참조(Strong Reference)하고 있다면 다른 코드에서 `health_bar`를 더 이상 사용하지 않아도 메모리에 계속 남아 있을 수 있습니다.
 
 ```text
 Player ─────(Strong Reference)─────> HealthBar
-
 ```
 
 따라서 Observer의 수명이 Subject보다 짧을 수 있다면 다음 전략을 고려할 수 있습니다.
@@ -994,7 +947,6 @@ Player ─────(Strong Reference)─────> HealthBar
 Subject ───(State Change)───> notify() ───┬───> Observer A
                                            ├───> Observer B
                                            └───> Observer C
-
 ```
 
 이를 더 추상적으로 바라보면 다음과 같습니다.
@@ -1005,7 +957,6 @@ Subject ───(State Change)───> notify() ───┬───> Observ
      Event Stream
           ↓
 여러 독립적인 Consumer
-
 ```
 
 즉 핵심 질문은 다음과 같습니다.
@@ -1026,14 +977,12 @@ class Observer:
         event: Event,
     ) -> None:
         ...
-
 ```
 
 하지만 상태를 별도로 가질 필요가 없는 Observer라면 단순한 함수로 표현할 수 있습니다.
 
 ```text
 type Observer[E] = E -> Unit
-
 ```
 
 Health Bar:
@@ -1043,7 +992,6 @@ def update_health_bar(
     event: HealthChanged,
 ) -> Unit:
     ...
-
 ```
 
 Logger:
@@ -1053,14 +1001,12 @@ def log_health(
     event: HealthChanged,
 ) -> Unit:
     ...
-
 ```
 
 Subject는 함수 목록을 관리합니다.
 
 ```text
 observers: Vector[HealthChanged -> Unit]
-
 ```
 
 알림:
@@ -1068,7 +1014,6 @@ observers: Vector[HealthChanged -> Unit]
 ```python
 for observer in observers:
     observer(event)
-
 ```
 
 객체지향 Observer의 `Observer Interface + Concrete Observer`가 `Event -> Unit`이라는 함수 타입으로 축약됩니다.
@@ -1088,7 +1033,6 @@ def subscribe[E](
     observer: E -> Unit,
 ) -> Subscription:
     ...
-
 ```
 
 사용:
@@ -1098,14 +1042,12 @@ subscription = subscribe(
     health_events,
     update_health_bar,
 )
-
 ```
 
 구독 해제:
 
 ```python
 subscription.cancel()
-
 ```
 
 `Subscription`을 선형 타입(Linear Type)으로 만들면 한 번 해제한 구독을 다시 사용할 수 없습니다.
@@ -1113,7 +1055,6 @@ subscription.cancel()
 ```python
 subscription.cancel()
 subscription.cancel()  # Type Error: Subscription has already been consumed.
-
 ```
 
 구독 수명 주기를 타입 시스템 수준에서 표현한 것입니다.
@@ -1129,7 +1070,6 @@ data GameEvent =
     HealthChanged(player: PlayerId, old_hp: Int, new_hp: Int)
   | LevelUp(player: PlayerId, new_level: Int)
   | ItemAcquired(player: PlayerId, item: ItemId)
-
 ```
 
 Observer는 Pattern Matching으로 처리합니다.
@@ -1144,7 +1084,6 @@ def observe(
             ...
         case LevelUp(player, level):
             ...
-
 ```
 
 Event 이름과 데이터 구조가 하나의 타입으로 엄격히 묶입니다.
@@ -1159,21 +1098,18 @@ Player는 HP 변경 Stream을 제공합니다.
 
 ```python
 player.health_changes: EventStream[HealthChanged]
-
 ```
 
 구독:
 
 ```python
 subscription = player.health_changes.subscribe(update_health_bar)
-
 ```
 
 ```text
 Player State ───(change)───> EventStream[HealthChanged] ───┬───> HealthBar
                                                            ├───> Logger
                                                            └───> Warning
-
 ```
 
 고전적인 Subject 내부의 `List[Observer]`가 독립적인 `EventStream[E]` 추상화로 이동합니다.
@@ -1188,19 +1124,16 @@ Observer 패턴의 중요한 확장은 Event를 받기만 하는 것이 아니�
 
 ```text
 damage_events = player.health_changes |> filter(lambda e: e.new_hp < e.old_hp)
-
 ```
 
 위험 체력 상태만 필터링:
 
 ```text
 critical_health = player.health_changes |> filter(lambda e: e.new_hp <= 20)
-
 ```
 
 ```text
 HealthChanged ───(filter)───> Damage Events ───(map)───> Damage Amounts
-
 ```
 
 Observer가 단순한 callback 관계에서 **합성 가능한 데이터 흐름**으로 바뀝니다.
@@ -1214,14 +1147,12 @@ Observer가 단순한 callback 관계에서 **합성 가능한 데이터 흐름*
 ```python
 hp: EventStream[Int]
 mana: EventStream[Int]
-
 ```
 
 두 Stream을 합칩니다.
 
 ```python
 status = combine_latest(hp, mana)
-
 ```
 
 이를 UI 상태로 변환합니다.
@@ -1233,7 +1164,6 @@ hud = status |> map(
         mana=state.mana,
     )
 )
-
 ```
 
 고전 Observer에서는 여러 Subject의 현재 값을 Observer가 직접 가져와 조합해야 했습니다. FRP에서는 **관계 자체를 Stream 연산으로 선언**할 수 있습니다.
@@ -1249,7 +1179,6 @@ Signal(또는 Behavior)은 **시간에 따라 변하는 현재 값**을 표현�
 ```python
 player.hp: Signal[Int]
 player.hp_changes: Event[HealthChanged]
-
 ```
 
 Observer 패턴에서 흔히 섞이는 **현재 상태**와 **상태 변경 사건**을 타입 수준에서 명확히 분리합니다.
@@ -1263,12 +1192,10 @@ Signal 기반에서는 파생 상태를 선언적으로 나타냅니다.
 ```text
 health_ratio = player.hp |> map(lambda hp: hp / player.max_hp)
 is_critical = health_ratio |> map(lambda ratio: ratio <= 0.2)
-
 ```
 
 ```text
 HP Signal ───(map)───> Health Ratio ───(map)───> Critical?
-
 ```
 
 "상태가 변경되었으니 객체를 호출한다"가 아니라 **데이터 사이의 관계를 선언**합니다.
@@ -1282,7 +1209,6 @@ Functional Reactive Programming에서는 다음과 같이 관계만 정의합니
 ```python
 health_bar.text = player.hp.map(lambda hp: f"{hp}/{player.max_hp}")
 warning.visible = player.hp.map(lambda hp: hp <= 20)
-
 ```
 
 더 이상 명시적인 `attach(observer)`나 `observer.update(...)`가 없을 수 있습니다. 대신 **Reactive Dependency Graph**가 Observer 관계를 대신합니다.
@@ -1291,7 +1217,6 @@ warning.visible = player.hp.map(lambda hp: hp <= 20)
             ┌─ HealthBar Text
 HP Signal ──┤
             └─ Warning Visible
-
 ```
 
 Observer를 **객체 그래프에서 데이터 의존 그래프로 이동**시킨 형태입니다.
@@ -1314,7 +1239,6 @@ Event 발생 사실은 Push하고(`state changed`), Observer가 실제 필요한
 
 ```text
 Subject.notify() ───> Observer A 실행 ───> Observer B 실행 (5초 소요) ───> Observer C 실행
-
 ```
 
 하나의 느린 Observer가 전체 알림을 지연시킬 수 있으므로 동기성 자체가 중요한 설계 사양이 됩니다.
@@ -1325,7 +1249,6 @@ Subject.notify() ───> Observer A 실행 ───> Observer B 실행 (5초
 
 ```text
 type AsyncObserver[E] = E -> Async[Unit]
-
 ```
 
 알림 정책을 순차 실행(`await observer(event)`) 또는 병렬 실행(`await gather(...)`)으로 선택할 수 있습니다. 단순한 `Observer` 인터페이스를 넘어 **알림 실행 정책**도 명시적인 추상화 대상이 됩니다.
@@ -1340,7 +1263,6 @@ Observer 하나가 실패했을 때의 처리 정책(Fail Fast, Continue, Retry 
 data NotificationResult[E] =
     AllSucceeded
   | PartialFailure(errors: Vector[E])
-
 ```
 
 실패 정책을 숨겨진 구현 세부 사항이 아니라 타입과 API로 명시할 수 있습니다.
@@ -1366,7 +1288,6 @@ Backpressure 정책(Producer 늦추기, Buffer, Drop, Latest 유지, Batching)�
 ```python
 with subscribe(health_events, update_health_bar):
     run_battle_screen()
-
 ```
 
 Context Manager 기반으로 Scope를 벗어나면 자동으로 구독 해제되게 만들어 메모리 누수를 방지합니다.
@@ -1385,7 +1306,6 @@ Subject가 Observer를 약한 참조로 다루면(`subscribe_weak(observer)`), O
 Player ───(publish)───> Event Bus ───┬───> HealthBar
                                      ├───> Logger
                                      └───> Achievement
-
 ```
 
 Publisher와 Subscriber 사이의 직접적인 관계를 완전히 차단합니다.
@@ -1398,7 +1318,6 @@ Publisher와 Subscriber 사이의 직접적인 관계를 완전히 차단합니�
 data Topic[Event] =
     HealthTopic -> Topic[HealthChanged]
   | LevelTopic -> Topic[LevelChanged]
-
 ```
 
 타입 시스템을 통해 `HealthTopic`에는 `HealthChanged` 이벤트만 발행되도록 컴파일 타임에 검증합니다.
@@ -1410,7 +1329,6 @@ data Topic[Event] =
 ```text
 effect PlayerEvents:
     def HealthChanged(event: HealthChanged) -> Unit
-
 ```
 
 Domain Logic 내부에서는 `perform HealthChanged(...)` 형태로 효과만 발생시키고, 실행 환경에서 `handle PlayerEvents with BattleLogger`와 같이 Handler를 주입합니다.
@@ -1424,7 +1342,6 @@ def take_damage(state: PlayerState, amount: Int) -> (PlayerState, Vector[GameEve
     next_state = ...
     event = HealthChanged(...)
     return (next_state, [event])
-
 ```
 
 Domain State Transition과 Notification Infrastructure를 완전히 분리합니다.
@@ -1437,7 +1354,6 @@ Domain State Transition과 Notification Infrastructure를 완전히 분리합니
 Value(t) ───┬───> UI(t)
             ├───> Warning(t)
             └───> Analytics(t)
-
 ```
 
 Observer는 본질적으로 **시간에 따라 변하는 값 사이의 의존 관계**를 표현하는 방법입니다.
@@ -1482,7 +1398,6 @@ flowchart LR
     notify --> observer_a[Observer A]
     notify --> observer_b[Observer B]
     notify --> observer_c[Observer C]
-
 ```
 
 핵심은 Subject가 Observer의 구체적인 타입(UI, Logger, Analytics 등)을 몰라도 된다는 점입니다.

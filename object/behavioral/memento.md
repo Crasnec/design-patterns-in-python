@@ -12,7 +12,6 @@
 현재 텍스트
 커서 위치
 선택 영역
-
 ```
 
 사용자는 편집 작업을 수행한 뒤 이전 상태로 되돌리는 Undo 기능을 사용할 수 있어야 합니다.
@@ -48,7 +47,6 @@ class TextEditor:
     ) -> None:
 
         self.cursor = position
-
 ```
 
 Undo 기능을 구현하기 위해 외부 History 객체가 현재 상태를 직접 복사한다고 가정합니다.
@@ -80,7 +78,6 @@ class BadEditorHistory:
                     self.editor.selection,
             }
         )
-
 ```
 
 복원 시에도 같은 내부 필드를 직접 수정해야 합니다.
@@ -104,7 +101,6 @@ def undo(self) -> None:
     self.editor.selection = (
         state["selection"]
     )
-
 ```
 
 이제 TextEditor 내부 구현이 변경된다고 가정합니다.
@@ -123,7 +119,6 @@ document
 caret
 selection_start
 selection_end
-
 ```
 
 TextEditor뿐 아니라 BadEditorHistory도 함께 수정해야 합니다.
@@ -144,7 +139,6 @@ self.history.append(
             self.editor.selection_end,
     }
 )
-
 ```
 
 외부 객체가 TextEditor의 내부 상태 표현을 알고 있기 때문입니다.
@@ -160,7 +154,6 @@ self.history.append(
 접힌 영역
 입력 모드
 문서 메타데이터
-
 ```
 
 History가 이러한 필드를 모두 복사하고 복원한다면 사실상 TextEditor의 내부 구현에 강하게 결합됩니다.
@@ -185,7 +178,6 @@ History가 이러한 필드를 모두 복사하고 복원한다면 사실상 Tex
 flowchart TD
     originator[Originator] -->|create_memento| memento[Memento]
     memento -->|stored by| caretaker[Caretaker]
-
 ```
 
 복원 과정은 반대 방향입니다.
@@ -193,7 +185,6 @@ flowchart TD
 ```mermaid
 flowchart TD
     caretaker[Caretaker] -->|Memento 전달| restore[Originator.restore]
-
 ```
 
 TextEditor가 자신의 상태를 직접 Snapshot으로 만듭니다.
@@ -208,7 +199,6 @@ def create_memento(
         cursor=self._cursor,
         selection=self._selection,
     )
-
 ```
 
 중요한 점은 어떤 상태를 저장해야 하는지는 Originator 자신이 결정한다는 것입니다.
@@ -223,7 +213,6 @@ memento = (
 history.append(
     memento
 )
-
 ```
 
 복원 역시 Originator가 담당합니다.
@@ -232,7 +221,6 @@ history.append(
 editor.restore(
     memento
 )
-
 ```
 
 History는 다음 정보를 알 필요가 없습니다.
@@ -242,7 +230,6 @@ TextEditor가 어떤 필드를 가지고 있는가?
 어떤 필주는 Snapshot에 포함되는가?
 어떤 순서로 상태를 복원해야 하는가?
 상태가 내부적으로 어떻게 표현되는가?
-
 ```
 
 구조는 다음과 같이 바뀝니다.
@@ -266,7 +253,6 @@ History
           │
           ↓
       TextEditor.restore()
-
 ```
 
 Caretaker는 Memento의 내용이 아니라 Memento 자체의 수명과 순서만 관리합니다.
@@ -277,7 +263,6 @@ Undo Stack:
 [0] Memento
 [1] Memento
 [2] Memento
-
 ```
 
 핵심은 단순히 객체를 복사하는 데 있지 않습니다.
@@ -325,7 +310,6 @@ Command는 무엇을했는가를 저장합니다.
 InsertText("Hello")
 DeleteText(5)
 MoveCursor(10)
-
 ```
 
 Undo는 역연산을 실행할 수 있습니다.
@@ -334,7 +318,6 @@ Undo는 역연산을 실행할 수 있습니다.
 Insert
    ↕
 Delete
-
 ```
 
 반면 Memento는 그 시점의 상태가 무엇이었는가를 저장합니다.
@@ -343,7 +326,6 @@ Delete
 Editor State at t₀
 Editor State at t₁
 Editor State at t₂
-
 ```
 
 Undo는 이전 Snapshot을 복원합니다.
@@ -352,7 +334,6 @@ Undo는 이전 Snapshot을 복원합니다.
 State t₂
    ↓ undo
 State t₁
-
 ```
 
 단순화하면:
@@ -363,7 +344,6 @@ Command:
 
 Memento:
     상태 기반 Undo
-
 ```
 
 입니다. 두 패턴은 함께 사용할 수도 있습니다.
@@ -374,7 +354,6 @@ Command
    ├─ execute()
    │
    └─ before: Memento
-
 ```
 
 ---
@@ -387,7 +366,6 @@ Prototype 역시 객체 상태를 복제합니다.
 Prototype
     ↓ clone()
 New Object
-
 ```
 
 하지만 목적이 다릅니다.
@@ -403,7 +381,6 @@ Prototype:
 
 Memento:
     State History
-
 ```
 
 입니다.
@@ -419,7 +396,6 @@ TCPConnection
     │
     ├─ ConnectedState
     └─ ClosedState
-
 ```
 
 Memento는 특정 시점의 상태를 저장한 수동적인 Snapshot입니다.
@@ -428,7 +404,6 @@ Memento는 특정 시점의 상태를 저장한 수동적인 Snapshot입니다.
 Memento₀
 Memento₁
 Memento₂
-
 ```
 
 즉:
@@ -439,7 +414,6 @@ State Pattern:
 
 Memento:
     과거 상태를 저장
-
 ```
 
 이라고 구분할 수 있습니다.
@@ -458,7 +432,6 @@ Object
 Bytes / JSON
    ↓
 Storage / Network
-
 ```
 
 처럼 전송 또는 영속 저장 가능한 표현으로 변환하는 것이 목적입니다.
@@ -471,7 +444,6 @@ Originator
 Snapshot
    ↓
 Restore
-
 ```
 
 처럼 상태 복원이 목적입니다.
@@ -488,7 +460,6 @@ Memento는 특정 시점의 상태를 직접 저장합니다.
 State₀
 State₁
 State₂
-
 ```
 
 Event Sourcing은 상태를 변경한 사건을 저장합니다.
@@ -498,7 +469,6 @@ DocumentCreated
 TextInserted
 TextDeleted
 CursorMoved
-
 ```
 
 현재 상태는 Event들을 다시 적용하여 계산합니다.
@@ -511,7 +481,6 @@ State₁
      │
      ↓ Event₂
 State₂
-
 ```
 
 즉:
@@ -522,7 +491,6 @@ Memento:
 
 Event Sourcing:
     State Transition 저장
-
 ```
 
 입니다.
@@ -559,7 +527,6 @@ again_second = random.random()
 
 assert first == again_first
 assert second == again_second
-
 ```
 
 구조는 다음과 같습니다.
@@ -574,7 +541,6 @@ Random Generator
       │ setstate()
       ↓
 Random Generator
-
 ```
 
 호출자는 난수 생성기의 내부 알고리즘이나 정확한 상태 표현을 알 필요가 없습니다.
@@ -586,7 +552,6 @@ Caretaker:
 Originator:
     getstate()
     setstate()
-
 ```
 
 라는 점에서 Memento의 핵심 구조와 상당히 직접적으로 대응합니다.
@@ -623,7 +588,6 @@ print(
     current_user.get()
 )
 # guest
-
 ```
 
 개념적으로:
@@ -636,7 +600,6 @@ Previous Context State
        │
        ↓ reset()
 Previous Context State
-
 ```
 
 입니다.
@@ -666,7 +629,6 @@ with localcontext() as context:
     )
 
 # 여기서는 이전 Decimal Context가 복원됨
-
 ```
 
 구조적으로:
@@ -679,7 +641,6 @@ Temporary Context
       │
       ↓ scope exit
 Previous Context
-
 ```
 
 라는 Snapshot / Restore 구조를 가집니다.
@@ -726,7 +687,6 @@ classDiagram
     TextEditor --> EditorMemento : Restores
     EditorHistory --> EditorMemento : Stores
     EditorHistory --> TextEditor : Requests snapshot/restore
-
 ```
 
 각 역할은 다음과 같습니다.
@@ -744,7 +704,6 @@ Caretaker
 Client
     편집 작업을 수행하면서
     History에 Snapshot을 요청하는 코드
-
 ```
 
 핵심 관계는 다음과 같습니다.
@@ -764,7 +723,6 @@ EditorHistory
     │
     ↓ previous memento
 TextEditor.restore()
-
 ```
 
 ---
@@ -906,7 +864,6 @@ Caretaker는 다음 코드를 사용합니다.
 
 ```python
 editor.create_memento()
-
 ```
 
 그리고:
@@ -915,7 +872,6 @@ editor.create_memento()
 editor.restore(
     memento
 )
-
 ```
 
 만 호출합니다.
@@ -925,7 +881,6 @@ editor.restore(
 ```python
 history.text = editor._text
 history.cursor = editor._cursor
-
 ```
 
 즉 History는 상태의 내용이 아니라 상태의 Snapshot만 관리합니다.
@@ -938,7 +893,6 @@ history.cursor = editor._cursor
 @dataclass(frozen=True)
 class EditorMemento:
     ...
-
 ```
 
 Snapshot이 생성된 이후 변경 가능하다면:
@@ -949,7 +903,6 @@ State t₁
 Memento t₁
    ↓ 외부 변경
 실제로는 t₁이 아닌 상태
-
 ```
 
 가 되어 History의 의미가 깨질 수 있기 때문입니다.
@@ -977,7 +930,6 @@ Mutable Originator (State₀) ──(Mutation)──> State₁ ──(Mutation)�
   - 불변 상태: State₀, State₁, State₂ 가 영속적 값(Value)으로 존재
   - 델타 모델: State₀ + Patch₁ + Patch₂ ...
   - 이벤트 모델: Initial + Event₁ + Event₂ ...
-
 ```
 
 > **핵심 질문**
@@ -1010,7 +962,6 @@ def insert(state: EditorState, value: str) -> EditorState:
 
 state1 = insert(state0, "Hello")
 state2 = insert(state1, " World")
-
 ```
 
 가변 객체와 달리 `state0`, `state1`, `state2`가 모두 메모리 상에 안전한 과거 값으로 존재하게 됩니다.
@@ -1024,7 +975,6 @@ state2 = insert(state1, " World")
 ```text
 [고전적 방식]  Originator State ──(Copy)──> Memento
 [함수형 방식]  Memento<State>   ≈   State (값 자체)
-
 ```
 
 History 역시 이전 값들의 리스트로 관리될 수 있습니다.
@@ -1032,7 +982,6 @@ History 역시 이전 값들의 리스트로 관리될 수 있습니다.
 ```python
 history = [state0, state1, state2]
 current = history.previous()
-
 ```
 
 ---
@@ -1047,7 +996,6 @@ State₀ ──┐
 State₁ ──┤
          ├── shared structure
 State₂ ──┘
-
 ```
 
 > **Full Snapshot Semantics** + **Structural Sharing**을 동시에 얻을 수 있습니다.
@@ -1069,7 +1017,6 @@ def restore[O, S](originator: O, memento: Memento[O, S]) -> O:
 
 # 타입 오류 발생
 restore(editor, game_snapshot)
-
 ```
 
 ---
@@ -1087,7 +1034,6 @@ snapshot_a: Snapshot[EditorA]
 
 # 인스턴스 타입 불일치로 타입 오류
 restore(editor_b, snapshot_a)
-
 ```
 
 ---
@@ -1102,7 +1048,6 @@ def restore(snapshot: Snapshot[Editor, V2]) -> Editor: ...
 def migrate(snapshot: Snapshot[Editor, V1]) -> Snapshot[Editor, V2]:
     # v1 -> v2 변환 로직
     ...
-
 ```
 
 ---
@@ -1118,7 +1063,6 @@ def restore[T](token: RestoreToken[T]) -> T: ...
 
 restore(token)
 restore(token) # Type Error: RestoreToken has already been consumed.
-
 ```
 
 ---
@@ -1134,7 +1078,6 @@ data EditorPatch =
   | MoveCursor(from: Int, to: Int)
 
 def apply(state: EditorState, patch: EditorPatch) -> EditorState: ...
-
 ```
 
 ---
@@ -1145,7 +1088,6 @@ def apply(state: EditorState, patch: EditorPatch) -> EditorState: ...
 
 ```text
 Snapshot₀ ──> 10 Patches ──> Snapshot₁ ──> 10 Patches ──> Snapshot₂
-
 ```
 
 ---
@@ -1160,7 +1102,6 @@ trait Reversible[P]:
 
 # Undo 수행
 previous = apply(current, inverse(patch))
-
 ```
 
 ---
@@ -1173,7 +1114,6 @@ previous = apply(current, inverse(patch))
 def dispatch(history: History[EditorState], action: EditorAction) -> History[EditorState]:
     next = reduce(history.current, action)
     return history.push(next)
-
 ```
 
 ---
@@ -1187,7 +1127,6 @@ immutable record History[S]:
     past: PersistentStack[S]
     present: S
     future: PersistentStack[S]
-
 ```
 
 ---
@@ -1199,7 +1138,6 @@ History를 리스트 구조 대신 초점(Focus)을 이동시키는 Zipper 자�
 ```text
 Undo 전:  Past [S₀, S₁]  |  Present S₂  |  Future [S₃, S₄]
 Undo 후:  Past [S₀]      |  Present S₁  |  Future [S₂, S₃, S₄]
-
 ```
 
 ---
@@ -1213,7 +1151,6 @@ snapshot = begin_transaction(state)
 match execute_changes():
     case Ok:  commit(snapshot)
     case Err: state = rollback(snapshot)
-
 ```
 
 ---
@@ -1225,7 +1162,6 @@ match execute_changes():
 ```python
 # 단순히 이전 불변 상태 포인터 지정
 current = state0
-
 ```
 
 ---
@@ -1236,7 +1172,6 @@ Memento가 "결과 상태"만 저장한다면, Event Sourcing은 "변화의 원�
 
 ```python
 state = fold(events, initial_state, evolve)
-
 ```
 
 ---
@@ -1247,7 +1182,6 @@ state = fold(events, initial_state, evolve)
 
 ```text
 Snapshot₁₀₀₀ + (Subsequent Events 1001 ~ 1050) ──> Current State
-
 ```
 
 ---
@@ -1263,7 +1197,6 @@ immutable record PureState:
 
 linear resource RuntimeResources:
     socket: Socket
-
 ```
 
 ---
@@ -1277,7 +1210,6 @@ trait Snapshotable[T]:
     type Snapshot
     def snapshot(value: T) -> Snapshot
     def restore(snapshot: Snapshot) -> T
-
 ```
 
 ---
@@ -1291,7 +1223,6 @@ opaque type EditorSnapshot
 
 # snapshot.text 접근 시 컴파일 에러 발생
 # 오직 editor.restore(snapshot) 형태로만 사용 가능
-
 ```
 
 ---
@@ -1304,7 +1235,6 @@ opaque type EditorSnapshot
 t₀ ──> State₀
 t₁ ──> State₁
 t₂ ──> State₂
-
 ```
 
 * **OOP**: 캡슐화된 Memento 객체
@@ -1351,7 +1281,6 @@ t₂ ──> State₂
 flowchart TD
     originator[Originator] -->|snapshot| memento[Memento]
     memento -->|보관| caretaker[Caretaker]
-
 ```
 
 라는 구조로 표현합니다.
@@ -1362,7 +1291,6 @@ flowchart TD
 flowchart TD
     caretaker[Caretaker] -->|Memento 전달| originator[Originator]
     originator -->|restore| previous[Previous state]
-
 ```
 
 가 됩니다.

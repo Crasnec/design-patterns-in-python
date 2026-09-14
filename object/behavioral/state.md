@@ -12,7 +12,6 @@
 stateDiagram-v2
     Pending --> Paid: 결제
     Paid --> Shipped: 배송
-
 ```
 
 주문은 상황에 따라 취소될 수도 있습니다.
@@ -21,7 +20,6 @@ stateDiagram-v2
 stateDiagram-v2
     Pending --> Cancelled: cancel
     Paid --> Cancelled: cancel
-
 ```
 
 각 상태에서 허용되는 동작도 서로 다릅니다.
@@ -44,7 +42,6 @@ Shipped:
 
 Cancelled:
     모든 작업 불가
-
 ```
 
 ### 패턴을 적용하지 않은 예시
@@ -140,7 +137,6 @@ class BadOrder:
             raise RuntimeError(
                 "이미 취소된 주문입니다."
             )
-
 ```
 
 현재는 상태가 네 개뿐이지만 모든 동작이 상태를 다시 확인합니다.
@@ -163,7 +159,6 @@ cancel()
     ├─ paid
     ├─ shipped
     └─ cancelled
-
 ```
 
 새로운 상태로 `RefundRequested`가 추가된다고 가정합니다.
@@ -174,7 +169,6 @@ Paid
 RefundRequested
   ↓ 승인
 Cancelled
-
 ```
 
 그러면 기존의 여러 메서드를 다시 확인해야 합니다.
@@ -191,7 +185,6 @@ def ship(self):
 def cancel(self):
     if self.state == "refund_requested":
         ...
-
 ```
 
 상태와 동작이 늘어날수록 하나의 클래스에 거대한 상태 전이 표가 조건문 형태로 흩어지게 됩니다.
@@ -227,7 +220,6 @@ Context
       StateA
       StateB
       StateC
-
 ```
 
 먼저 상태 인터페이스를 정의합니다.
@@ -258,7 +250,6 @@ class OrderState(ABC):
         order: "Order",
     ) -> None:
         pass
-
 ```
 
 `Pending` 상태는 자신에게 허용된 행동과 전이를 알고 있습니다.
@@ -302,7 +293,6 @@ class PendingState(
         order.transition_to(
             CancelledState()
         )
-
 ```
 
 `Paid` 상태는 별도의 객체입니다.
@@ -347,7 +337,6 @@ class PaidState(
         order.transition_to(
             CancelledState()
         )
-
 ```
 
 Context인 `Order`는 구체적인 상태별 규칙을 알지 않습니다.
@@ -381,7 +370,6 @@ class Order:
     ) -> None:
 
         self._state = state
-
 ```
 
 클라이언트는 동일한 `Order` 객체를 계속 사용합니다.
@@ -391,7 +379,6 @@ order = Order()
 
 order.pay()
 order.ship()
-
 ```
 
 하지만 내부 행동은 현재 State 객체에 따라 달라집니다.
@@ -417,7 +404,6 @@ PaidState.ship()
   └─ transition
          ↓
      ShippedState
-
 ```
 
 핵심은 단순히 `if` 문을 여러 클래스로 옮기는 것에 있지 않습니다.
@@ -465,7 +451,6 @@ Context
    │
    ↓
 Strategy
-
 ```
 
 State:
@@ -475,7 +460,6 @@ Context
    │
    ↓
 State
-
 ```
 
 둘 다 객체 합성을 이용해 행동을 위임합니다.
@@ -488,7 +472,6 @@ Strategy는 일반적으로 **클라이언트 또는 구성 영역이 어떤 알
 calculator.set_strategy(
     DiscountStrategy()
 )
-
 ```
 
 State에서는 **객체 내부 상태 변화에 따라 사용하는 행동이 바뀝니다.**
@@ -499,7 +482,6 @@ Pending
 Paid
    ↓ ship
 Shipped
-
 ```
 
 즉:
@@ -510,7 +492,6 @@ Strategy:
 
 State:
     현재 어떤 상태에 있는가?
-
 ```
 
 라고 구분할 수 있습니다.
@@ -538,7 +519,6 @@ Paid:
 
 Shipped:
     거부
-
 ```
 
 두 패턴은 함께 사용할 수 있습니다.
@@ -553,7 +533,6 @@ State 패턴의 State는 **현재 행동을 결정하는 활성 상태**입니�
 Order
    ↓
 PaidState
-
 ```
 
 Memento는 특정 시점의 **과거 상태 Snapshot**입니다.
@@ -562,7 +541,6 @@ Memento는 특정 시점의 **과거 상태 Snapshot**입니다.
 Memento t₀
 Memento t₁
 Memento t₂
-
 ```
 
 즉:
@@ -573,7 +551,6 @@ State Pattern:
 
 Memento:
     과거 상태를 저장하고 복원
-
 ```
 
 입니다.
@@ -590,7 +567,6 @@ State Machine은 일반적으로 다음 세 요소를 모델링합니다.
 States
 Events
 Transitions
-
 ```
 
 예:
@@ -603,7 +579,6 @@ Paid
    │ Ship
    ↓
 Shipped
-
 ```
 
 State 패턴은 이러한 상태 기반 행동을 **객체지향 클래스와 다형성으로 구현하는 방법 중 하나**입니다.
@@ -616,7 +591,6 @@ State Machine:
 
 State Pattern:
     그 모델의 OOP 구현 방식
-
 ```
 
 으로 이해할 수 있습니다.
@@ -648,7 +622,6 @@ Pending
    │ cancel()
    ↓
 Cancelled
-
 ```
 
 그리고 같은 메서드라도 현재 상태에 따라 의미가 달라집니다.
@@ -664,7 +637,6 @@ Done:
 
 Cancelled:
     CancelledError
-
 ```
 
 실제 구현은 GoF State 클래스를 그대로 사용하는 것은 아니지만 **현재 상태가 객체의 허용 동작과 결과를 결정한다는 점에서 State Machine과 유사한 설계**입니다.
@@ -685,7 +657,6 @@ Open
   │ close()
   ↓
 Closed
-
 ```
 
 입니다.
@@ -699,7 +670,6 @@ Open:
 Closed:
     read/write 불가
     close는 다시 호출 가능
-
 ```
 
 역시 전형적인 GoF State 객체 구조라기보다 **현재 수명 주기 상태에 따라 API의 의미가 달라지는 상태 기반 객체**의 사례입니다.
@@ -724,7 +694,6 @@ Inside Transaction
         │ enter nested atomic
         ↓
 Inside Savepoint
-
 ```
 
 종료 시에는 성공과 실패에 따라:
@@ -735,7 +704,6 @@ Success
 
 Failure
     → rollback
-
 ```
 
 으로 동작합니다.
@@ -799,7 +767,6 @@ classDiagram
     OrderState <|.. CancelledState
 
     Order --> OrderState : current state
-
 ```
 
 각 역할은 다음과 같습니다.
@@ -816,7 +783,6 @@ Concrete States
     PaidState
     ShippedState
     CancelledState
-
 ```
 
 핵심 관계는 다음과 같습니다.
@@ -830,7 +796,6 @@ Order
            ├─ PaidState
            ├─ ShippedState
            └─ CancelledState
-
 ```
 
 상태가 전이되면 `Order` 객체 자체를 교체하는 것이 아니라 내부 State 객체가 변경됩니다.
@@ -843,7 +808,6 @@ Order
   ├─ PaidState
   │       ↓ ship
   └─ ShippedState
-
 ```
 
 ---
@@ -1011,7 +975,6 @@ PaidState.ship()
         ↓
 
 Shipped
-
 ```
 
 Context의 메서드는 상태를 검사하지 않습니다.
@@ -1022,7 +985,6 @@ def pay(self) -> None:
     self._state.pay(
         self
     )
-
 ```
 
 다음과 같은 코드가 사라집니다.
@@ -1036,7 +998,6 @@ elif self.state == "paid":
 
 elif self.state == "shipped":
     ...
-
 ```
 
 현재 State 객체가 행동을 결정합니다.
@@ -1051,7 +1012,6 @@ elif self.state == "shipped":
 order.transition_to(
     PaidState()
 )
-
 ```
 
 이 방식의 장점은 특정 상태의 행동과 전이 규칙이 같은 클래스에 모인다는 것입니다.
@@ -1060,7 +1020,6 @@ order.transition_to(
 stateDiagram-v2
     Pending --> Paid: pay
     Pending --> Cancelled: cancel
-
 ```
 
 반면 전이 규칙이 매우 복잡하거나 외부 정책에 따라 달라진다면 State 객체가 다음 State를 직접 생성하지 않도록 할 수도 있습니다.
@@ -1072,7 +1031,6 @@ flowchart LR
     state[State] --> result[Transition result]
     result --> machine[Context / State Machine]
     machine --> change[실제 상태 변경]
-
 ```
 
 구조로 분리할 수 있습니다.
@@ -1092,7 +1050,6 @@ Object
     data
     current_state
     methods
-
 ```
 
 그리고 같은 메서드 호출이 상태에 따라 다른 의미를 가집니다.
@@ -1111,7 +1068,6 @@ Shipped:
 
 Cancelled:
     거부
-
 ```
 
 이를 더 추상적으로 바라보면 다음과 같습니다.
@@ -1126,7 +1082,6 @@ Cancelled:
 새로운 상태
     +
 출력 / Effect
-
 ```
 
 즉 State 패턴의 본질은 다음 질문으로 확장할 수 있습니다.
@@ -1144,7 +1099,6 @@ PendingState
 PaidState
 ShippedState
 CancelledState
-
 ```
 
 함수형 언어에서는 하나의 합 타입으로 표현할 수 있습니다.
@@ -1164,7 +1118,6 @@ data OrderState =
         reason:
             CancelReason
     )
-
 ```
 
 중요한 점은 각 상태가 **자신에게만 존재하는 데이터**를 가질 수 있다는 것입니다.
@@ -1181,7 +1134,6 @@ Shipped:
 
 Cancelled:
     cancellation reason 존재
-
 ```
 
 가변 객체 안에 여러 Optional 필드를 넣는 것보다 정확합니다.
@@ -1205,7 +1157,6 @@ record Order:
 
     cancel_reason:
         Option[CancelReason]
-
 ```
 
 다음과 같은 모순된 상태를 만들 수 있습니다.
@@ -1215,7 +1166,6 @@ state = Pending
 transaction = Some(...)
 tracking = Some(...)
 cancel_reason = Some(...)
-
 ```
 
 즉 여러 Boolean/Optional 필드의 조합으로 상태를 표현하면 유효하지 않은 상태가 많아집니다.
@@ -1244,14 +1194,12 @@ data Order =
         reason:
             CancelReason,
     )
-
 ```
 
 이제:
 
 ```text
 Pending인데 tracking이 존재한다
-
 ```
 
 는 상태 자체를 만들 수 없습니다.
@@ -1268,7 +1216,6 @@ Pending인데 tracking이 존재한다
 order.transition_to(
     PaidState()
 )
-
 ```
 
 불변 데이터에서는 기존 상태를 수정하지 않습니다.
@@ -1284,7 +1231,6 @@ def pay(
         items=order.items,
         transaction=transaction,
     )
-
 ```
 
 타입만 보아도 전이가 드러납니다.
@@ -1293,7 +1239,6 @@ def pay(
 PendingOrder
      ↓ pay
 PaidOrder
-
 ```
 
 배송:
@@ -1311,7 +1256,6 @@ def ship(
             order.transaction,
         tracking=tracking,
     )
-
 ```
 
 타입:
@@ -1320,7 +1264,6 @@ def ship(
 PaidOrder
     ↓ ship
 ShippedOrder
-
 ```
 
 상태 전이가 **함수의 입력 타입과 출력 타입**으로 표현됩니다.
@@ -1346,7 +1289,6 @@ ShippedState:
     pay()
     ship()
     cancel()
-
 ```
 
 그래서 의미 없는 메서드에서는 예외를 발생시킵니다.
@@ -1357,7 +1299,6 @@ class ShippedState:
     def pay(...):
 
         raise RuntimeError(...)
-
 ```
 
 Typestate 방식에서는 해당 상태에 애초에 연산을 정의하지 않습니다.
@@ -1367,7 +1308,6 @@ def pay(
     order: PendingOrder,
 ) -> PaidOrder:
     ...
-
 ```
 
 ```python
@@ -1375,7 +1315,6 @@ def ship(
     order: PaidOrder,
 ) -> ShippedOrder:
     ...
-
 ```
 
 `ShippedOrder`에 `pay()`는 없습니다.
@@ -1384,7 +1323,6 @@ def ship(
 pay(
     shipped_order
 )
-
 ```
 
 컴파일러:
@@ -1397,7 +1335,6 @@ pay requires:
 
 found:
     ShippedOrder
-
 ```
 
 런타임 예외가 아니라 **정적 타입 오류**가 됩니다.
@@ -1412,7 +1349,6 @@ found:
 data Pending
 data Paid
 data Shipped
-
 ```
 
 ```text
@@ -1420,7 +1356,6 @@ record Order[
     State
 ]:
     ...
-
 ```
 
 초기 생성:
@@ -1428,7 +1363,6 @@ record Order[
 ```text
 def create_order(...) -> Order[Pending]:
     ...
-
 ```
 
 결제:
@@ -1439,7 +1373,6 @@ def pay(
         Order[Pending],
 ) -> Order[Paid]:
     ...
-
 ```
 
 배송:
@@ -1450,7 +1383,6 @@ def ship(
         Order[Paid],
 ) -> Order[Shipped]:
     ...
-
 ```
 
 상태 전이가:
@@ -1461,7 +1393,6 @@ Order[Pending]
 Order[Paid]
       ↓
 Order[Shipped]
-
 ```
 
 라는 타입 전이로 나타납니다.
@@ -1488,7 +1419,6 @@ Order[Paid]
 
 Order[Shipped]
     track
-
 ```
 
 즉 Context의 인터페이스 자체가 상태에 따라 변합니다.
@@ -1499,14 +1429,12 @@ Order[Shipped]
 같은 인터페이스
        +
 상태에 따라 런타임 행동 변경
-
 ```
 
 을:
 
 ```text
 상태에 따라 정적 인터페이스 자체 변경
-
 ```
 
 으로 강화한 것입니다.
@@ -1523,7 +1451,6 @@ data OrderState =
   | Paid
   | Shipped
   | Cancelled
-
 ```
 
 ```text
@@ -1531,7 +1458,6 @@ data OrderEvent =
     PaymentReceived
   | ShipmentStarted
   | CancelRequested
-
 ```
 
 전이 함수:
@@ -1581,7 +1507,6 @@ def transition(
                     event,
                 )
             )
-
 ```
 
 객체 계층이 아니라 **명시적인 전이 함수**로 State Machine을 표현합니다.
@@ -1618,7 +1543,6 @@ transition_table = {
     ):
         Cancelled,
 }
-
 ```
 
 전이:
@@ -1635,7 +1559,6 @@ def transition(
             event,
         )
     ]
-
 ```
 
 장점은 전체 상태 머신을 한눈에 볼 수 있다는 것입니다.
@@ -1644,7 +1567,6 @@ def transition(
 State × Event
       ↓
 Next State
-
 ```
 
 상태가 수십 개라면 Concrete State 클래스보다 이런 방식이 더 읽기 쉬울 수도 있습니다.
@@ -1662,7 +1584,6 @@ data OrderState =
   | RefundRequested
   | Shipped
   | Cancelled
-
 ```
 
 기존 `transition()`이 `RefundRequested`를 처리하지 않는다면 exhaustive pattern checker가 알려줄 수 있습니다.
@@ -1672,7 +1593,6 @@ Non-exhaustive match:
 
 State:
     RefundRequested
-
 ```
 
 객체지향 State에서는 새 State 클래스를 만들었지만 전체 전이 중 일부가 누락되었는지 컴파일러가 자동으로 확인하기 어렵습니다.
@@ -1690,7 +1610,6 @@ State
   ├─ PendingState
   ├─ PaidState
   └─ NewState
-
 ```
 
 이는 상태 종류가 외부 Plugin 등에서 계속 추가되는 **Open World**에 적합할 수 있습니다.
@@ -1702,7 +1621,6 @@ data State =
     A
   | B
   | C
-
 ```
 
 새 상태를 추가하면 기존 패턴 매칭 함수들이 영향을 받습니다.
@@ -1715,7 +1633,6 @@ data State =
 
 상태 종류가 닫힌 구조
     → ADT + Pattern Matching
-
 ```
 
 이라는 선택 기준을 가질 수 있습니다.
@@ -1730,7 +1647,6 @@ Mealy Machine은 다음 형태입니다.
 
 ```text
 State + Input ───> Output + Next State
-
 ```
 
 타입:
@@ -1741,7 +1657,6 @@ type Mealy[
     Input,
     Output,
 ] = (State, Input) -> (State, Output)
-
 ```
 
 주문 예제:
@@ -1755,21 +1670,18 @@ def step(
     Vector[OrderEffect],
 ):
     ...
-
 ```
 
 결제 Event:
 
 ```text
 Pending + PaymentReceived ───> Paid + SendReceipt
-
 ```
 
 배송 Event:
 
 ```text
 Paid + ShipmentStarted ───> Shipped + NotifyCustomer
-
 ```
 
 상태 전이와 외부 Effect를 분리할 수 있습니다.
@@ -1782,7 +1694,6 @@ Moore Machine에서는 출력이 Event가 아니라 현재 상태에 의해 결�
 
 ```text
 State ───> Output
-
 ```
 
 예를 들어 UI 표시:
@@ -1811,14 +1722,12 @@ def view(
                 label="배송 중",
                 can_pay=False,
             )
-
 ```
 
 UI가 상태를 직접 mutation하는 대신:
 
 ```text
 State ───> View
-
 ```
 
 라는 순수 함수로 파생됩니다.
@@ -1839,7 +1748,6 @@ def pay(...):
     email.send(...)
 
     order.transition_to(...)
-
 ```
 
 를 모두 수행할 수도 있습니다.
@@ -1853,7 +1761,6 @@ data OrderEffect =
     ChargePayment(...)
   | SendReceipt(...)
   | NotifyShipping(...)
-
 ```
 
 전이 함수:
@@ -1867,14 +1774,12 @@ def transition(
     Vector[OrderEffect],
 ):
     ...
-
 ```
 
 Runtime이 Effect를 실행합니다.
 
 ```text
 State + Event ───> Pure Transition ───> New State + Effects ───> Interpreter
-
 ```
 
 상태 머신 자체를 순수하게 유지할 수 있습니다.
@@ -1887,7 +1792,6 @@ State + Event ───> Pure Transition ───> New State + Effects ──�
 
 ```text
 Pending ── PayClicked ──> ???
-
 ```
 
 실제 결제가 실패할 수 있기 때문입니다.
@@ -1906,7 +1810,6 @@ data OrderState =
   | PaymentFailed(
         reason: PaymentError
     )
-
 ```
 
 전이:
@@ -1915,7 +1818,6 @@ data OrderState =
 Pending ── PaymentRequested ──> PaymentProcessing ── PaymentSucceeded ──> Paid
 
 PaymentProcessing ── PaymentFailed ──> PaymentFailed
-
 ```
 
 **중간 상태도 도메인에서 실제 의미를 가진다면 타입으로 표현하는 것이 중요합니다.**
@@ -1928,7 +1830,6 @@ PaymentProcessing ── PaymentFailed ──> PaymentFailed
 
 ```text
 State ── await Event ──> State Transition ── await Event ──> State Transition
-
 ```
 
 가상의 함수:
@@ -1950,7 +1851,6 @@ async def run_machine(
         )
 
     return state
-
 ```
 
 State 객체의 직접 메서드 호출이 **Event Stream을 Fold하는 계산**으로 바뀝니다.
@@ -1963,7 +1863,6 @@ State 객체의 직접 메서드 호출이 **Event Stream을 Fold하는 계산**
 
 ```text
 Initial State ── Event₁ ──> State₁ ── Event₂ ──> State₂ ── Event₃ ──> State₃
-
 ```
 
 따라서:
@@ -1974,7 +1873,6 @@ current = fold(
     initial_state,
     transition,
 )
-
 ```
 
 으로 표현할 수 있습니다.
@@ -1983,7 +1881,6 @@ current = fold(
 
 ```text
 Events ───(fold)───> Current State
-
 ```
 
 ---
@@ -1996,21 +1893,18 @@ Order에 다음 Event들이 저장되어 있다고 가정합니다.
 OrderCreated
 PaymentReceived
 ShipmentStarted
-
 ```
 
 초기 상태:
 
 ```text
 NotCreated
-
 ```
 
 Event를 차례로 적용하면:
 
 ```text
 NotCreated ── OrderCreated ──> Pending ── PaymentReceived ──> Paid ── ShipmentStarted ──> Shipped
-
 ```
 
 현재 상태를 얻을 수 있습니다.
@@ -2026,21 +1920,18 @@ State 객체를 직접 직렬화하는 대신 **전이 원인이었던 Event를 
 ```text
 Memento:
 State₀, State₁, State₂
-
 ```
 
 Event Sourcing:
 
 ```text
 Event₁, Event₂, Event₃
-
 ```
 
 State 패턴은 그 사이에서:
 
 ```text
 현재 State + State Transition Rules
-
 ```
 
 를 다룹니다.
@@ -2051,7 +1942,6 @@ State 패턴은 그 사이에서:
 State:          지금 어떤 상태인가?
 Memento:        과거 상태가 무엇이었는가?
 Event Sourcing: 어떤 사건 때문에 상태가 변했는가?
-
 ```
 
 ---
@@ -2066,7 +1956,6 @@ capability Payable[T]:
     def pay(
         value: T,
     ) -> PaidOrder
-
 ```
 
 `PendingOrder`만 구현합니다.
@@ -2074,7 +1963,6 @@ capability Payable[T]:
 ```text
 impl Payable[PendingOrder]:
     ...
-
 ```
 
 `Shippable`:
@@ -2085,7 +1973,6 @@ capability Shippable[T]:
     def ship(
         value: T,
     ) -> ShippedOrder
-
 ```
 
 `PaidOrder`만 구현합니다.
@@ -2093,7 +1980,6 @@ capability Shippable[T]:
 ```text
 impl Shippable[PaidOrder]:
     ...
-
 ```
 
 함수는 필요한 상태 능력만 요구합니다.
@@ -2107,7 +1993,6 @@ where Shippable[T]:
     return ship(
         order
     )
-
 ```
 
 상태와 가능한 행동의 관계를 **타입클래스 수준**으로 표현합니다.
@@ -2122,7 +2007,6 @@ Typestate를 선형 타입과 결합한다고 가정합니다.
 
 ```text
 linear Order[State]
-
 ```
 
 결제:
@@ -2132,7 +2016,6 @@ def pay(
     order: Order[Pending],
 ) -> Order[Paid]:
     ...
-
 ```
 
 호출:
@@ -2140,14 +2023,12 @@ def pay(
 ```python
 pending = create_order()
 paid = pay(pending)
-
 ```
 
 이제 기존 `pending`은 소비되었습니다.
 
 ```python
 cancel(pending)
-
 ```
 
 컴파일러:
@@ -2155,7 +2036,6 @@ cancel(pending)
 ```text
 Type Error:
 Order[Pending] has already been consumed by pay().
-
 ```
 
 하나의 논리 Order가 동시에 `Pending`과 `Paid` 두 상태로 존재하는 것을 타입 시스템이 방지합니다.
@@ -2170,14 +2050,12 @@ Order[Pending] has already been consumed by pay().
 Context ───> State Object ───┬───> handle A
                              ├───> handle B
                              └───> transition
-
 ```
 
 하지만 더 일반적으로 보면:
 
 ```text
 State Space + Input Events + Transition Relation + Outputs / Effects
-
 ```
 
 입니다.
@@ -2227,7 +2105,6 @@ flowchart LR
     current -. 런타임 교체 .-> state_a[State A]
     current -. 런타임 교체 .-> state_b[State B]
     current -. 런타임 교체 .-> state_c[State C]
-
 ```
 
 라는 구조로 표현합니다.
@@ -2236,7 +2113,6 @@ Context의 호출은 동일하지만:
 
 ```python
 order.pay()
-
 ```
 
 실제 의미는 현재 State에 의해 결정됩니다.
@@ -2247,7 +2123,6 @@ flowchart LR
     pending -->|Pending| paid[결제 후 Paid로 전이]
     pending -->|Paid| already[이미 결제됨]
     pending -->|Shipped| denied[허용되지 않음]
-
 ```
 
 현대 타입 시스템과 함수형 패러다임에서는 이 개념을 더 일반적인 **상태 머신과 타입 상태 전이**로 확장할 수 있습니다.

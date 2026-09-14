@@ -29,7 +29,6 @@ class Monster:
         self.skills = skills
         self.resistances = resistances
         self.loot_table = loot_table
-
 ```
 
 기본 고블린과 대부분의 설정이 동일한 엘리트 고블린을 생성하는 상황을 가정해 보겠습니다.
@@ -66,7 +65,6 @@ elite_goblin = Monster(
         "dagger": 0.1,
     },
 )
-
 ```
 
 두 객체는 일부 값만 다름에도 불구하고, 대부분의 초기화 정보를 반복해서 작성해야 합니다.
@@ -81,7 +79,6 @@ elite_goblin.hp = 200
 
 print(goblin.name)
 # 엘리트 고블린
-
 ```
 
 Python의 대입 연산은 객체를 복제하는 것이 아니라 동일한 객체에 대한 참조를 하나 더 생성하므로, 두 변수가 동일한 객체를 가리키게 됩니다.
@@ -102,14 +99,12 @@ elite_goblin = Monster(
     resistances=goblin.resistances,
     loot_table=goblin.loot_table,
 )
-
 ```
 
 이 상황에서 다음과 같이 코드를 실행해 보겠습니다.
 
 ```python
 elite_goblin.skills.append("PowerSlash")
-
 ```
 
 그러면 원본 객체의 `skills`에도 영향을 주게 됩니다.
@@ -117,7 +112,6 @@ elite_goblin.skills.append("PowerSlash")
 ```python
 print(goblin.skills)
 # ["Slash", "Dodge", "PowerSlash"]
-
 ```
 
 ### 이 방식이 가진 단점
@@ -153,7 +147,6 @@ elite_goblin = goblin.clone()
 
 elite_goblin.name = "엘리트 고블린"
 elite_goblin.hp = 200
-
 ```
 
 클라이언트 입장에서는 Monster의 생성자 매개변수가 무엇인지, 내부 가변 객체나 별도 복제 필드가 무엇인지 등의 세부 구현 정보를 파악할 필요가 없습니다. 복제에 관한 정책을 객체 내부로 캡슐화할 수 있기 때문입니다.
@@ -167,7 +160,6 @@ registry.register(
 )
 
 monster = registry.create("goblin")
-
 ```
 
 이 경우 객체 생성의 기준은 더 이상 클래스와 생성자를 직접 호출하는 방식이 아니며, **이미 구성된 Monster 객체의 `clone()` 연산을 호출하는 방식**으로 바뀌게 됩니다.
@@ -225,7 +217,6 @@ from copy import copy, deepcopy
 
 monster2 = copy(monster)
 monster3 = deepcopy(monster)
-
 ```
 
 객체가 자신의 깊은 복사 정책을 직접 정의할 수도 있습니다.
@@ -235,7 +226,6 @@ class Monster:
 
     def __deepcopy__(self, memo):
         ...
-
 ```
 
 이는 **복제 정책을 객체 내부에 캡슐화할 수 있다**는 점에서 Prototype 패턴의 메커니즘과 직접 연결됩니다.
@@ -254,7 +244,6 @@ elite = replace(
     name="엘리트 고블린",
     hp=200,
 )
-
 ```
 
 이는 기존에 **`clone()` 호출 후 필드를 수정하던 단계별 흐름**을, **`replace(changes)`를 통해 변경 사항이 적용된 새로운 변형 객체를 직접 얻는 방식**으로 단순화한 접근 방식입니다.
@@ -289,7 +278,6 @@ elite = replace(
     name="엘리트 고블린",
     hp=200,
 )
-
 ```
 
 ---
@@ -306,7 +294,6 @@ elite = attrs.evolve(
     name="엘리트 고블린",
     hp=200,
 )
-
 ```
 
 이 기법은 전통적인 Prototype의 `clone()` 방식보다 **copy-with-update** 형태에 가까운 현대적 변형 구조라고 볼 수 있습니다.
@@ -343,7 +330,6 @@ classDiagram
 
     PrototypeRegistry --> Monster : stores
     Monster ..> Monster : clones
-
 ```
 
 ---
@@ -451,7 +437,6 @@ HP: 200
 공격력: 40
 방어력: 10
 스킬: ['Slash', 'Dodge', 'PowerSlash']
-
 ```
 
 `goblin2.skills`를 변경하더라도 `goblin1.skills`에는 영향을 주지 않습니다.
@@ -486,7 +471,6 @@ Prototype 패턴 자체가 반드시 깊은 복사만을 요구하는 것은 아
 
 ```python
 monster2 = monster1
-
 ```
 
 두 변수가 동일한 메모리 객체를 참조하므로, 한쪽에서의 상태 변경이 다른 쪽에도 그대로 반영되기 때문입니다.
@@ -498,7 +482,6 @@ immutable record Monster:
     name: str
     hp: Int
     skills: Vector[Skill]
-
 ```
 
 이 상태에서 객체를 생성합니다.
@@ -512,14 +495,12 @@ goblin = Monster(
         Dodge,
     ],
 )
-
 ```
 
 그리고 다른 변수에 동일한 값을 바인딩합니다.
 
 ```python
 another = goblin
-
 ```
 
 두 변수가 내부적으로 동일한 메모리 영역을 공유하더라도 아무런 문제가 발생하지 않습니다. 어느 변수를 통해서도 상태를 수정하는 것이 불가능하기 때문입니다.
@@ -538,7 +519,6 @@ another = goblin
 clone()
     ↓
 필드 변경
-
 ```
 
 반면 불변 레코드를 지원하는 언어에서는 **기존 값을 기반으로 새로운 값을 직접 정의하여 생성**할 수 있습니다.
@@ -548,7 +528,6 @@ elite_goblin = goblin with {
     name = "엘리트 고블린",
     hp = 200,
 }
-
 ```
 
 이때 원본 객체의 값은 그대로 유지됩니다.
@@ -561,7 +540,6 @@ goblin
 elite_goblin
     name = "엘리트 고블린"
     hp   = 200
-
 ```
 
 두 객체는 모두 동일한 타입을 가집니다.
@@ -569,7 +547,6 @@ elite_goblin
 ```text
 goblin       : Monster
 elite_goblin : Monster
-
 ```
 
 기존 방식이 `Prototype.clone()`을 통한 복제와 이후의 상태 변경(`Mutation`)을 결합하여 처리했다면, 불변 패러다임에서는 이를 **`Immutable Record Update`라는 단일 연산**으로 깔끔하게 대체한 셈입니다.
@@ -591,7 +568,6 @@ skills = Vector[
     Hide,
     Steal,
 ]
-
 ```
 
 엘리트 고블린 객체에 새로운 스킬을 추가합니다.
@@ -601,7 +577,6 @@ elite = goblin with {
     skills =
         goblin.skills.append(PowerSlash)
 }
-
 ```
 
 개념상 전체 리스트를 새로 복사하는 대신, 변경되지 않은 기존 데이터 구조를 안전하게 재사용합니다.
@@ -620,7 +595,6 @@ goblin.skills
 elite.skills
      │
      └── PowerSlash 추가
-
 ```
 
 따라서 전통적인 깊은 복사처럼 **전체 객체 그래프를 통째로 복제하는 대신, 변경이 일어난 경로만 새로 생성하고 나머지 구조는 안전하게 공유**하는 방식으로 처리할 수 있습니다.
@@ -637,21 +611,18 @@ elite.skills
 immutable record Character:
     profile: Profile
     equipment: Equipment
-
 ```
 
 ```text
 immutable record Equipment:
     weapon: Weapon
     armor: Armor
-
 ```
 
 ```text
 immutable record Weapon:
     name: str
     damage: Int
-
 ```
 
 이 상황에서 무기의 공격력만 수정하고자 할 때, 일반적인 불변 데이터 방식으로는 다음과 같이 전체 경로를 재작성해야 합니다.
@@ -664,7 +635,6 @@ hero with {
         }
     }
 }
-
 ```
 
 그러나 Lens를 지원하는 언어 환경에서는 특정 데이터 접근 경로를 일종의 독립된 값으로 다룰 수 있습니다.
@@ -672,7 +642,6 @@ hero with {
 ```text
 damage_lens =
     lens Character.equipment.weapon.damage
-
 ```
 
 이를 사용하여 새로운 값을 설정할 수 있습니다.
@@ -682,7 +651,6 @@ upgraded = damage_lens.set(
     hero,
     100,
 )
-
 ```
 
 또는 기존 값에 함수를 적용하여 변경할 수도 있습니다.
@@ -693,7 +661,6 @@ upgraded = damage_lens.modify(
     lambda damage:
         damage * 2,
 )
-
 ```
 
 이처럼 Lens 개념은 기존의 **"객체 깊은 복사, 중첩 필드 탐색, 대상 위치 값 변경"으로 이어지던 단계를 "특정 데이터 경로에 대한 합성 가능한 불변 업데이트"라는 형태**로 추상화해 줍니다.
@@ -708,7 +675,6 @@ upgraded = damage_lens.modify(
 class Prototype:
     def clone(self):
         ...
-
 ```
 
 현대적인 타입 시스템에서는 복제 가능성(Capability)이라는 개념 자체를 별도의 타입 제약으로 선언할 수 있습니다.
@@ -719,7 +685,6 @@ trait Clone[T]:
     def clone(
         value: T,
     ) -> T
-
 ```
 
 일반적인 데이터 객체는 `Clone` 타입클래스를 구현하여 복제 동작을 정의합니다.
@@ -732,7 +697,6 @@ impl Clone[Monster]:
     ) -> Monster:
 
         return value
-
 ```
 
 불변 값이라면 물리적인 복사 연산 없이 자기 자신을 그대로 반환해도 무방합니다.
@@ -746,7 +710,6 @@ def duplicate[T](
 where Clone[T]:
 
     return Clone.clone(value)
-
 ```
 
 이 방식을 사용하면 모든 객체의 최상위 공통 부모 클래스에 `clone()` 메서드를 강제로 상속시키는 대신, **`Clone[T]`와 같은 타입 자격(Capability)을 붙여 복제 가능 여부를 표현**할 수 있습니다.
@@ -763,7 +726,6 @@ Prototype 패턴을 적용할 때 가장 주의해야 할 부분 중 하나는 *
 record DatabaseConnection:
     socket: Socket
     transaction: Transaction
-
 ```
 
 이 객체에 대해 `clone()`을 수행한다는 개념은 매우 모호합니다.
@@ -775,7 +737,6 @@ Socket을 그대로 공유해야 하는지, 새로운 Socket을 연결해야 하
 ```text
 linear resource DatabaseConnection:
     socket: Socket
-
 ```
 
 선형 타입으로 지정된 값은 일반 데이터처럼 임의로 복제할 수 없습니다.
@@ -786,7 +747,6 @@ connection1 =
 
 connection2 =
     clone(connection1)
-
 ```
 
 이 경우 컴파일러 단계에서 오류가 발생합니다.
@@ -796,7 +756,6 @@ Type Error:
 
 DatabaseConnection is linear
 and does not implement Clone.
-
 ```
 
 복제 가능한 필드와 복제할 수 없는 자원을 타입에 빠짐없이 반영했다면, "이 객체를 복제할 수 있는가?"라는 규칙의 일부를 수동 검토 대신 타입 검사 단계에서 확인할 수 있습니다.
@@ -814,7 +773,6 @@ record Character:
     id: CharacterId
     name: str
     stats: Stats
-
 ```
 
 이 값을 단순히 메모리 복사하게 되면 동일한 ID를 가진 캐릭터 인스턴스가 중복 생성되는 문제가 발생합니다.
@@ -825,7 +783,6 @@ record Character:
 
 ```text
 opaque type CharacterId
-
 ```
 
 ```text
@@ -836,7 +793,6 @@ def duplicate(
     return source with {
         id = CharacterId.fresh()
     }
-
 ```
 
 이 로직의 실행 결과는 다음과 같습니다.
@@ -849,7 +805,6 @@ def duplicate(
 복제본:
     id = CharacterId(456)
     name = "아라곤"
-
 ```
 
 결론적으로 **단순한 메모리상 데이터 복사**와 **도메인 관점에서의 새로운 Entity 생성**은 명확히 구별되어야 하는 서로 다른 연산입니다.
@@ -868,7 +823,6 @@ Monster 객체가 다음과 같이 두 종류의 데이터를 관리한다고 �
 record Monster:
     stats: Owned[Stats]
     metadata: Shared[MonsterMetadata]
-
 ```
 
 `stats` 필드는 각 몬스터 인스턴스가 독점 소유(`Owned[Stats]`)하는 데이터이며, `metadata` 필드는 동일 종류의 몬스터들이 공유(`Shared[MonsterMetadata]`) 가능한 데이터입니다.
@@ -884,7 +838,6 @@ def clone(
         stats=clone(monster.stats),
         metadata=monster.metadata,
     )
-
 ```
 
 이 접근법은 기존의 모호했던 **"얕은 복사인가 깊은 복사인가"라는 이분법적 논의**에서 벗어나, "각 필드가 가지는 소유권과 공유 가능성"을 타입 자체로 명확하게 표현할 수 있게 해줍니다.
@@ -909,7 +862,6 @@ elite =
         hp = 200,
         attack = 40,
     }
-
 ```
 
 이 과정에서 복잡하게 중첩된 구조의 변경은 **Lens**로 다루고, 공유 가능한 내부 데이터 구조는 **Structural Sharing**으로 재사용하며, 복제 불가능한 자원에 대해서는 **Linear / Ownership Type**을 통해 컴파일 단계에서 제약합니다.

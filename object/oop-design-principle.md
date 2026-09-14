@@ -19,7 +19,6 @@ flowchart LR
     Change[요구사항 변경] --> Boundary[변경 경계]
     Boundary --> Target[관련된 코드만 수정]
     Target --> Stable[나머지 코드의 영향 최소화]
-
 ```
 
 Python에서는 클래스뿐만 아니라 함수, 덕 타이핑, `Protocol`, `ABC`, 일급 함수 등을 활용할 수 있으므로, SOLID를 반드시 전통적인 클래스 계층 구조로 구현할 필요는 없습니다.
@@ -48,7 +47,6 @@ class OrderService:
 
     def send_confirmation_email(self, order):
         print("주문 확인 이메일 발송")
-
 ```
 
 겉으로 보면 모두 주문과 관련된 기능입니다. 하지만 각 기능이 변경되는 원인은 서로 다릅니다.
@@ -82,7 +80,6 @@ classDiagram
     PricingPolicy ..> OrderService : changes
     Database ..> OrderService : changes
     EmailSystem ..> OrderService : changes
-
 ```
 
 각 역할을 별도 클래스로 분리할 수 있습니다.
@@ -99,7 +96,6 @@ class OrderRepository:
 class OrderNotifier:
     def send_confirmation(self, order):
         print("주문 확인 이메일 발송")
-
 ```
 
 ```mermaid
@@ -115,7 +111,6 @@ classDiagram
     class OrderNotifier {
         +send_confirmation(order)
     }
-
 ```
 
 이제 가격 정책은 `OrderCalculator`, 데이터 저장은 `OrderRepository`, 알림 발송은 `OrderNotifier`로 각각 분리되어 독립적으로 변경할 수 있습니다.
@@ -165,7 +160,6 @@ classDiagram
     Logger --> Handler : dispatches
     Handler --> Formatter : formats with
     Handler --> Filter : filters with
-
 ```
 
 만약 단일 `Logger` 클래스가 모든 기능을 직접 수행하도록 구현되었다면,
@@ -186,7 +180,6 @@ class Logger:
 
     def filter_by_module(self):
         ...
-
 ```
 
 새로운 출력 형태나 포맷이 추가될 때마다 `Logger` 클래스 자체를 계속 수정해야 했을 것입니다. 실제 `logging` 모듈은 역할을 분리하여 출력 방식과 포맷을 독립적으로 교체할 수 있도록 설계되었습니다.
@@ -209,7 +202,6 @@ classDiagram
     Order --> OrderPriceGetter
     Order --> OrderPriceCalculator
     Order --> OrderValidator
-
 ```
 
 과도하게 분리하면 단순한 로직을 파악하기 위해 수많은 객체를 추적해야 하는 문제가 발생합니다. SRP의 본질은 **클래스를 작게 쪼개는 것**이 아니라 **서로 다른 변경 이유를 분리하는 것**입니다.
@@ -236,7 +228,6 @@ def calculate_discount(customer_type, price):
         return price * 0.20
 
     return 0
-
 ```
 
 이 구조에서는 새로운 고객 유형이 추가될 때마다 기존 함수를 수정해야 합니다.
@@ -246,7 +237,6 @@ flowchart LR
     Student[Student 추가] --> Function[calculate_discount 수정]
     Partner[Partner 추가] --> Function
     Event[Event Member 추가] --> Function
-
 ```
 
 타입에 따른 분기 처리가 계속 늘어난다면 행위(전략)를 객체로 분리할 수 있습니다.
@@ -269,7 +259,6 @@ class VipDiscount:
 class EmployeeDiscount:
     def discount(self, price: int) -> int:
         return int(price * 0.20)
-
 ```
 
 이제 가격 계산 클래스는 구체적인 할인 구현 내용을 알 필요가 없습니다.
@@ -282,7 +271,6 @@ class PriceCalculator:
         policy: DiscountPolicy,
     ) -> int:
         return price - policy.discount(price)
-
 ```
 
 ```mermaid
@@ -312,7 +300,6 @@ classDiagram
     DiscountPolicy <|.. RegularDiscount
     DiscountPolicy <|.. VipDiscount
     DiscountPolicy <|.. EmployeeDiscount
-
 ```
 
 새로운 할인 정책이 추가되더라도 `PriceCalculator` 코드는 변경되지 않습니다.
@@ -321,7 +308,6 @@ classDiagram
 class StudentDiscount:
     def discount(self, price: int) -> int:
         return int(price * 0.15)
-
 ```
 
 ### OCP는 조건문 금지 원칙이 아니다
@@ -331,7 +317,6 @@ class StudentDiscount:
 ```python
 def shipping_fee(is_member):
     return 0 if is_member else 3000
-
 ```
 
 문제는 조건문 존재 자체가 아니라, 새로운 요구사항이 발생할 때마다 동일한 형태의 조건문을 여러 위치에서 반복 수정해야 하는 구조입니다.
@@ -343,7 +328,6 @@ elif type == "b":
     ...
 elif type == "c":
     ...
-
 ```
 
 이러한 상황에서 다형성이나 전략 패턴을 도입하면 효과적인 확장 지점을 확보할 수 있습니다.
@@ -364,7 +348,6 @@ import pytest
 @pytest.hookimpl
 def pytest_runtest_setup(item):
     print("test setup")
-
 ```
 
 이를 구조화하면 다음과 같습니다.
@@ -394,7 +377,6 @@ classDiagram
     PytestCore --> HookSpecification : invokes
     HookSpecification <|.. PluginA
     HookSpecification <|.. PluginB
-
 ```
 
 pytest 코어 시스템을 수정하지 않고도 신규 기능을 추가할 수 있는 구조입니다.
@@ -406,7 +388,6 @@ flowchart LR
     Hook --> B[Custom Reporter]
     Hook --> C[Project Plugin]
     Hook --> D[New Plugin]
-
 ```
 
 다만 확장 지점을 너무 많이 노출하면 추후 API 호환성을 유지하는 데 발생하는 비용이 커집니다. 따라서 OCP는 "모든 코드를 확장 가능하게 만드는 것"이 아니라, "실제 변화가 자주 일어나는 경계에 확장 지점을 마련하는 것"으로 이해해야 합니다.
@@ -432,7 +413,6 @@ class Sparrow(Bird):
 class Penguin(Bird):
     def fly(self):
         raise RuntimeError("펭귄은 날 수 없습니다")
-
 ```
 
 ```mermaid
@@ -451,7 +431,6 @@ classDiagram
 
     Bird <|-- Sparrow
     Bird <|-- Penguin
-
 ```
 
 상위 타입을 인자로 받는 함수를 작성합니다.
@@ -459,7 +438,6 @@ classDiagram
 ```python
 def make_bird_fly(bird: Bird):
     bird.fly()
-
 ```
 
 `Sparrow`는 기대한 대로 동작하지만 `Penguin`을 전달하면 예외가 발생합니다. 상위 타입인 `Bird`에 '비행 기능'을 보편적인 속성으로 정의했기 때문입니다.
@@ -480,7 +458,6 @@ class Sparrow(FlyingBird):
 
 class Penguin(Bird):
     pass
-
 ```
 
 ```mermaid
@@ -500,7 +477,6 @@ classDiagram
     Bird <|-- FlyingBird
     Bird <|-- Penguin
     FlyingBird <|-- Sparrow
-
 ```
 
 이제 `Penguin` 클래스는 불가능한 행위를 구현하도록 강제받지 않습니다.
@@ -513,7 +489,6 @@ classDiagram
 class Repository:
     def save(self, item):
         """아이템을 저장한다."""
-
 ```
 
 이를 상속받은 하위 클래스가 다음과 같이 작성되면 문제가 발생합니다.
@@ -522,7 +497,6 @@ class Repository:
 class ReadOnlyRepository(Repository):
     def save(self, item):
         raise PermissionError("저장할 수 없습니다")
-
 ```
 
 상위 타입에서 저장 기능을 보장하기로 계약했음에도 하위 타입이 이를 거부하기 때문입니다. 즉, 메서드의 시그니처가 동일한 것과 **행위 계약을 올바르게 이행하는 것**은 별개의 문제입니다.
@@ -556,7 +530,6 @@ interface List<E> {
 
     ...
 }
-
 ```
 
 하지만 모든 `List` 구현체가 수정 기능을 지원하지는 않습니다.
@@ -566,7 +539,6 @@ List<String> names =
     List.of("Alice", "Bob");
 
 names.add("Charlie");
-
 ```
 
 위 코드는 컴파일을 통과하지만 실행 시 `UnsupportedOperationException`이 발생합니다. Oracle 문서에 따르면 `List.of()`나 `List.copyOf()`로 생성된 리스트는 수정이 불가능하며, 변경 메서드 호출 시 예외를 발생시키도록 설계되어 있습니다.
@@ -592,7 +564,6 @@ classDiagram
 
     List~E~ <|.. ArrayList~E~
     List~E~ <|.. UnmodifiableList~E~
-
 ```
 
 이 구조는 일반적인 LSP 기준에서 벗어난 것처럼 보입니다.
@@ -601,7 +572,6 @@ classDiagram
 void addDefaultUser(List<String> users) {
     users.add("guest");
 }
-
 ```
 
 `ArrayList`를 전달하면 정상 동작하지만, 불변 리스트를 전달하면 실패하기 때문입니다.
@@ -615,7 +585,6 @@ flowchart TD
     ListType["List&lt;T&gt;"] --> Q{수정 가능한가?}
     Q -->|가능| Mutable[ArrayList 등]
     Q -->|불가능| ReadOnly[List.of 등]
-
 ```
 
 호출자는 `List<T>`라는 타입만으로 해당 객체의 수정 가능 여부를 명확히 알 수 없습니다.
@@ -652,7 +621,6 @@ classDiagram
     Collection <|-- FixedSizeCollection
     Collection <|-- AppendOnlyCollection
     Collection <|-- DeleteOnlyCollection
-
 ```
 
 따라서 Java 설계진은 인터페이스 계층을 단순하게 유지하는 대신, 일련의 제약 사항을 런타임 예외로 처리하는 방식을 채택했습니다.
@@ -661,7 +629,6 @@ classDiagram
 flowchart LR
     Small[작은 인터페이스 계층] --> Optional[optional operation]
     Optional --> Runtime[일부 제약을 런타임에서 검사]
-
 ```
 
 이 사례는 현실적인 제약조건에 따라 SOLID 원칙을 적절히 절충해야 함을 보여줍니다.
@@ -691,7 +658,6 @@ class Machine(ABC):
     @abstractmethod
     def fax(self):
         pass
-
 ```
 
 다기능 복합기에는 문제없는 인터페이스입니다.
@@ -706,7 +672,6 @@ class MultiFunctionPrinter(Machine):
 
     def fax(self):
         print("팩스")
-
 ```
 
 그러나 단순 인쇄 기능만 가진 클래스도 불필요한 메서드를 강제로 구현해야 하는 상황이 발생합니다.
@@ -721,7 +686,6 @@ class SimplePrinter(Machine):
 
     def fax(self):
         raise NotImplementedError
-
 ```
 
 ```mermaid
@@ -738,7 +702,6 @@ classDiagram
 
     Machine <|.. MultiFunctionPrinter
     Machine <|.. SimplePrinter
-
 ```
 
 역할별로 인터페이스를 분리하여 개선합니다.
@@ -757,7 +720,6 @@ class Scanner(Protocol):
 class Fax(Protocol):
     def fax(self) -> None:
         ...
-
 ```
 
 ```mermaid
@@ -792,7 +754,6 @@ classDiagram
     Printer <|.. MultiFunctionPrinter
     Scanner <|.. MultiFunctionPrinter
     Fax <|.. MultiFunctionPrinter
-
 ```
 
 이제 `SimplePrinter`는 자신에게 필요한 `Printer` 인터페이스만 구현합니다.
@@ -811,7 +772,6 @@ Java의 `List` 구조는 ISP 관점에서도 분석할 수 있습니다. 조회 
 
 ```csharp
 IReadOnlyList<T>
-
 ```
 
 이 인터페이스는 인덱서 및 `Count` 등 조회 기능만 제공하며, `Add`나 `Remove` 같은 수정 메서드는 포함하지 않습니다.
@@ -824,7 +784,6 @@ void PrintUsers(IReadOnlyList<User> users)
         Console.WriteLine(user.Name);
     }
 }
-
 ```
 
 읽기 기능만 사용하는 코드는 수정 메서드의 존재를 몰라도 됩니다.
@@ -848,7 +807,6 @@ classDiagram
 
     IReadOnlyList~T~ <|.. List~T~
     IList~T~ <|.. List~T~
-
 ```
 
 .NET의 `List<T>`는 `IList<T>`와 `IReadOnlyList<T>`를 동시에 구현합니다. 따라서 사용 목적에 따라 적절한 수준의 인터페이스를 선택할 수 있습니다.
@@ -865,7 +823,6 @@ flowchart LR
 
     Reader --> Mutable
     Writer --> Mutable
-
 ```
 
 개념적으로 읽기 전용 인터페이스(Read-only interface)와 불변 객체(Immutable object)는 구별해서 다루어야 합니다.
@@ -878,7 +835,6 @@ flowchart LR
 
 ```csharp
 IImmutableList<T>
-
 ```
 
 `IImmutableList<T>`는 `IReadOnlyList<T>`를 확장하며, 변경 연산 수행 시 원본을 변경하지 않고 **새로운 객체를 생성하여 반환**합니다.
@@ -889,7 +845,6 @@ IImmutableList<string> first =
 
 IImmutableList<string> second =
     first.Add("C");
-
 ```
 
 ```mermaid
@@ -900,7 +855,6 @@ flowchart LR
 
     First --> Add
     Add --> Second
-
 ```
 
 `first` 변수가 참조하는 인스턴스는 유지됩니다. .NET 명세에 따르면 새로 생성되는 인스턴스는 기존 인스턴스와 내부 메모리를 최대한 공유하도록 최적화되어 있습니다.
@@ -928,7 +882,6 @@ flowchart TD
     Need -->|읽기만| ReadOnly["IReadOnlyList&lt;T&gt;"]
     Need -->|수정| Mutable["IList&lt;T&gt;"]
     Need -->|불변 값 연산| Immutable["IImmutableList&lt;T&gt;"]
-
 ```
 
 다만 .NET의 `ImmutableList<T>` 구체 클래스 역시 하위 호환성을 위해 `IList<T>`, `ICollection<T>` 등을 복합적으로 구현하고 있습니다. 따라서 이는 설계 선택 방식의 차이이며 단편적인 우열의 문제는 아닙니다.
@@ -942,7 +895,6 @@ Kotlin은 JVM 환경에서 컬렉션 인터페이스 계층 구조를 재설계�
 ```kotlin
 List<T>
 MutableList<T>
-
 ```
 
 `MutableList<T>`가 `List<T>`를 상속받아 요소의 추가, 삭제, 수정 메서드를 확장하는 방식입니다. 수정 작업이 불필요한 경우 read-only 타입인 `List`를 지정합니다.
@@ -963,7 +915,6 @@ classDiagram
     }
 
     List~T~ <|-- MutableList~T~
-
 ```
 
 기본 `List` 타입에는 수정 메서드가 존재하지 않아 다음 코드는 컴파일되지 않습니다.
@@ -973,7 +924,6 @@ val names: List<String> =
     listOf("Alice", "Bob")
 
 // names.add("Charlie")
-
 ```
 
 변경이 필요한 경우 명시적으로 `MutableList` 타입을 사용합니다.
@@ -983,7 +933,6 @@ val names: MutableList<String> =
     mutableListOf("Alice", "Bob")
 
 names.add("Charlie")
-
 ```
 
 Kotlin의 `List` 역시 읽기 전용 인터페이스이며, 객체 자체의 완벽한 불변성을 상징하는 것은 아닙니다. 해당 객체를 참조하는 다른 가변 참조에 의해 내용이 변경될 수 있으므로 `read-only`와 `immutable`의 구분은 동일하게 유효합니다.
@@ -997,7 +946,6 @@ Python의 `collections.abc` 모듈도 표준 컬렉션에 유사한 구조를 �
 ```python
 Sequence
 MutableSequence
-
 ```
 
 `MutableSequence`는 `Sequence`가 가진 읽기 전용 인터페이스에 `__setitem__`, `__delitem__`, `insert()` 등의 변경 메서드를 추가하여 확장합니다.
@@ -1020,7 +968,6 @@ classDiagram
     }
 
     Sequence <|-- MutableSequence
-
 ```
 
 이 상속 구조는 다른 컬렉션 ABC(Abstract Base Class)에도 적용되어 있습니다.
@@ -1039,7 +986,6 @@ classDiagram
     Set <|-- MutableSet
     Mapping <|-- MutableMapping
     Sequence <|-- MutableSequence
-
 ```
 
 필요한 행위 세트만을 인터페이스로 의존하게 만드는 전형적인 ISP 적용 사례입니다.
@@ -1067,7 +1013,6 @@ flowchart LR
 
     Python[Python] --> P1[Sequence]
     Python --> P2[MutableSequence]
-
 ```
 
 핵심은 특정 언어의 우월성이 아니라 "변경 가능성이라는 제약 조건을 타입 시스템으로 강제할 것인가, 문서 및 런타임 계약으로 처리할 것인가"에 대한 설계상 결정입니다.
@@ -1094,7 +1039,6 @@ class OrderService:
     def complete_order(self):
         print("주문 완료")
         self.sender.send("주문이 완료되었습니다.")
-
 ```
 
 ```mermaid
@@ -1109,7 +1053,6 @@ classDiagram
     }
 
     OrderService --> EmailSender : directly depends on
-
 ```
 
 `OrderService`가 비즈니스 로직 외에 `EmailSender`라는 특정 전송 기술에 직접 결합된 상태입니다. 이 상황에서 알림 매체를 SMS로 변경하면 `OrderService` 코드도 함께 수정해야 합니다.
@@ -1122,7 +1065,6 @@ from typing import Protocol
 class MessageSender(Protocol):
     def send(self, message: str) -> None:
         ...
-
 ```
 
 세부 전송 클래스는 이 인터페이스 규약을 준수하도록 구현합니다.
@@ -1135,7 +1077,6 @@ class EmailSender:
 class SmsSender:
     def send(self, message: str) -> None:
         print(f"SMS 전송: {message}")
-
 ```
 
 비즈니스 로직 클래스는 추상화된 규약에만 의존합니다.
@@ -1148,7 +1089,6 @@ class OrderService:
     def complete_order(self):
         print("주문 완료")
         self.sender.send("주문이 완료되었습니다.")
-
 ```
 
 ```mermaid
@@ -1174,7 +1114,6 @@ classDiagram
     OrderService --> MessageSender : depends on
     MessageSender <|.. EmailSender
     MessageSender <|.. SmsSender
-
 ```
 
 객체 생성 및 주입은 외부에서 담당합니다.
@@ -1184,7 +1123,6 @@ sender = EmailSender()
 service = OrderService(sender)
 
 service.complete_order()
-
 ```
 
 ---
@@ -1195,7 +1133,6 @@ service.complete_order()
 
 ```python
 service = OrderService(EmailSender())
-
 ```
 
 다만 DI와 DIP가 완전히 동일한 개념은 아닙니다.
@@ -1204,7 +1141,6 @@ service = OrderService(EmailSender())
 class OrderService:
     def __init__(self, sender: EmailSender):
         self.sender = sender
-
 ```
 
 위 코드는 외부에서 객체를 주입받아 DI는 충족하지만, 인자의 타입으로 구체 클래스(`EmailSender`)를 지정하고 있어 DIP 원칙은 위반합니다.
@@ -1213,7 +1149,6 @@ class OrderService:
 class OrderService:
     def __init__(self, sender: MessageSender):
         self.sender = sender
-
 ```
 
 추상 타입(`MessageSender`)에 의존하도록 설정해야 DIP 원칙이 성립됩니다.
@@ -1241,7 +1176,6 @@ session.mount(
     "https://example.com/",
     MyAdapter(),
 )
-
 ```
 
 `requests` 모듈 내부에는 모든 Adapter가 구현해야 하는 표준 규약인 `BaseAdapter` 추상 클래스가 존재합니다.
@@ -1272,7 +1206,6 @@ classDiagram
     Session --> BaseAdapter : delegates transport
     BaseAdapter <|-- HTTPAdapter
     BaseAdapter <|-- CustomAdapter
-
 ```
 
 `Session` 클래스는 네트워크 전송의 구체적인 방식을 직접 알지 않고 `BaseAdapter` 규약에만 의존합니다.
@@ -1282,7 +1215,6 @@ flowchart LR
     Session --> Adapter[Transport Adapter]
     Adapter --> HTTP[HTTPAdapter]
     Adapter --> Custom[Custom Adapter]
-
 ```
 
 새로운 통신 프로토콜이나 동작 방식이 필요한 경우 Adapter 경계에 맞추어 구현체만 교체할 수 있습니다. 이 구조는 DIP와 OCP가 복합적으로 적용된 형태입니다.
@@ -1306,7 +1238,6 @@ class Checkout:
 
         elif payment_type == "point":
             print("포인트 결제")
-
 ```
 
 새로운 결제 수단이 추가될 때마다 `Checkout` 수정이 필요합니다. 구조를 변경해 결제 수단을 전략으로 분리합니다.
@@ -1329,7 +1260,6 @@ class BankTransfer:
 class PointPayment:
     def pay(self, amount: int) -> None:
         print(f"포인트로 {amount}원 결제")
-
 ```
 
 ```python
@@ -1339,7 +1269,6 @@ class Checkout:
 
     def checkout(self, amount: int) -> None:
         self.payment_method.pay(amount)
-
 ```
 
 ```mermaid
@@ -1370,7 +1299,6 @@ classDiagram
     PaymentMethod <|.. CardPayment
     PaymentMethod <|.. BankTransfer
     PaymentMethod <|.. PointPayment
-
 ```
 
 이 구조 하나에 다섯 가지 원칙이 작동합니다.
@@ -1411,7 +1339,6 @@ flowchart TD
     Service --> Calc[가격 계산]
     Service --> DB[DB 저장]
     Service --> Email[이메일 발송]
-
 ```
 
 하나의 클래스가 여러 이유로 변경되는 상황을 방지합니다.
@@ -1428,7 +1355,6 @@ flowchart TD
     Simple[SimplePrinter] -. 필요 .-> Print
     Simple -. 불필요 .-> Scan
     Simple -. 불필요 .-> Fax
-
 ```
 
 클라이언트가 쓰지 않는 메서드에 영향을 받지 않도록 인터페이스를 쪼개는 것에 초점을 맞춥니다.
@@ -1456,7 +1382,6 @@ classDiagram
     class CardPayment
 
     Checkout --> CardPayment
-
 ```
 
 위 구조를 추상화를 이용해 아래와 같이 의존 방향을 재설정하도록 유도합니다.
@@ -1473,7 +1398,6 @@ classDiagram
 
     Checkout --> PaymentMethod
     PaymentMethod <|.. CardPayment
-
 ```
 
 DIP를 적용해 인터페이스에 의존하도록 만들면 자연스럽게 OCP를 달성하기 쉬워집니다. 그러나 의존 관계의 관점(DIP)과 확장성의 관점(OCP)이라는 목적상의 차이가 존재합니다.
@@ -1498,7 +1422,6 @@ class CardCheckout(Checkout):
 class BankCheckout(Checkout):
     def pay(self, amount):
         print("계좌 이체")
-
 ```
 
 ```mermaid
@@ -1517,7 +1440,6 @@ classDiagram
 
     Checkout <|-- CardCheckout
     Checkout <|-- BankCheckout
-
 ```
 
 이 관계가 명확한 **is-a** 관계인지 판단해야 합니다. 결제 방식을 합성 구조로 변경하면 다음과 같습니다.
@@ -1534,7 +1456,6 @@ classDiagram
     }
 
     Checkout --> PaymentMethod : has-a
-
 ```
 
 합성과 위임을 활용하면 다음과 같은 이점이 있습니다.
@@ -1568,7 +1489,6 @@ class NotificationService:
 
     def notify(self, message):
         self.sender.send(message)
-
 ```
 
 `NotificationService`는 객체의 타입이 아닌 `send()` 메서드의 존재 여부만 확인하여 작동합니다.
@@ -1583,7 +1503,6 @@ from typing import Protocol
 class Sender(Protocol):
     def send(self, message: str) -> None:
         ...
-
 ```
 
 ### `ABC`
@@ -1597,7 +1516,6 @@ class Sender(ABC):
     @abstractmethod
     def send(self, message: str) -> None:
         pass
-
 ```
 
 | 방식 | 특징 |
@@ -1621,7 +1539,6 @@ def vip_discount(price):
 
 def calculate_price(price, discount_policy):
     return price - discount_policy(price)
-
 ```
 
 함수를 직접 인자로 넘깁니다.
@@ -1631,7 +1548,6 @@ total = calculate_price(
     10000,
     vip_discount,
 )
-
 ```
 
 ```mermaid
@@ -1639,7 +1555,6 @@ flowchart LR
     Calculator[calculate_price] --> Policy[discount_policy]
     Policy --> Regular[regular_discount]
     Policy --> VIP[vip_discount]
-
 ```
 
 비즈니스 로직과 세부 할인 알고리즘이 성공적으로 분리됩니다. SOLID의 본질은 무조건적인 클래스 양산이 아닌 **변화의 경계를 올바르게 정의하는 것**입니다.
@@ -1655,7 +1570,6 @@ class WeatherService:
     def get_weather(self):
         client = RealWeatherApi()
         return client.fetch()
-
 ```
 
 ```mermaid
@@ -1669,7 +1583,6 @@ classDiagram
     }
 
     WeatherService --> RealWeatherApi : creates directly
-
 ```
 
 외부에서 의존성을 전달받도록 개선하면 테스트 대역(Test Double)을 주입할 수 있습니다.
@@ -1681,7 +1594,6 @@ class WeatherService:
 
     def get_weather(self):
         return self.client.fetch()
-
 ```
 
 ```python
@@ -1696,7 +1608,6 @@ service = WeatherService(
 )
 
 assert service.get_weather()["temperature"] == 20
-
 ```
 
 ```mermaid
@@ -1722,7 +1633,6 @@ classDiagram
     WeatherService --> WeatherClient
     WeatherClient <|.. RealWeatherApi
     WeatherClient <|.. FakeWeatherApi
-
 ```
 
 외부 시스템과의 결합도가 낮아지면 다음과 같은 장점이 있습니다.
@@ -1773,7 +1683,6 @@ SOLID 원칙은 절대적인 철칙이 아닙니다.
 ```python
 def add(a, b):
     return a + b
-
 ```
 
 이러한 로직에 정형화된 패턴이나 인터페이스 구조를 지나치게 적용할 필요는 없습니다.
@@ -1786,7 +1695,6 @@ flowchart LR
     A --> B[AdditionStrategy]
     B --> C[DefaultAdditionStrategy]
     C --> D[AdditionFactory]
-
 ```
 
 추상화 레이어 자체가 비용이자 복잡성을 유발할 수 있기 때문입니다.
@@ -1808,7 +1716,6 @@ flowchart LR
     PaymentMethod --> PaymentProvider
     PaymentProvider --> GatewayAdapter
     GatewayAdapter --> Transport
-
 ```
 
 따라서 추상화는 **실제 변경이 빈번하게 일어나거나 명확한 확장 요구가 예상되는 지점**에 한해 제약적으로 도입해야 합니다.
@@ -1835,7 +1742,6 @@ classDiagram
     PaymentRegistry --> PaymentProvider
     PaymentProvider --> PaymentStrategy
     PaymentStrategy --> PaymentMethod
-
 ```
 
 실제 변경 요구 사항의 변화 양상이 파악되는 시점에 추상화를 도입하는 것도 적절한 접근 전략입니다.
@@ -1933,7 +1839,6 @@ flowchart LR
     Change -. 최소 영향 .-> StableA[다른 기능]
     Change -. 최소 영향 .-> StableB[외부 시스템]
     Change -. 최소 영향 .-> StableC[다른 모듈]
-
 ```
 
 올바른 설계는 요구사항이 바뀌었을 때 관련된 영역만 영향받도록 하고, 상관없는 코드까지 사이드 이펙트가 퍼지지 않도록 만드는 것입니다. 따라서 코드를 분석할 때는 단순히 "원칙을 지켰는가?"보다는 "요구사항 변경 시 영향 범위가 어디까지 미치는가?"를 확인해야 합니다.

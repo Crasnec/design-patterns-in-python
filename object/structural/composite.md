@@ -43,7 +43,6 @@ class Platoon:
     ):
         self.name = name
         self.squads = squads
-
 ```
 
 각 객체의 전투력을 계산하려면 타입별 처리가 필요합니다.
@@ -70,7 +69,6 @@ def calculate_power(
         )
 
     raise TypeError("알 수 없는 부대 타입입니다.")
-
 ```
 
 현재 부대 계층 구조는 다음과 같습니다.
@@ -83,7 +81,6 @@ flowchart TD
     squad_a --> soldier_a2[Soldier]
     squad_b --> soldier_b1[Soldier]
     squad_b --> soldier_b2[Soldier]
-
 ```
 
 문제는 계층 구조가 확장될수록 클라이언트가 전체 트리 구조를 파악하고 탐색해야 한다는 점입니다.
@@ -97,7 +94,6 @@ class Division:
         platoons: list[Platoon],
     ):
         self.platoons = platoons
-
 ```
 
 이 경우 기존 계산 함수에도 새로운 조건 분기를 추가해야 합니다.
@@ -111,7 +107,6 @@ if isinstance(unit, Division):
         for squad in platoon.squads
         for soldier in squad.soldiers
     )
-
 ```
 
 계층 단계가 늘어날수록 클라이언트는 다음 구조를 직접 순회하고 탐색해야 합니다.
@@ -121,7 +116,6 @@ flowchart LR
     division[Division] --> platoon[Platoon]
     platoon --> squad[Squad]
     squad --> soldier[Soldier]
-
 ```
 
 전투력 외에도 인원수, 유지 비용, 이동 속도 등의 연산이 추가될 때마다 유사한 재귀 탐색 코드가 반복해서 작성됩니다.
@@ -148,7 +142,6 @@ class Unit(ABC):
     @abstractmethod
     def get_power(self) -> int:
         pass
-
 ```
 
 단일 병사는 `Leaf` 역할을 수행합니다.
@@ -166,7 +159,6 @@ class Soldier(Unit):
 
     def get_power(self) -> int:
         return self.power
-
 ```
 
 여러 `Unit`을 포함하는 `Composite` 객체도 동일한 인터페이스를 구현합니다.
@@ -192,7 +184,6 @@ class UnitGroup(Unit):
             child.get_power()
             for child in self._children
         )
-
 ```
 
 여기서 핵심은 `UnitGroup`이 보유한 자식 요소의 타입 역시 `Unit`이라는 점입니다.
@@ -202,7 +193,6 @@ class UnitGroup(Unit):
 UnitGroup
     ├─ Soldier
     └─ Soldier
-
 ```
 
 또 다른 `UnitGroup`일 수도 있습니다.
@@ -216,7 +206,6 @@ UnitGroup
           ├─ Soldier
           └─ UnitGroup
                 └─ Soldier
-
 ```
 
 이 구조에서는 트리의 깊이에 제한이 없습니다.
@@ -230,7 +219,6 @@ def show_power(
     print(
         f"총 전투력: {unit.get_power()}"
     )
-
 ```
 
 다음 객체들을 모두 동일한 방식으로 전달할 수 있습니다.
@@ -240,7 +228,6 @@ show_power(soldier)
 show_power(squad)
 show_power(platoon)
 show_power(division)
-
 ```
 
 호출하는 입장에서는 이들이 모두 단순한 `Unit`으로 보입니다.
@@ -259,7 +246,6 @@ Client
           └─ UnitGroup
                  │
                  └─ ...
-
 ```
 
 컴포지트 패턴의 본질은 단순히 트리 자료구조를 구축하는 데 있지 않습니다. `Leaf`와 `Composite`가 같은 추상 인터페이스를 공유하여, **단일 객체와 객체의 재귀적 집합을 클라이언트가 같은 계약으로 다루게 하는 것**이 패턴의 핵심입니다.
@@ -312,7 +298,6 @@ class Unit(ABC):
     @abstractmethod
     def add(self, unit: "Unit") -> None:
         pass
-
 ```
 
 * **장점**: 클라이언트는 모든 Component를 같은 인터페이스로 다룰 수 있습니다.
@@ -320,7 +305,6 @@ class Unit(ABC):
 
 ```python
 soldier.add(other_soldier)  # 런타임 예외 발생 필요
-
 ```
 
 따라서 다음과 같이 예외를 발생시키는 처리가 수반됩니다.
@@ -334,7 +318,6 @@ def add(
     raise TypeError(
         "Leaf에는 자식을 추가할 수 없습니다."
     )
-
 ```
 
 결과적으로 **인터페이스 일관성은 높아지지만 타입 안전성은 낮아집니다.**
@@ -358,7 +341,6 @@ class UnitGroup(Unit):
         unit: Unit,
     ) -> None:
         ...
-
 ```
 
 * **장점**: `soldier.add(...)`와 같은 잘못된 코드 작성을 정적 타입 단계에서 차단할 수 있으며, 타입의 실제 역할을 정확히 표현합니다.
@@ -402,7 +384,6 @@ ET.SubElement(
     squad,
     "soldier",
 )
-
 ```
 
 구조는 다음과 같습니다.
@@ -414,7 +395,6 @@ Element("army")
            │
            ├─ Element("soldier")
            └─ Element("soldier")
-
 ```
 
 모든 노드가 동일한 `Element` 타입으로 다루어지고 자식을 재귀적으로 포함할 수 있다는 점에서 Composite 구조와 매우 유사합니다.
@@ -429,7 +409,6 @@ Element("army")
 
 ```python
 a + b * c
-
 ```
 
 개념적으로 아래와 같은 트리 구조로 변환됩니다.
@@ -443,7 +422,6 @@ BinOp(+)
        │
        ├─ Name(b)
        └─ Name(c)
-
 ```
 
 Leaf역할을 하는 `Name` 노드와 하위 노드를 집합으로 갖는 `BinOp` 노드가 하나의 AST 계층 구조 내에서 재귀적으로 결합하는 컴포지트 형태를 띱니다.
@@ -463,7 +441,6 @@ EmailMessage
           │
           ├─ EmailMessage(text/plain)
           └─ EmailMessage(text/html)
-
 ```
 
 최상위 메시지나 내부 서브 메시지가 모두 동일한 `EmailMessage` 클래스 인스턴스로 표현되고 재귀적으로 중첩된다는 점에서 Composite 패턴의 특성을 강하게 보여줍니다.
@@ -500,7 +477,6 @@ classDiagram
     Unit <|.. UnitGroup
 
     UnitGroup o-- Unit : children
-
 ```
 
 ### 각 역할 설명
@@ -518,7 +494,6 @@ UnitGroup ── contains ──> Unit
                            ├─ Soldier
                            │
                            └─ UnitGroup
-
 ```
 
 `Composite` 자신도 `Component` 인터페이스를 구현하므로 트리가 재귀적으로 형성될 수 있습니다.
@@ -628,7 +603,6 @@ if __name__ == "__main__":
         - Soldier: 보로미르 (전투력: 85)
 
 총 전투력: 370
-
 ```
 
 클라이언트는 전달받는 대상의 구체적 구조와 관계없이 아래 객체들을 완전히 동일한 인터페이스로 처리합니다.
@@ -637,7 +611,6 @@ if __name__ == "__main__":
 print_unit_info(aragorn)        # Leaf 단일 객체
 print_unit_info(fellowship)     # Composite 단일 계층
 print_unit_info(allied_forces)  # Composite 중첩 계층
-
 ```
 
 1. **`aragorn`**: 단일 `Soldier` (`Leaf`)
@@ -654,7 +627,6 @@ UnitGroup (allied_forces)
     │
     └─ UnitGroup (gondor)
          └─ Soldier (boromir)
-
 ```
 
 어떤 구조이든 클라이언트는 단지 다음 메서드를 호출할 뿐입니다.
@@ -662,7 +634,6 @@ UnitGroup (allied_forces)
 ```python
 unit.get_power()
 unit.show()
-
 ```
 
 이것이 컴포지트 패턴이 제공하는 "부분과 전체의 일관된 처리"입니다.
@@ -681,7 +652,6 @@ Component
     ├─ Leaf
     │
     └─ Composite ──> Component*
-
 ```
 
 `Composite`가 `Component`를 재귀적으로 포함하는 구조를 수학식으로 단순화하면 다음과 같습니다.
@@ -718,7 +688,6 @@ data Unit =
         name: str,
         children: Vector[Unit],
     )
-
 ```
 
 `Group`의 자식 타입이 다시 자기 자신인 `Unit`으로 정의되어 있습니다.
@@ -731,7 +700,6 @@ Unit
   └─ Group
         │
         └─ Vector[Unit] ──> ...
-
 ```
 
 이 타입을 사용하면 데이터 구조를 단 하나의 표현식으로 직접 구성할 수 있습니다.
@@ -759,7 +727,6 @@ army = Group(
         ),
     ],
 )
-
 ```
 
 객체지향에서의 `Component 인터페이스 + Leaf 서브클래스 + Composite 서브클래스` 조합이 하나의 **Recursive ADT**로 깔끔하게 통합됩니다.
@@ -772,7 +739,6 @@ army = Group(
 
 ```python
 unit.get_power()
-
 ```
 
 반면 ADT 관점에서는 데이터 정의와 연산 로직을 서로 분리할 수 있습니다.
@@ -798,7 +764,6 @@ def get_power(
                 get_power(child)
                 for child in children
             )
-
 ```
 
 * **`Soldier`**: `power` 값을 그대로 반환
@@ -819,7 +784,6 @@ match node:
         ...
     case Composite:
         # 자식 노드들을 재귀 탐색 후 결합
-
 ```
 
 이 재귀 구조 자체를 `fold` 기법으로 추상화할 수 있습니다.
@@ -864,7 +828,6 @@ def fold_unit[R](
                     in children
                 ],
             )
-
 ```
 
 이제 전투력 계산 로직은 재귀 구현 없이 선언적으로 작성할 수 있습니다.
@@ -879,7 +842,6 @@ def total_power(
         soldier=lambda name, power: power,
         group=lambda name, powers: sum(powers),
     )
-
 ```
 
 인원수 집계 함수 역시 마찬가지입니다.
@@ -894,7 +856,6 @@ def count_soldiers(
         soldier=lambda name, power: 1,
         group=lambda name, counts: sum(counts),
     )
-
 ```
 
 이로써 "트리를 탐색하는 구조적 로직"과 "각 노드에서 수행할 구체적인 연산 로직"이 깔끔하게 분리됩니다.
@@ -907,7 +868,6 @@ def count_soldiers(
 
 ```text
 Recursive Tree ──> [Leaf 변환] ──> [Branch 결과 결합] ──> 최종 축약값
-
 ```
 
 전투력 계산 과정은 다음과 같은 흐름을 가집니다.
@@ -919,7 +879,6 @@ Group
  └─ Group
       ├─ Soldier(80)
       └─ Soldier(70)
-
 ```
 
 1. 각 `Leaf`를 해당 전투력 값으로 변환합니다.
@@ -931,7 +890,6 @@ Group
  └─ Group
       ├─ 80
       └─ 70
-
 ```
 
 2. 각 `Group` 단계에서 자식들의 값을 합산합니다.
@@ -961,7 +919,6 @@ trait Monoid[T]:
         a: T,
         b: T,
     ) -> T
-
 ```
 
 정수 합산에 대한 모노이드 구현 예시입니다.
@@ -980,7 +937,6 @@ impl Monoid[Sum[Int]]:
         return Sum(
             a.value + b.value
         )
-
 ```
 
 모노이드를 활용하면 Composite 트리의 집계 연산을 다음과 같이 극도로 일반화할 수 있습니다.
@@ -991,7 +947,6 @@ def aggregate[T](
 ) -> T
 where Monoid[T]:
     ...
-
 ```
 
 결과의 결합 연산이 결합 법칙을 만족하고 항등원이 있다면 **Monoid**로 일반화할 수 있습니다. 정수 합산에서는 덧셈과 0이 그 역할을 합니다. 뺄셈처럼 결합 순서에 따라 값이 바뀌거나 부모의 문맥이 필요한 계산은 이 모델에 그대로 들어맞지 않습니다.
@@ -1030,7 +985,6 @@ def buff(
                     in children
                 ],
             )
-
 ```
 
 이 예제는 구조를 유지하는 값 변환을 보여줍니다. 이를 Functor로 일반화하려면 `Tree[A]`처럼 변환할 값의 타입을 매개변수로 두고, 항등 변환과 함수 합성에 관한 법칙을 만족하는 `map`을 정의해야 합니다. 고정된 `Unit` 타입의 `buff()` 하나가 곧 범용 Functor 구현인 것은 아닙니다.
@@ -1050,7 +1004,6 @@ def buff(
 ```python
 group.add(unit)
 group.remove(unit)
-
 ```
 
 이 같은 가변 트리는 다중 참조 환경에서 의도치 않은 상태 변경 문제를 야기할 수 있습니다.
@@ -1065,7 +1018,6 @@ immutable data Unit =
         name: str,
         children: Vector[Unit],
     )
-
 ```
 
 자식을 추가하는 함수는 기존 객체를 수정하지 않고 새로운 `Group`을 생성합니다.
@@ -1079,7 +1031,6 @@ def add_child(
     return group with {
         children = group.children.append(child)
     }
-
 ```
 
 이때 **영속적 자료구조(Persistent Data Structure)** 기술을 사용하면 변경되지 않은 서브트리의 노드들을 메모리상에서 구조적으로 공유(Structural Sharing)하여 효율성을 극대화합니다.
@@ -1090,7 +1041,6 @@ old_tree ─────┐
 new_tree ─────┘
                 \
                  [새로 추가된 노드]
-
 ```
 
 ---
@@ -1102,7 +1052,6 @@ new_tree ─────┘
 ```python
 group_a.add(group_b)
 group_b.add(group_a)  # 순환 구조 형성!
-
 ```
 
 이 상태에서 `get_power()` 같은 재귀 연산을 실행하면 무한 루프에 빠져 스택 오버플로우가 발생합니다.
@@ -1111,7 +1060,6 @@ group_b.add(group_a)  # 순환 구조 형성!
 
 ```text
 Unit₀ ──> Unit₁ ──> Unit₂
-
 ```
 
 이 제약을 지키는 모델은 순환 방지를 생성 규칙으로 옮깁니다. Python의 frozen dataclass나 불변 참조 하나만으로 객체 그래프 전체에 이 조건이 성립하지는 않습니다. 외부 데이터에서 트리를 복원할 때는 순환·깊이·노드 수의 검증이 여전히 필요할 수 있습니다.
@@ -1146,7 +1094,6 @@ async def load_status(
     soldier: Soldier,
 ) -> SoldierStatus:
     ...
-
 ```
 
 효과 시스템을 지원하는 타입 환경에서는 트리 순회 로직과 부수 효과 로직의 경계를 타입에 드러낼 수 있습니다.
@@ -1160,14 +1107,12 @@ def traverse_unit[
 ) -> F[UnitStatus]
 where Applicative[F]:
     ...
-
 ```
 
 동일한 순회 틀을 사용하면서 비동기 처리(`Async`), 예외 처리(`Result`), 검증(`Validation`), 상태 변경(`State`) 등의 다양한 효과와 조합할 수 있습니다.
 
 ```python
 status: Async[UnitStatus] = traverse_unit(army, load_status)
-
 ```
 
 ---
@@ -1190,7 +1135,6 @@ data UnitF[A] =
         name: str,
         children: Vector[A],
     )
-
 ```
 
 이후 `Fix` 타입을 통해 재귀를 주입합니다.
@@ -1199,7 +1143,6 @@ data UnitF[A] =
 newtype Fix[F] = Fix(value: F[Fix[F]])
 
 type Unit = Fix[UnitF]
-
 ```
 
 이제 **Catamorphism (`cata`)** 기법을 적용하면, 개발자는 재귀 로직을 작성하지 않고 단일 노드에 대한 계산 규칙인 **Algebra**만 정의하면 됩니다.
@@ -1220,7 +1163,6 @@ def power_algebra(
 
 # 실제 호출
 power = cata(power_algebra, army)
-
 ```
 
 이 표현에서는 객체지향의 "재귀적 객체 구조 + 재귀적 메서드 호출"을 "재귀 타입 구조(`Fix`) + Algebra + Recursion Scheme(`cata`)"으로 분해합니다.

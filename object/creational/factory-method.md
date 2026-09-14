@@ -60,7 +60,6 @@ class BadDungeon:
         # 문제점 2: 생성 로직과 실제 비즈니스 로직이 혼재됨
         print("던전에 입장했습니다.")
         monster.attack()
-
 ```
 
 새로운 던전과 몬스터가 추가되면 기존 조건문을 계속 수정해야 합니다.
@@ -80,7 +79,6 @@ elif dungeon_type == "swamp":
 
 elif dungeon_type == "desert":
     monster = SandWorm()
-
 ```
 
 동일한 생성 규칙이 필요한 곳이 많아지면 조건문이 프로젝트 전반에 반복되어 중복을 만듭니다.
@@ -98,7 +96,6 @@ def preview_monster(dungeon_type: str) -> Monster:
         return FireDragon()
 
     raise ValueError("알 수 없는 던전입니다.")
-
 ```
 
 ### 이 방식이 가진 단점
@@ -132,7 +129,6 @@ class Dungeon(ABC):
 
         print("던전에 입장했습니다.")
         monster.attack()
-
 ```
 
 상위 클래스는 `create_monster()`가 어떤 구체 객체를 반환하는지 알 필요가 없으며, 구체 던전이 생성할 제품을 결정합니다.
@@ -148,7 +144,6 @@ class IceDungeon(Dungeon):
 
     def create_monster(self) -> Monster:
         return IceGolem()
-
 ```
 
 클라이언트는 구체 `Creator`를 선택한 뒤 동일한 인터페이스로 사용합니다.
@@ -156,7 +151,6 @@ class IceDungeon(Dungeon):
 ```python
 dungeon = ForestDungeon()
 dungeon.enter()
-
 ```
 
 `Dungeon.enter()`의 코드는 수정되지 않았지만, 실제 생성되는 제품은 `Goblin`으로 변경됩니다.
@@ -216,7 +210,6 @@ class TestCase:
 
         # 공통 테스트 실행 로직
         ...
-
 ```
 
 구조를 단순화하면 다음과 같습니다.
@@ -243,7 +236,6 @@ class FormMixin:
         return form_class(
             **self.get_form_kwargs()
         )
-
 ```
 
 하위 View가 `get_form_class()` 또는 `get_form()`을 오버라이드하여 상위 폼 처리 흐름을 유지하면서 생성 대상을 변경할 수 있도록 구성되어 있습니다.
@@ -261,7 +253,6 @@ class GUID(TypeDecorator):
             return UUID()
 
         return CHAR(32)
-
 ```
 
 상위 `TypeDecorator`의 처리 과정은 유지하면서 하위 클래스가 사용할 구체 타입을 결정한다는 점에서 Factory Method와 유사한 패턴을 보여줍니다.
@@ -320,7 +311,6 @@ classDiagram
     ForestDungeon ..> Goblin : Creates
     IceDungeon ..> IceGolem : Creates
     VolcanoDungeon ..> FireDragon : Creates
-
 ```
 
 ---
@@ -416,7 +406,6 @@ if __name__ == "__main__":
 
 === 던전 입장 ===
 [화염 드래곤] 브레스 공격!
-
 ```
 
 새로운 독 늪 던전을 추가하더라도 기존 `Dungeon.enter()`와 클라이언트 로직을 수정할 필요가 없습니다.
@@ -432,7 +421,6 @@ class SwampDungeon(Dungeon):
 
     def create_monster(self) -> Monster:
         return PoisonSlime()
-
 ```
 
 ---
@@ -464,21 +452,18 @@ class Dungeon:
 
     def create_monster(self) -> Monster:
         ...
-
 ```
 
 하지만 함수가 일급 객체인 언어에서는 "무언가를 생성하는 행위" 자체를 하나의 값으로 표현할 수 있습니다.
 
 ```text
 type Factory[T] = () -> T
-
 ```
 
 `Monster`를 만드는 Factory는 다음 타입에 해당합니다.
 
 ```python
 Factory[Monster]
-
 ```
 
 구체 생성 함수는 단순한 함수로 정의할 수 있습니다.
@@ -490,7 +475,6 @@ def create_goblin() -> Goblin:
 
 def create_ice_golem() -> IceGolem:
     return IceGolem()
-
 ```
 
 상위 알고리즘은 생성 함수를 매개변수로 받아 사용합니다.
@@ -504,7 +488,6 @@ def enter_dungeon[M <: Monster](
 
     print("던전에 입장했습니다.")
     monster.attack()
-
 ```
 
 호출 시 필요한 생성 전략을 전달합니다.
@@ -512,7 +495,6 @@ def enter_dungeon[M <: Monster](
 ```python
 enter_dungeon(create_goblin)
 enter_dungeon(create_ice_golem)
-
 ```
 
 고전 Factory Method의 `ConcreteCreator` 오버라이딩 방식이 **`Factory[T]` 타입의 함수 값**으로 치환되는 형태입니다. 생성 전략을 바꾸기 위해 매번 새로운 Creator 서브클래스를 만들 필요가 없습니다.
@@ -523,7 +505,6 @@ enter_dungeon(create_ice_golem)
 
 ```text
 type Factory[Context, Product] = Context -> Product
-
 ```
 
 예를 들어 몬스터 생성에 던전의 난이도와 플레이어 레벨이 필요한 상황을 가정해 보겠습니다.
@@ -532,7 +513,6 @@ type Factory[Context, Product] = Context -> Product
 immutable record SpawnContext:
     player_level: Int
     difficulty: Difficulty
-
 ```
 
 고블린 생성 함수는 다음과 같습니다.
@@ -546,7 +526,6 @@ def create_goblin(
         level=context.player_level,
         elite=context.difficulty == Hard,
     )
-
 ```
 
 아이스 골렘 생성 함수 역시 동일한 Factory 타입을 따릅니다.
@@ -559,7 +538,6 @@ def create_ice_golem(
     return IceGolem(
         level=context.player_level + 10,
     )
-
 ```
 
 상위 알고리즘은 구체 제품에 관계없이 동작합니다.
@@ -571,7 +549,6 @@ def spawn[M <: Monster](
 ) -> M:
 
     return factory(context)
-
 ```
 
 이 구조에서는 생성 정책이 **상속 계층**에 고정되는 대신 **함수 매개변수**로 이동하므로, 실행 중에도 생성 전략을 자유롭게 교체할 수 있습니다.
@@ -585,7 +562,6 @@ monster = spawn(
     context,
     factory,
 )
-
 ```
 
 ### 3. Creator와 Product의 관계를 연관 타입으로 표현하기
@@ -600,7 +576,6 @@ trait Factory[F]:
     def create(
         factory: F,
     ) -> Product
-
 ```
 
 숲 던전의 Factory를 정의합니다.
@@ -616,7 +591,6 @@ impl Factory[ForestFactory]:
     ) -> Goblin:
 
         return Goblin()
-
 ```
 
 얼음 던전은 다른 연관 타입을 가집니다.
@@ -632,7 +606,6 @@ impl Factory[IceFactory]:
     ) -> IceGolem:
 
         return IceGolem()
-
 ```
 
 따라서 호출 코드에 따라 컴파일러가 추론하는 타입이 세분화됩니다.
@@ -640,7 +613,6 @@ impl Factory[IceFactory]:
 ```python
 monster = create(ForestFactory())  # monster : Goblin
 monster = create(IceFactory())     # monster : IceGolem
-
 ```
 
 고전 Factory Method가 런타임 다형성으로 관리하던 **`Creator → Product`** 관계를 `Factory F → Associated Product Type`이라는 정적 타입 관계 형태로 보존하는 접근법입니다.
@@ -657,7 +629,6 @@ $$\text{Dungeon} \longleftarrow \{\text{ForestDungeon}, \text{IceDungeon}, \text
 immutable record Forest
 immutable record IceField
 immutable record Volcano
-
 ```
 
 각 타입에 Factory 구현을 부여합니다.
@@ -677,7 +648,6 @@ impl Factory[IceField]:
 
     def create(_: IceField) -> IceGolem:
         return IceGolem()
-
 ```
 
 상위 함수는 Factory 제약만 요구합니다.
@@ -690,7 +660,6 @@ where Factory[D]:
 
     monster = Factory.create(dungeon)
     monster.attack()
-
 ```
 
 즉, 고전적인 **상속을 통한 확장**을 **타입클래스 인스턴스 추가를 통한 확장**으로 전환할 수 있습니다.
@@ -704,7 +673,6 @@ data DungeonType =
     Forest
   | Ice
   | Volcano
-
 ```
 
 몬스터 역시 닫힌 ADT로 정의합니다.
@@ -714,7 +682,6 @@ data Monster =
     Goblin(attack: Int)
   | IceGolem(attack: Int)
   | FireDragon(attack: Int)
-
 ```
 
 생성 함수는 패턴 매칭을 활용합니다.
@@ -734,7 +701,6 @@ def create_monster(
 
         case Volcano:
             return FireDragon(attack=100)
-
 ```
 
 만약 새로운 `DungeonType`이 추가되었는데 생성 분기에 누락되어 있다면 완전성 검사(Exhaustive Pattern Matching)를 통해 컴파일 타임에 즉시 탐지됩니다.
@@ -745,7 +711,6 @@ data DungeonType =
   | Ice
   | Volcano
   | Swamp  # 추가 시 create_monster()의 match 분기 미작성 오류 발생
-
 ```
 
 정리하자면 다음과 같은 기준을 적용해볼 수 있습니다.
@@ -763,14 +728,12 @@ data DungeonType =
 data Result[T, E] =
     Ok(T)
   | Err(E)
-
 ```
 
 Factory 타입 역시 실패 가능성을 서명에 포함하도록 변경됩니다.
 
 ```text
 type Factory[T, E] = () -> Result[T, E]
-
 ```
 
 ```text
@@ -779,7 +742,6 @@ def create_boss() -> Result[Boss, ResourceError]:
     resource = load_resource("boss.json")?
 
     return Ok(Boss(resource))
-
 ```
 
 호출자는 실패 시나리오를 타입 수준에서 강제로 명시하여 처리해야 합니다.
@@ -792,7 +754,6 @@ match create_boss():
 
     case Err(error):
         show_error(error)
-
 ```
 
 ### 7. 생성 과정의 부수효과를 Effect Type으로 표현하기
@@ -807,7 +768,6 @@ def create_remote_monster(
 ) -> Result[RemoteMonster, NetworkError] ! Network:
 
     ...
-
 ```
 
 이 타입 서명은 다음 정보를 나타냅니다.
@@ -842,7 +802,6 @@ type Factory[
     Error,
     Effects,
 ] = Context -> Result[Product, Error] ! Effects
-
 ```
 
 결국 팩토리 메서드 패턴의 본질은 클래스 구조 생성을 넘어서, "값을 생성하는 계산을 상위 비즈니스 로직에서 분리하고, 그 계산을 유연하게 교체 가능하도록 추상화하는 기법"으로 해석할 수 있습니다.

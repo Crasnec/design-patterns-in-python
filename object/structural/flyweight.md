@@ -31,7 +31,6 @@ class Tree:
 
     def draw(self) -> None:
         print(f"{self.name} 나무를 ({self.x}, {self.y})에 그립니다.")
-
 ```
 
 숲에 같은 종류의 나무를 여러 개 배치합니다.
@@ -60,7 +59,6 @@ trees = [
         texture=load_texture("oak.png"),
     ),
 ]
-
 ```
 
 각 나무의 위치는 서로 다릅니다.
@@ -75,7 +73,6 @@ trees = [
 name = "Oak"
 color = "green"
 texture = oak.png
-
 ```
 
 특히 `texture`처럼 크기가 큰 데이터가 각 객체마다 독립적으로 존재한다면 중복 비용이 매우 커질 수 있습니다.
@@ -128,7 +125,6 @@ class TreeType:
 
     def draw(self, x: int, y: int) -> None:
         print(f"{self.name} 나무를 ({x}, {y})에 그립니다.")
-
 ```
 
 각 실제 나무는 위치와 공유 Flyweight에 대한 참조만 가집니다.
@@ -147,7 +143,6 @@ class Tree:
 
     def draw(self) -> None:
         self.tree_type.draw(self.x, self.y)
-
 ```
 
 구조는 다음과 같습니다.
@@ -160,7 +155,6 @@ flowchart LR
     oak --> name[name]
     oak --> color[color]
     oak --> texture[texture]
-
 ```
 
 각 `Tree`는 작은 개별 상태만 가집니다.
@@ -170,7 +164,6 @@ flowchart LR
     tree_1[Tree 1: x, y] --> shared[Shared TreeType]
     tree_2[Tree 2: x, y] --> shared
     tree_3[Tree 3: x, y] --> shared
-
 ```
 
 동일한 `TreeType` 객체를 재사용하기 위해 일반적으로 Flyweight Factory를 둡니다.
@@ -196,7 +189,6 @@ class TreeTypeFactory:
             )
 
         return self._types[key]
-
 ```
 
 같은 키로 요청하면 동일한 Flyweight 객체를 반환합니다.
@@ -206,7 +198,6 @@ oak1 = factory.get("Oak", "green", "oak.png")
 oak2 = factory.get("Oak", "green", "oak.png")
 
 assert oak1 is oak2
-
 ```
 
 핵심은 단순히 객체를 캐싱하는 데 있지 않습니다. 객체의 상태를 공유 가능한 **Intrinsic State**와 개별적인 **Extrinsic State**로 의도적으로 분리하고, Intrinsic State의 객체 수를 제한하여 매우 많은 논리적 객체를 적은 물리적 상태로 표현하는 것이 플라이웨이트 패턴의 본질입니다.
@@ -253,7 +244,6 @@ Flyweight:
     TreeType["Oak"]   → 1 shared instance
     TreeType["Pine"]  → 1 shared instance
     TreeType["Birch"] → 1 shared instance
-
 ```
 
 > **참고**: Flyweight Factory는 키별로 객체를 하나씩 유지한다는 점에서 Registry 또는 Multiton과 비슷한 형태를 가질 수 있지만, 목적은 대량 객체의 상태 공유와 메모리 절감입니다.
@@ -268,7 +258,6 @@ Prototype:
 
 Flyweight:
     기존 객체 <──(공유)─── 여러 Context들
-
 ```
 
 #### Flyweight vs Object Pool
@@ -307,7 +296,6 @@ a = intern("player_health")
 b = intern("player_health")
 
 assert a is b
-
 ```
 
 개념적으로 다음과 같습니다.
@@ -318,7 +306,6 @@ assert a is b
 "player_health" ──┼──> canonical str object
                   │
 "player_health" ──┘
-
 ```
 
 CPython의 현재 내부 문서 역시 intern된 문자열을 인터프리터 범위의 집합처럼 설명하며, 같은 내용의 interned string이 중복되지 않도록 관리한다고 설명합니다. CPython은 이를 딕셔너리 및 attribute lookup 등의 최적화에 활용합니다. 이는 동일한 Intrinsic Value를 하나의 canonical object로 공유한다는 점에서 Flyweight와 매우 직접적으로 유사한 사례입니다.
@@ -344,7 +331,6 @@ def get_tree_type(name: str, color: str, texture: str) -> TreeType:
         color=color,
         texture=texture,
     )
-
 ```
 
 동일한 인자로 호출하면 캐시된 결과를 사용합니다.
@@ -354,7 +340,6 @@ oak1 = get_tree_type("Oak", "green", "oak.png")
 oak2 = get_tree_type("Oak", "green", "oak.png")
 
 assert oak1 is oak2
-
 ```
 
 `functools.cache` 자체가 GoF Flyweight는 아니지만 `key -> canonical shared value` 구조를 구현하는 Flyweight Factory의 기반으로 활용할 수 있습니다.
@@ -365,7 +350,6 @@ Flyweight Factory가 모든 객체를 강한 참조로 영구 보관하면 메�
 
 ```text
 한 번 생성된 Flyweight ──> Cache가 계속 참조 ──> 사용되지 않아도 메모리 유지
-
 ```
 
 Python의 `weakref.WeakValueDictionary`는 값을 약한 참조로 저장하며, 해당 객체에 대한 강한 참조가 더 이상 존재하지 않으면 엔트리가 자동으로 제거됩니다. 이를 Flyweight Registry에 활용할 수 있습니다.
@@ -379,7 +363,6 @@ class TreeTypeFactory:
 
     def get(self, key):
         ...
-
 ```
 
 구조는 다음과 같습니다.
@@ -393,7 +376,6 @@ Weak Cache
       ├─ 사용 중인 Flyweight         ──> 유지
       │
       └─ 아무도 사용하지 않는 Flyweight ──> GC 가능
-
 ```
 
 `WeakValueDictionary` 역시 Flyweight 패턴 그 자체는 아니지만 Flyweight의 canonical object cache를 수명 주기까지 고려하여 구현할 때 유용한 기반 구조입니다.
@@ -436,7 +418,6 @@ classDiagram
     TreeTypeFactory --> TreeType : Creates / Reuses
     Forest --> Tree : Contains
     Forest --> TreeTypeFactory : Uses
-
 ```
 
 ### 역할 및 상태 분리
@@ -557,7 +538,6 @@ if __name__ == "__main__":
 
 실제 Tree 객체 수: 5
 실제 TreeType 객체 수: 2
-
 ```
 
 논리적으로는 나무가 다섯 개 존재하지만(`Tree x 5`), 무거운 공통 상태는 두 종류만 존재합니다 (`Oak TreeType x 1`, `Pine TreeType x 1`).
@@ -572,7 +552,6 @@ Tree(x=100, y=200) ─┘
 Tree(x=40, y=60) ───┐
                     ├──> Pine TreeType
 Tree(x=80, y=120) ──┘
-
 ```
 
 > **`frozen=True` 사용 이유**:
@@ -660,7 +639,6 @@ AST(구문 분석 트리)와 같이 재귀적인 트리 구조에서 동일한 �
 
 ```text
   Tree (중복 노드 존재) ────(Hash-Consing)────> DAG (공유 서브구조)
-
 ```
 
 ### 5. Structural Sharing과 Flyweight의 차이

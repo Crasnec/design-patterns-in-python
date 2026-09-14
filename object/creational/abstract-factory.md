@@ -31,7 +31,6 @@ class BadHero:
         elif job == "mage" and item_type == "armor":
             # 실수로 마법사에게 전사 갑옷을 반환해도 문법 에러가 발생하지 않음
             return ChainMail() 
-
 ```
 
 ### 이 방식이 가진 단점
@@ -145,7 +144,6 @@ classDiagram
     WarriorEquipmentFactory ..> ChainMail : Creates
     MageEquipmentFactory ..> Wand : Creates
     MageEquipmentFactory ..> Robe : Creates
-
 ```
 
 ---
@@ -278,7 +276,6 @@ def create_hero(name: str, supplier_fn):
     return Hero(name, weapon, armor)
 
 hero1 = create_hero("아라곤", warrior_supplier)
-
 ```
 
 ---
@@ -320,7 +317,6 @@ def equip_hero(equipment: JobEquipment):
             print(f"전사 장비 장착: {type(weapon).__name__}, {type(armor).__name__}")
         case MageSet(weapon, armor):
             print(f"마법사 장비 장착: {type(weapon).__name__}, {type(armor).__name__}")
-
 ```
 
 ---

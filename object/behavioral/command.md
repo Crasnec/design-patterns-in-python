@@ -36,7 +36,6 @@ class BadEditorApplication:
 
     def delete_text(self, position: int, length: int) -> None:
         self.editor.delete(position, length)
-
 ```
 
 이 구조 자체는 단순한 프로그램에서는 문제가 없습니다.
@@ -56,7 +55,6 @@ Undo를 추가하려면 이전 작업에 대한 정보를 별도로 기록해야
 def insert_text(self, position: int, text: str) -> None:
     self.editor.insert(position, text)
     self.history.append(("insert", position, text))
-
 ```
 
 삭제 명령은 복원할 원래 문자열까지 저장해야 합니다.
@@ -66,7 +64,6 @@ def delete_text(self, position: int, length: int) -> None:
     deleted = self.editor.text[position : position + length]
     self.editor.delete(position, length)
     self.history.append(("delete", position, deleted))
-
 ```
 
 Undo 실행 시에는 명령 종류별로 분기하여 처리해야 합니다.
@@ -86,7 +83,6 @@ def undo(self) -> None:
         ...
     elif command[0] == "format":
         ...
-
 ```
 
 새로운 작업이 추가될수록 요청 실행과 History 처리, Undo 로직이 함께 비대해지며 복잡성이 증가합니다.
@@ -113,7 +109,6 @@ flowchart LR
     client --> invoker[Invoker]
     invoker -->|execute / undo| command
     command --> receiver[Receiver]
-
 ```
 
 ### 요청 생성, 실행, 실제 편집의 책임
@@ -142,7 +137,6 @@ class Command(ABC):
     @abstractmethod
     def undo(self) -> None:
         pass
-
 ```
 
 문자열 삽입 작업 자체를 하나의 Command 객체로 만듭니다.
@@ -160,7 +154,6 @@ class InsertTextCommand(Command):
 
     def undo(self) -> None:
         self._editor.delete(self._position, len(self._text))
-
 ```
 
 삭제 명령 역시 별도의 객체로 표현합니다.
@@ -180,7 +173,6 @@ class DeleteTextCommand(Command):
 
     def undo(self) -> None:
         self._editor.insert(self._position, self._deleted_text)
-
 ```
 
 Invoker(`EditorHistory`)는 구체적인 편집 작업의 내용이나 Receiver의 메서드를 알지 못합니다.
@@ -194,7 +186,6 @@ class EditorHistory:
     def execute(self, command: Command) -> None:
         command.execute()
         self._undo_stack.append(command)
-
 ```
 
 Invoker가 알고 있는 것은 `Command.execute()`와 `Command.undo()`뿐입니다.
@@ -203,14 +194,12 @@ Invoker가 알고 있는 것은 `Command.execute()`와 `Command.undo()`뿐입니
 
 ```python
 command = InsertTextCommand(editor, position=0, text="Hello")
-
 ```
 
 즉시 실행할 수도 있고,
 
 ```python
 history.execute(command)
-
 ```
 
 Queue에 담아 나중에 실행할 수도 있습니다. 다음 발췌 코드는 지연 실행만 보여주며 History에는 기록하지 않습니다. Undo까지 필요하면 `command.execute()` 대신 `history.execute(command)`를 호출합니다.
@@ -220,7 +209,6 @@ queue.append(command)
 
 for command in queue:
     command.execute()
-
 ```
 
 Undo도 각 Command 객체가 자신의 역연산을 알고 있으므로 Invoker에서 타입별 조건문이 필요하지 않습니다.
@@ -229,7 +217,6 @@ Undo도 각 Command 객체가 자신의 역연산을 알고 있으므로 Invoker
 command = self._undo_stack[-1]
 command.undo()
 self._undo_stack.pop()
-
 ```
 
 핵심은 단순히 메서드 호출을 클래스로 감싸는 것이 아닙니다.
@@ -311,7 +298,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         print("작업을 실행합니다.")
-
 ```
 
 `django-admin`이나 `call_command()`는 명령 이름이나 Command 객체를 받아 비즈니스 로직을 실행 메커니즘과 분리하여 다룹니다.
@@ -327,7 +313,6 @@ import click
 @click.command()
 def hello():
     click.echo("Hello!")
-
 ```
 
 명령을 정의하는 코드와 CLI 호출 메커니즘을 분리한다는 점에서 커맨드 패턴의 철학을 공유합니다.
@@ -345,7 +330,6 @@ signature.delay()
 
 # Macro처럼 워크플로우로 합성
 workflow = add.s(2, 2) | multiply.s(10)
-
 ```
 
 ### 4. Tkinter Button command
@@ -356,7 +340,6 @@ GUI 이벤트 바인딩 시 `command` 매개변수에 함수나 메서드를 전
 import tkinter as tk
 
 button = tk.Button(text="저장", command=save_document)
-
 ```
 
 클래스 기반 GoF 패턴보다는 함수를 일급 객체(First-class Command)로 사용하는 형태입니다.
@@ -427,7 +410,6 @@ classDiagram
     Client ..> EditorHistory : Uses
     Client ..> InsertTextCommand : Creates
     Client ..> DeleteTextCommand : Creates
-
 ```
 
 ---

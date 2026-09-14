@@ -45,7 +45,6 @@ class EncodedFileDataSource(FileDataSource):
     ) -> None:
         encoded = encode(data)
         super().write(encoded)
-
 ```
 
 문제는 두 기능을 동시에 사용해야 할 때 발생합니다.
@@ -60,7 +59,6 @@ class CompressedEncodedFileDataSource(FileDataSource):
         compressed = compress(data)
         encoded = encode(compressed)
         super().write(encoded)
-
 ```
 
 새로운 기능으로 암호화가 추가되면 필요한 조합은 더욱 증가합니다.
@@ -111,7 +109,6 @@ class BadFileDataSource:
             "wb",
         ) as file:
             file.write(data)
-
 ```
 
 이 경우 새로운 기능이 추가될 때마다 클래스의 생성자와 `write()` 로직을 계속 수정해야 합니다.
@@ -151,7 +148,6 @@ class DataSource(ABC):
     @abstractmethod
     def read(self) -> bytes:
         pass
-
 ```
 
 기본 구현은 실제 파일 저장 책임만 담당합니다.
@@ -167,7 +163,6 @@ class FileDataSource(DataSource):
 
     def read(self) -> bytes:
         ...
-
 ```
 
 Decorator 역시 동일한 `DataSource` 인터페이스를 구현합니다.
@@ -189,7 +184,6 @@ class DataSourceDecorator(DataSource):
 
     def read(self) -> bytes:
         return self._wrapped.read()
-
 ```
 
 구체 Decorator가 필요한 기능을 추가합니다.
@@ -207,7 +201,6 @@ class CompressionDecorator(DataSourceDecorator):
     def read(self) -> bytes:
         data = self._wrapped.read()
         return decompress(data)
-
 ```
 
 다른 기능 역시 별도의 Decorator로 정의합니다.
@@ -225,7 +218,6 @@ class Base64Decorator(DataSourceDecorator):
     def read(self) -> bytes:
         data = self._wrapped.read()
         return decode(data)
-
 ```
 
 이제 필요한 기능을 객체 조합으로 구성할 수 있습니다.
@@ -236,7 +228,6 @@ source = CompressionDecorator(
         FileDataSource("data.bin")
     )
 )
-
 ```
 
 구조는 다음과 같습니다.
@@ -245,7 +236,6 @@ source = CompressionDecorator(
 flowchart TD
     compression[CompressionDecorator] --> base64[Base64Decorator]
     base64 --> file[FileDataSource]
-
 ```
 
 클라이언트는 가장 바깥쪽 객체만 사용합니다.
@@ -253,7 +243,6 @@ flowchart TD
 ```python
 source.write(b"Hello Decorator")
 data = source.read()
-
 ```
 
 클라이언트의 관점에서 모든 객체는 동일한 `DataSource`입니다.
@@ -280,7 +269,6 @@ compressed_and_encoded = CompressionDecorator(
         FileDataSource("data.bin")
     )
 )
-
 ```
 
 핵심은 단순히 Wrapper 객체를 만드는 것에 있지 않습니다.
@@ -318,7 +306,6 @@ compressed_and_encoded = CompressionDecorator(
 CompressionDecorator(Base64Decorator(FileDataSource(...)))
 # 과
 Base64Decorator(CompressionDecorator(FileDataSource(...)))
-
 ```
 
 첫 번째는 개념적으로 `원본 → 압축 → Base64 → 파일`이 되고, 두 번째는 `원본 → Base64 → 압축 → 파일`이 됩니다.
@@ -338,7 +325,6 @@ Python에서 "Decorator"라는 용어는 언어 기능으로도 사용됩니다.
 @some_decorator
 def function():
     ...
-
 ```
 
 이 문법은 본질적으로 다음과 같습니다.
@@ -348,7 +334,6 @@ def function():
     ...
 
 function = some_decorator(function)
-
 ```
 
 즉, 기존 callable을 받아 새로운 callable로 감싸는 방식입니다.
@@ -361,7 +346,6 @@ classDiagram
     class Decorator
     Component <|.. Decorator : implements
     Decorator --> Component : wraps
-
 ```
 
 Python의 함수 Decorator는 이것을 함수라는 값에 적용한 형태로 볼 수 있지만 두 개념이 완전히 동일한 것은 아닙니다.
@@ -408,7 +392,6 @@ class Middleware:
             receive,
             send,
         )
-
 ```
 
 여러 Middleware를 겹겹이 적용할 수 있습니다.
@@ -423,7 +406,6 @@ HTTPSRedirectMiddleware
 ExceptionMiddleware
         ↓
 Application
-
 ```
 
 Starlette 공식 문서 역시 middleware가 계층적으로 적용되며 ASGI middleware가 다음 ASGI application을 감싸는 형태임을 설명합니다.
@@ -448,7 +430,6 @@ def middleware(get_response):
         return response
 
     return wrapped
-
 ```
 
 Django 공식 문서는 이 구조를 양파(onion)에 비유하며, 요청이 바깥 Middleware에서 안쪽으로 이동하고 응답은 역순으로 다시 통과한다고 설명합니다.
@@ -461,7 +442,6 @@ Middleware B
 Middleware C
     ↓
 View
-
 ```
 
 호출 타입은 계속 동일합니다.
@@ -483,7 +463,6 @@ from functools import lru_cache
 @lru_cache(maxsize=128)
 def load_user(user_id: int):
     ...
-
 ```
 
 개념적으로는 다음과 같습니다.
@@ -494,7 +473,6 @@ Client
 Caching Wrapper
    ↓
 Original Function
-
 ```
 
 함수의 본래 책임을 수정하지 않고 캐싱이라는 새로운 책임을 호출 주변에 추가한다는 점에서 함수형 Decorator의 대표적인 사례입니다.
@@ -542,7 +520,6 @@ classDiagram
     DataSourceDecorator <|-- Base64Decorator
 
     DataSourceDecorator --> DataSource : Wraps
-
 ```
 
 각 역할은 다음과 같습니다.
@@ -558,7 +535,6 @@ classDiagram
 DataSourceDecorator
        │
        └── contains ──> DataSource
-
 ```
 
 Decorator 자신도 DataSource이므로 다시 다른 Decorator로 감쌀 수 있습니다.
@@ -573,7 +549,6 @@ Decorator
        Decorator
           │
           └── DataSource
-
 ```
 
 ---
@@ -680,7 +655,6 @@ if __name__ == "__main__":
 
 ```text
 Decorator Pattern
-
 ```
 
 저장 과정은 바깥 Decorator에서 안쪽으로 진행됩니다.
@@ -696,7 +670,6 @@ Base64 bytes
     │
     ↓ FileDataSource
 파일 저장
-
 ```
 
 읽기 과정에서는 반대 방향의 변환이 수행됩니다.
@@ -712,7 +685,6 @@ Base64 decode
     │
     ↓
 원본 bytes
-
 ```
 
 Decorator 조합을 바꾸는 것도 쉽습니다.
@@ -726,7 +698,6 @@ Decorator 조합을 바꾸는 것도 쉽습니다.
 
 ```python
 save_message(source, "Decorator Pattern")
-
 ```
 
 클라이언트가 알고 있는 타입은 항상 다음 하나뿐입니다: `DataSource`
@@ -745,7 +716,6 @@ Component
 Decorator
     │
     └── Component
-
 ```
 
 Decorator는 Component를 입력으로 받아 사실상 새로운 Component를 만듭니다.
@@ -762,7 +732,6 @@ Handler
 Decorator
    ↓
 Handler
-
 ```
 
 즉, $\text{Handler} \rightarrow \text{Handler}$ 입니다.
@@ -783,7 +752,6 @@ Phantom Type과 Effect System은 각각 적용 기능의 기록과 실행 효과
 
 ```text
 type Handler[Request, Response] = Request -> Response
-
 ```
 
 Decorator는 Handler를 받아 다시 같은 Handler를 반환합니다.
@@ -792,7 +760,6 @@ Decorator는 Handler를 받아 다시 같은 Handler를 반환합니다.
 type Decorator[Request, Response] = (
     Handler[Request, Response] -> Handler[Request, Response]
 )
-
 ```
 
 즉, $(\text{Request} \rightarrow \text{Response}) \rightarrow (\text{Request} \rightarrow \text{Response})$ 입니다.
@@ -811,7 +778,6 @@ def with_logging[Request, Response](
         return response
 
     return wrapped
-
 ```
 
 캐싱 Decorator:
@@ -833,7 +799,6 @@ def with_cache[Request: Hashable, Response](
                 return value
 
     return wrapped
-
 ```
 
 클래스 계층 없이 함수로 조합할 수 있습니다.
@@ -844,7 +809,6 @@ handler = (
     |> with_cache
     |> with_logging
 )
-
 ```
 
 이는 고전적인 `LoggingDecorator(CacheDecorator(BaseComponent))`와 같은 구조입니다.
@@ -857,7 +821,6 @@ Decorator의 중요한 조건은 기존 인터페이스를 유지한다는 것�
 
 ```text
 type Decorator = forall Args, R. (Args -> R) -> (Args -> R)
-
 ```
 
 즉, 입력 함수가 $(\text{Int}, \text{str}) \rightarrow \text{User}$라면 Decorator를 적용한 결과도 반드시 $(\text{Int}, \text{str}) \rightarrow \text{User}$이어야 합니다.
@@ -869,7 +832,6 @@ def trace[*Args, R](
     fn: (*Args) -> R
 ) -> (*Args) -> R:
     ...
-
 ```
 
 다음 함수에 적용합니다.
@@ -877,7 +839,6 @@ def trace[*Args, R](
 ```python
 def load_user(id: UserId, active_only: Bool) -> User:
     ...
-
 ```
 
 Decorator 이후에도 타입은 유지됩니다.
@@ -885,7 +846,6 @@ Decorator 이후에도 타입은 유지됩니다.
 ```python
 traced = trace(load_user)
 # traced : (UserId, Bool) -> User
-
 ```
 
 즉, 인터페이스 보존이라는 Decorator의 핵심 규칙을 타입 시스템 자체가 검증할 수 있습니다.
@@ -896,7 +856,6 @@ traced = trace(load_user)
 
 ```text
 type Endo[T] = T -> T
-
 ```
 
 Decorator 역시 `type Decorator[C] = Endo[C]` 입니다.
@@ -917,21 +876,18 @@ def compose[T](
     second: Endo[T]
 ) -> Endo[T]:
     return lambda value: second(first(value))
-
 ```
 
 다음과 같이 하나의 정책을 만들 수 있습니다.
 
 ```python
 production = with_cache >> with_retry >> with_logging
-
 ```
 
 적용:
 
 ```python
 handler = production(base_handler)
-
 ```
 
 객체 Decorator의 중첩 구조가 함수의 합성으로 변환됩니다.
@@ -959,14 +915,12 @@ data Layer =
   | Cache(capacity: Int)
   | Retry(attempts: Int)
   | Timeout(duration: Duration)
-
 ```
 
 Pipeline:
 
 ```python
 type Pipeline = Vector[Layer]
-
 ```
 
 설정값으로 구성합니다.
@@ -977,7 +931,6 @@ pipeline = [
     Retry(attempts=3),
     Cache(capacity=1000),
 ]
-
 ```
 
 Interpreter가 실제 Handler를 구성합니다.
@@ -988,7 +941,6 @@ def apply_pipeline[Req, Res](
     layers: Pipeline,
 ) -> Handler[Req, Res]:
     ...
-
 ```
 
 구조는 다음과 같습니다.
@@ -1001,7 +953,6 @@ Interpreter
      │
      ↓
 Decorated Handler
-
 ```
 
 이렇게 하면 Decorator 구성을 설정 파일이나 정책 데이터로 관리할 수도 있습니다.
@@ -1019,7 +970,6 @@ data Encoded
 
 record Source[Features]:
     ...
-
 ```
 
 압축 함수:
@@ -1029,7 +979,6 @@ def compress_source[F](
     source: Source[F]
 ) -> Source[F + Compressed]:
     ...
-
 ```
 
 인코딩:
@@ -1039,7 +988,6 @@ def encode_source[F](
     source: Source[F]
 ) -> Source[F + Encoded]:
     ...
-
 ```
 
 사용:
@@ -1050,7 +998,6 @@ source = (
     |> compress_source
     |> encode_source
 )
-
 ```
 
 컴파일러가 보는 타입은 `Source[Plain + Compressed + Encoded]`입니다.
@@ -1072,7 +1019,6 @@ Phantom Type은 런타임 데이터에 직접 저장하지 않는 타입 표식�
 record Codec[A, B]:
     encode: A -> B
     decode: B -> Result[A, DecodeError]
-
 ```
 
 압축 Codec: `compression: Codec[Bytes, CompressedBytes]`
@@ -1084,7 +1030,6 @@ Base64 Codec: `base64: Codec[CompressedBytes, EncodedBytes]`
 ```python
 storage_codec = compression >> base64
 # 타입: Codec[Bytes, EncodedBytes]
-
 ```
 
 저장소 자체는 변환 기능을 알 필요가 없습니다.
@@ -1096,7 +1041,6 @@ def store[A, B](
     value: A,
 ) -> Unit:
     source.write(codec.encode(value))
-
 ```
 
 고전적인 `CompressionDecorator → Base64Decorator → FileDataSource` 구조가 `Compression Codec >> Base64 Codec >> Storage`라는 함수 합성 구조로 바뀝니다.
@@ -1113,14 +1057,12 @@ service = MetricsDecorator(
         )
     )
 )
-
 ```
 
 Decorator가 늘어날수록 핵심 서비스 주변에 Wrapper 계층이 계속 쌓입니다.
 
 ```text
 Metrics → Logging → Retry → Tracing → Authorization → Service
-
 ```
 
 효과 시스템(Effect System)을 지원하는 언어에서는 핵심 로직이 필요한 효과만 선언할 수 있습니다.
@@ -1128,7 +1070,6 @@ Metrics → Logging → Retry → Tracing → Authorization → Service
 ```text
 def load_user(id: UserId) -> User ! Database + Logging + Metrics:
     ...
-
 ```
 
 실행 경계에서 Handler를 적용합니다.
@@ -1138,7 +1079,6 @@ handle Database with ProductionDatabase
 handle Logging with StructuredLogger
 handle Metrics with Prometheus:
     run_application()
-
 ```
 
 고전 Decorator에서 객체 Wrapper로 표현되던 횡단 관심사를 Effect Handler Stack으로 분리한 것입니다.
@@ -1150,7 +1090,6 @@ handle Metrics with Prometheus:
 ```text
 effect Network:
     def request(req: Request) -> Response
-
 ```
 
 비즈니스 로직:
@@ -1158,7 +1097,6 @@ effect Network:
 ```text
 def load_profile(id: UserId) -> Profile ! Network:
     ...
-
 ```
 
 Retry Decorator 대신 Network 효과를 처리하는 Handler를 만들 수 있습니다.
@@ -1172,7 +1110,6 @@ handler retry_network(attempts: Int):
                     return response
                 case Err(_):
                     continue
-
 ```
 
 Timeout 역시 별도의 Handler입니다.
@@ -1180,7 +1117,6 @@ Timeout 역시 별도의 Handler입니다.
 ```text
 handler timeout_network(duration: Duration):
     ...
-
 ```
 
 둘을 겹쳐 적용합니다.
@@ -1191,7 +1127,6 @@ Retry Handler
 Timeout Handler
       ↓
 Network Implementation
-
 ```
 
 구조적으로는 Decorator와 유사하지만, 핵심 객체 자체를 여러 Wrapper 객체로 변경하지 않습니다. 어떤 효과를 어떻게 해석할 것인가를 별도의 계층으로 이동시킵니다.
@@ -1211,14 +1146,12 @@ trait Writable[T]:
 
 trait Compressed[T]:
     def compression_level(value: T) -> Level
-
 ```
 
 타입이 여러 Capability를 제공할 수 있습니다.
 
 ```python
 Source : Readable + Writable + Compressed
-
 ```
 
 함수는 필요한 기능만 요구합니다.
@@ -1227,7 +1160,6 @@ Source : Readable + Writable + Compressed
 def backup[T](source: T) -> Unit
 where Readable[T] + Compressed[T]:
     ...
-
 ```
 
 고전적인 Decorator가 객체를 감싸 기능을 동적으로 추가했다면, 정적 조합이 가능한 언어에서는 타입이 제공하는 Capability 집합을 합성하는 접근도 가능합니다.
@@ -1242,7 +1174,6 @@ where Readable[T] + Compressed[T]:
 ```text
 Adapter: A -> B
 Decorator: A -> A
-
 ```
 
 Proxy 역시 일반적으로 `A -> A` 형태를 가지므로 타입 모양만으로 Decorator와 구별되지는 않습니다. 차이는 의도와 의미에 있습니다.
@@ -1258,14 +1189,12 @@ Proxy 역시 일반적으로 `A -> A` 형태를 가지므로 타입 모양만으
 
 ```text
 Decorator A → Decorator B → Decorator C → Component
-
 ```
 
 하지만 더 추상적으로 보면 다음과 같습니다.
 
 ```text
 기본 행동 → 행동 변환 A → 행동 변환 B → 행동 변환 C
-
 ```
 
 즉, Decorator의 본질은 객체의 계층보다 행동의 단계적인 변환과 합성에 있습니다.

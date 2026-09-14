@@ -173,8 +173,8 @@ Adapter 내부에서는 실제로 다음 변환이 수행됩니다.
 ```mermaid
 flowchart TD
     money[Money] --> req[레거시 요청 형식]
-    req --> call[LegacyPaymentClient.request_payment]
-    call --> resp[레거시 응답 dict]
+    req --> legacyCall[LegacyPaymentClient.request_payment]
+    legacyCall --> resp[레거시 응답 dict]
     resp --> result[PaymentResult]
 ```
 

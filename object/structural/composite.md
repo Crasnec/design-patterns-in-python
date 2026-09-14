@@ -303,9 +303,9 @@ ET.SubElement(squad, "soldier")
 
 ```mermaid
 flowchart TD
-    army["Element(&quot;army&quot;)"] --> squad["Element(&quot;squad&quot;)"]
-    squad --> soldier1["Element(&quot;soldier&quot;)"]
-    squad --> soldier2["Element(&quot;soldier&quot;)"]
+    army["Element(#quot;army#quot;)"] --> squad["Element(#quot;squad#quot;)"]
+    squad --> soldier1["Element(#quot;soldier#quot;)"]
+    squad --> soldier2["Element(#quot;soldier#quot;)"]
 ```
 
 모든 노드가 동일한 `Element` 타입으로 다루어지고 자식을 재귀적으로 포함할 수 있다는 점에서 Composite 구조와 매우 유사합니다.

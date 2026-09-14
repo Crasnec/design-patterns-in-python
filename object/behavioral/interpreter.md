@@ -769,7 +769,7 @@ if __name__ == "__main__":
 flowchart TD
     add[AddExpression] --> num1["NumberExpression(10)"]
     add --> multiply[MultiplyExpression]
-    multiply --> var1["VariableExpression(\"x\")"]
+    multiply --> var1["VariableExpression(#quot;x#quot;)"]
     multiply --> num2["NumberExpression(2)"]
 ```
 
@@ -780,7 +780,7 @@ flowchart TD
     add[Add] --> num1["Number(10)"]
     num1 --> num1_val[10]
     add --> multiply[Multiply]
-    multiply --> var1["Variable(\"x\")"]
+    multiply --> var1["Variable(#quot;x#quot;)"]
     var1 -->|"Context 조회"| var1_val[5]
     multiply --> num2["Number(2)"]
     num2 --> num2_val[2]
@@ -947,7 +947,7 @@ def eval_expr(expr: Expr, env: Environment) -> Result[Int, EvalError]:
 
 ```mermaid
 flowchart TD
-    input["Add(Number(10), Variable(\"x\")) + 빈 환경"] --> output["Err(UndefinedVariable(\"x\"))"]
+    input["Add(Number(10), Variable(#quot;x#quot;)) + 빈 환경"] --> output["Err(UndefinedVariable(#quot;x#quot;))"]
 ```
 
 나눗셈을 추가한다면 `DivisionByZero` 같은 오류 대안을 함께 정의할 수 있습니다. 결과형은 예상한 실패를 표현하는 계약이며, 계산의 종료나 메모리 사용량까지 보장하지는 않습니다.

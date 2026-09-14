@@ -283,7 +283,7 @@ result = server.add(10, 20)
 
 ```mermaid
 flowchart TD
-    call[Python method call] --> proxy[ServerProxy]
+    methodCall[Python method call] --> proxy[ServerProxy]
     proxy --> xml[XML serialization]
     xml --> http[HTTP]
     http --> server[Remote XML-RPC Server]
@@ -555,8 +555,8 @@ flowchart LR
 ```mermaid
 flowchart LR
     create[Proxy 생성] --> none[아직 Real Subject 없음]
-    none --> call[최초 method 호출]
-    call --> real[Real Subject 생성]
+    none --> firstCall[최초 method 호출]
+    firstCall --> real[Real Subject 생성]
 ```
 
 이를 타입으로 직접 표현할 수 있습니다.
@@ -579,7 +579,7 @@ real_image = force(image)
 
 ```mermaid
 flowchart LR
-    unevaluated[Unevaluated] -->|force() 호출| exec[load_image 실행]
+    unevaluated[Unevaluated] -->|"force() 호출"| exec[load_image 실행]
     exec --> evaluated[Evaluated Image]
 ```
 

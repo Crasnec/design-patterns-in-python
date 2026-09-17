@@ -1,8 +1,8 @@
 # 파이썬으로 배우는 디자인 패턴 (Python Design Patterns)
 
-이 저장소는 객체 지향 프로그래밍의 핵심 디자인 패턴(Design Patterns)을 **파이썬(Python) 예제 코드**로 구현하고 설명하는 공간입니다.
+이 저장소는 객체 지향 설계와 함수형 프로그래밍을 함께 다룹니다. 객체 지향 파트는 **Python**으로 GoF 디자인 패턴을 구현하고 설명하며, 함수형 파트는 **Scala**를 기준 언어로 기초부터 심화까지 학습한 뒤 각 개념을 실제 **Python에 어떻게 적용할 수 있는지와 그 표현 한계**를 비교합니다.
 
-효율적이고 확장성 있는 소프트웨어를 설계하기 위한 대표적인 디자인 패턴 23가지를 생성, 구조, 행위 유형별로 분류하여 제공합니다.
+앞부분에서는 대표적인 GoF 디자인 패턴 23가지를 생성, 구조, 행위 유형별로 분류하고, 후반부에서는 함수형 사고, 데이터 모델링, 타입 추상화, 효과 제어와 함수형 설계 패턴으로 확장합니다.
 
 ---
 
@@ -31,7 +31,7 @@
   * 코드가 만드는 문제 상황을 먼저 살펴본 뒤, 이를 어떻게 해결하는지 예제 코드로 확인하세요.
 
 * **중급 코스 (실무 설계 및 판단)**
-  * `3. 장점, 단점 및 트레이드오프` 
+  * `3. 장점, 단점 및 트레이드오프`
   * `4. 파이썬 오픈소스 예시`
   * 트레이드오프를 체크하여 실제 프로젝트 도입 여부를 결정하세요.
 
@@ -79,98 +79,122 @@
 
 ---
 
-## 함수형 디자인 패턴 (Functional Design Patterns)
+## 함수형 프로그래밍 (Functional Programming)
 
-후반부에서는 파이썬을 활용한 **함수형 디자인 패턴**을 다룹니다. 불변성, 순수 함수, 타입 시스템 및 효과 제어를 바탕으로 프로그램을 더 안전하고 간결하게 작성하는 기법을 배웁니다.
+후반부에서는 **Scala**를 기준 언어로 함수형 프로그래밍을 기초부터 심화까지 단계적으로 학습합니다. Scala의 강한 타입 시스템과 함수형 기능을 이용해 개념을 정확하게 설명한 뒤, 각 주제를 **Python에서는 어떻게 적용할 수 있는지**, 그리고 **Python의 언어 및 타입 시스템에서 무엇을 표현하기 어려운지** 함께 비교합니다.
 
-> **안내**: 본 문서에서 다루는 일부 함수형 패턴은 파이썬 언어 자체에서 직접 지원하지 않습니다. 이해를 돕기 위해 파이썬에 특정 함수형 문법이 포함되어 있다고 전제한 **가상의 언어 스펙**을 사용하여 작성되었습니다.
+> **학습 원칙**: 가상의 Python 문법을 만들지 않습니다. 먼저 Scala로 개념을 온전히 표현하고, 실제 Python으로 옮길 수 있는 부분만 구현합니다. 표현할 수 없는 성질은 `Python에서의 한계`로 명시적으로 다룹니다.
 
-### 1. 함수 구성 (Function Composition)
+함수형 파트의 기본 학습 흐름은 다음과 같습니다.
 
-작은 단위의 함수들을 조합하여 복잡한 연산 흐름을 만들어냅니다.
+`함수형 사고 → 함수와 데이터 변환 → 데이터 모델링 → 오류를 값으로 다루기 → 함수형 추상화 → 효과 제어 → 함수형 설계 패턴 → 고급 함수형 프로그래밍`
 
-* [**Function Composition**](functional/function-composition/function-composition.md): 작은 함수를 연결해 큰 연산 구성
-* [**Pipeline / Pipe**](functional/function-composition/pipeline-pipe.md): 데이터를 함수 체인으로 순차 전달
-* [**Partial Application**](functional/function-composition/partial-application.md): 함수 인자의 일부를 미리 고정하여 재사용
-* [**Currying**](functional/function-composition/currying.md): 다중 인자 함수를 단일 인자 함수들의 연쇄로 변환
-* [**Higher-Order Function**](functional/function-composition/higher-order-function.md): 함수를 인자로 받거나 결과로 반환
+각 문서는 가능한 경우 다음 순서를 따릅니다.
 
-### 2. 데이터 처리 (Data Processing)
+1. 개념과 문제 상황
+2. Scala에서의 표현
+3. 설계 원리와 트레이드오프
+4. Python에서 적용하기
+5. Python에서의 표현 한계
 
-컬렉션과 데이터 스트림을 선언적으로 변환하고 축약합니다.
+### 1. 함수형 프로그래밍 기초 (Foundations)
 
-* [**Map**](functional/data-processing/map.md): 각 원소를 지정한 함수로 변환
-* [**Filter**](functional/data-processing/filter.md): 조건에 맞는 원소만 선별
-* [**Fold / Reduce**](functional/data-processing/fold-reduce.md): 컬렉션을 하나의 값으로 축약
-* [**Scan**](functional/data-processing/scan.md): Fold의 중간 연산 과정 결과를 유지하며 출력
-* [**Zip**](functional/data-processing/zip.md): 여러 컬렉션을 동일 인덱스끼리 대응시켜 결합
-* [**Unfold**](functional/data-processing/unfold.md): 초기 상태에서 출발해 순차적으로 데이터 구조 생성
+함수형 프로그래밍의 출발점이 되는 사고방식과 언어 요소를 익힙니다.
 
-### 3. 재귀 (Recursion)
+* [**Expression-Oriented Programming**](functional/01-foundations/expression-oriented-programming.md): 문장보다 표현식을 중심으로 프로그램 구성
+* [**Pure Functions**](functional/01-foundations/pure-functions.md): 동일 입력에 동일 출력을 보장하고 외부 상태 변경을 피하는 함수
+* [**Immutability**](functional/01-foundations/immutability.md): 값을 변경하기보다 새로운 값을 만들어 상태 변화 표현
+* [**Referential Transparency**](functional/01-foundations/referential-transparency.md): 표현식을 그 결과값으로 치환해도 의미가 변하지 않는 성질
+* [**First-Class Functions**](functional/01-foundations/first-class-functions.md): 함수를 값처럼 저장하고 전달하고 반환
+* [**Higher-Order Functions**](functional/01-foundations/higher-order-functions.md): 함수를 인자로 받거나 결과로 반환하는 함수
+* [**Closures**](functional/01-foundations/closures.md): 함수와 함수가 캡처한 환경을 함께 다루기
+* [**Recursion**](functional/01-foundations/recursion.md): 반복을 재귀적 정의로 표현하고 재귀의 비용과 한계 이해
 
-반복문 대신 재귀적 구조를 안전하고 명확하게 다룹니다.
+### 2. 함수 조합과 데이터 변환 (Composition & Data Transformation)
 
-* [**Tail Recursion**](functional/recursion/tail-recursion.md): 스택 오버플로우 없이 반복을 꼬리 재귀로 표현
-* [**Recursion Schemes**](functional/recursion/recursion-schemes.md): 재귀 구조 자체와 실제 데이터 처리 로직을 분리
+작은 함수를 조합하여 데이터 변환 파이프라인을 만들고 명령형 반복을 선언적인 변환으로 바꾸는 방법을 배웁니다.
 
-### 4. 타입 및 오류 처리 (Type & Error Handling)
+* [**Function Composition**](functional/02-composition/function-composition.md): 작은 함수를 연결해 더 큰 연산 구성
+* [**Map**](functional/02-composition/map.md): 컬렉션의 각 값을 함수로 변환
+* [**Filter**](functional/02-composition/filter.md): 조건을 만족하는 값만 선택
+* [**Fold / Reduce**](functional/02-composition/fold.md): 데이터 구조를 하나의 결과로 축약
+* [**FlatMap**](functional/02-composition/flat-map.md): 변환과 평탄화를 결합해 연속된 계산 구성
+* [**Pipeline**](functional/02-composition/pipeline.md): 데이터를 연속된 함수 단계로 전달
+* [**Partial Application**](functional/02-composition/partial-application.md): 일부 인자를 미리 적용해 새로운 함수 생성
+* [**Currying**](functional/02-composition/currying.md): 다중 인자 함수를 단일 인자 함수의 연쇄로 변환
 
-Null 예외나 실행 오류를 타입 시스템 내에서 안전하게 값으로 다룹니다.
+### 3. 함수형 데이터 모델링 (Functional Data Modeling)
 
-* [**Option / Maybe**](functional/type-error-handling/option-maybe.md): 값의 부재(Null/None)를 타입으로 명시
-* [**Either / Result**](functional/type-error-handling/either-result.md): 성공과 실패 결과를 명시적인 값으로 표현
-* [**Validation**](functional/type-error-handling/validation.md): 여러 연산 과정의 오류를 한 번에 누적하여 검증
+행동보다 가능한 상태와 데이터의 형태를 먼저 정의하고, 잘못된 상태를 구조적으로 줄이는 방법을 배웁니다.
 
-### 5. 효과 제어 (Effect Management)
+* [**Product Types**](functional/03-data-modeling/product-types.md): 여러 값을 동시에 가지는 데이터 구조 모델링
+* [**Sum Types**](functional/03-data-modeling/sum-types.md): 여러 가능한 상태 중 하나를 타입으로 표현
+* [**Algebraic Data Types (ADT)**](functional/03-data-modeling/algebraic-data-types.md): 합 타입과 곱 타입을 조합해 도메인 모델링
+* [**Pattern Matching**](functional/03-data-modeling/pattern-matching.md): 데이터의 형태에 따라 계산을 분해하고 처리
+* [**Smart Constructors**](functional/03-data-modeling/smart-constructors.md): 유효한 값만 생성되도록 생성 경로 제한
+* [**Make Illegal States Unrepresentable**](functional/03-data-modeling/make-illegal-states-unrepresentable.md): 잘못된 상태 자체를 타입으로 표현하기 어렵게 설계
 
-부수효과(Side Effect)나 외부 환경, 상태 변경을 순수 함수형 틀 안에서 관리합니다.
+### 4. 오류를 값으로 다루기 (Error Handling as Values)
 
-* [**Functor**](functional/effect-management/functor.md): 컨텍스트 내부의 값을 안전하게 변환
-* [**Applicative**](functional/effect-management/applicative.md): 컨텍스트 안의 함수와 값을 결합하여 연산
-* [**Monad**](functional/effect-management/monad.md): 컨텍스트를 유지하면서 순차 연산을 체이닝
-* [**Reader**](functional/effect-management/reader.md): 환경이나 의존성을 명시적으로 전달
-* [**Writer**](functional/effect-management/writer.md): 계산 과정과 함께 로그/부가정보를 누적
-* [**State**](functional/effect-management/state.md): 상태 변경을 명시적인 값 반환으로 모델링
-* [**IO**](functional/effect-management/io.md): 외부 부수효과를 연산 단위로 분리하여 제어
+예외나 `null`에 의존하는 제어 흐름을 명시적인 데이터와 타입으로 바꾸는 방법을 배웁니다.
 
-### 6. 비동기 (Asynchrony)
+* [**Exceptions vs Values**](functional/04-error-handling/exceptions-vs-values.md): 예외 기반 오류 처리와 값 기반 오류 처리 비교
+* [**Option**](functional/04-error-handling/option.md): 값의 부재를 명시적인 타입으로 표현
+* [**Either**](functional/04-error-handling/either.md): 성공과 실패를 하나의 합 타입으로 모델링
+* [**Try**](functional/04-error-handling/try.md): 예외가 발생할 수 있는 계산을 값으로 표현
+* [**Validation**](functional/04-error-handling/validation.md): 독립적인 검증 결과를 조합
+* [**Error Accumulation**](functional/04-error-handling/error-accumulation.md): fail-fast와 여러 오류 누적 방식의 차이 이해
 
-* [**Future / Promise / Task**](functional/asynchrony/future-promise-task.md): 비동기 연산과 미래의 계산을 값으로 표현
+### 5. 함수형 추상화 (Functional Abstractions)
 
-### 7. 불변성 (Immutability)
+여러 데이터 타입과 계산에 반복되는 구조를 타입 수준에서 일반화하는 방법을 배웁니다.
 
-원본 데이터를 변경하지 않고 안전하게 관리합니다.
+* [**Generic Functions**](functional/05-functional-abstractions/generic-functions.md): 구체 타입에 종속되지 않는 함수 작성
+* [**Type Classes**](functional/05-functional-abstractions/type-classes.md): 타입과 동작의 구현을 분리하여 다형성 구성
+* [**Higher-Kinded Types**](functional/05-functional-abstractions/higher-kinded-types.md): 타입 생성자를 추상화하는 고차 타입 이해
+* [**Functor**](functional/05-functional-abstractions/functor.md): 컨텍스트의 구조를 유지하면서 내부 값 변환
+* [**Applicative**](functional/05-functional-abstractions/applicative.md): 독립적인 컨텍스트 계산들을 결합
+* [**Monad**](functional/05-functional-abstractions/monad.md): 앞선 계산 결과에 의존하는 연속 계산 구성
+* [**Semigroup**](functional/05-functional-abstractions/semigroup.md): 결합 가능한 연산을 추상화
+* [**Monoid**](functional/05-functional-abstractions/monoid.md): 항등원을 가진 결합 연산을 추상화
 
-* [**Immutable Data**](functional/immutability/immutable-data.md): 데이터를 직접 수정하지 않고 새로운 값 생성
-* [**Persistent Data Structure**](functional/immutability/persistent-data-structure.md): 기존 구조를 보존하면서 변경된 새 구조 생성
+### 6. 효과와 의존성 (Effects & Dependencies)
 
-### 8. 도메인 모델링 (Domain Modeling)
+상태 변경, 외부 입출력, 환경 의존성, 비동기 실행 같은 효과를 계산의 핵심 로직과 분리하여 다루는 방법을 배웁니다.
 
-타입 수준에서 불가능한 상태를 방지하여 견고한 모델을 만듭니다.
+* [**Side Effects**](functional/06-effects/side-effects.md): 순수 계산과 외부 세계의 변화를 구분
+* [**Reader**](functional/06-effects/reader.md): 환경과 의존성을 명시적인 계산 컨텍스트로 전달
+* [**State**](functional/06-effects/state.md): 상태 변화를 입력과 출력 값으로 모델링
+* [**Writer**](functional/06-effects/writer.md): 계산 결과와 로그나 부가 정보를 함께 누적
+* [**IO**](functional/06-effects/io.md): 외부 부수효과를 지연된 계산으로 표현하고 조합
+* [**Dependency Injection with Functions**](functional/06-effects/dependency-injection.md): 객체 컨테이너 대신 함수와 값으로 의존성 전달
+* [**Asynchronous Effects**](functional/06-effects/asynchronous-effects.md): Future, Task, IO와 비동기 계산의 차이 이해
 
-* [**Algebraic Data Type (ADT)**](functional/domain-modeling/algebraic-data-type.md): 합 타입(Sum)과 곱 타입(Product)으로 상태 모델링
-* [**Smart Constructor**](functional/domain-modeling/smart-constructor.md): 잘못된 상태의 객체 생성을 원천 차단
-* [**Make Illegal States Unrepresentable**](functional/domain-modeling/make-illegal-states-unrepresentable.md): 잘못된 상태 자체를 타입으로 표현 불가능하게 설계
+### 7. 함수형 설계 패턴 (Functional Design Patterns)
 
-### 9. 의존성 관리 (Dependency Management)
+기초 개념과 추상화를 실제 소프트웨어 설계에 적용하고, 기존 객체지향 패턴이 함수형 스타일에서 어떻게 달라지는지 살펴봅니다.
 
-* [**Dependency Injection via Functions**](functional/dependency-management/dependency-injection-via-functions.md): 클래스 대신 함수 인자로 의존성 직접 전달
+* [**Functional Core, Imperative Shell**](functional/07-patterns/functional-core-imperative-shell.md): 순수한 핵심 로직과 효과적인 외곽 계층 분리
+* [**Parse, Don't Validate**](functional/07-patterns/parse-dont-validate.md): 검증 후 원래 타입을 유지하기보다 유효한 타입으로 변환
+* [**Railway-Oriented Programming**](functional/07-patterns/railway-oriented-programming.md): 성공과 실패 경로를 조합 가능한 계산 흐름으로 구성
+* [**Dependency Rejection**](functional/07-patterns/dependency-rejection.md): 가능한 범위에서 의존성을 데이터와 순수 함수로 제거
+* [**Functions as Strategies**](functional/07-patterns/functions-as-strategies.md): 전략 객체 대신 일급 함수로 행위를 주입
+* [**Algebra & Interpreter**](functional/07-patterns/algebra-and-interpreter.md): 프로그램의 명세와 실행 방식을 분리
+* [**Tagless Final**](functional/07-patterns/tagless-final.md): 고차 추상화를 이용해 프로그램 표현과 해석을 분리
+* [**Free Monad**](functional/07-patterns/free-monad.md): 프로그램 구조를 데이터로 표현하고 실행을 나중에 해석
+* [**Combinators & DSL**](functional/07-patterns/combinators-and-dsl.md): 작은 구성 요소를 조합해 도메인 특화 언어 구축
 
-### 10. 제어 흐름 (Control Flow)
+### 8. 고급 함수형 프로그래밍 (Advanced Functional Programming)
 
-* [**Continuation / CPS**](functional/control-flow/continuation-cps.md): 이후 실행할 연산 전체를 함수로 넘겨 제어
+앞에서 배운 개념을 바탕으로 평가 전략, 재귀 추상화, 영속 자료구조, optics, 효과 시스템과 반응형 모델까지 확장합니다.
 
-### 11. 지연 계산 및 최적화 (Lazy Evaluation & Optimization)
-
-* [**Lazy Evaluation**](functional/lazy-evaluation-optimization/lazy-evaluation.md): 실제 필요한 시점까지 연산을 지연
-* [**Memoization**](functional/lazy-evaluation-optimization/memoization.md): 동일한 함수 호출 결과를 캐싱하여 재사용
-
-### 12. 이벤트 기반 처리 (Event-Driven)
-
-* [**Event Stream / FRP**](functional/event-driven/event-stream-frp.md): 시간에 따라 변화하는 데이터 흐름을 함수형으로 모델링
-
-### 13. 추상화 및 기타 (Abstraction & DSL)
-
-* [**Lens / Prism / Optics**](functional/abstraction-dsl/lens-prism-optics.md): 불변 중첩 데이터 구조의 안전한 조회 및 수정
-* [**Interpreter Pattern / Tagless Final**](functional/abstraction-dsl/interpreter-pattern-tagless-final.md): 프로그램의 정의(Syntax)와 실행 방식(Semantics)을 분리
-* [**Combinator**](functional/abstraction-dsl/combinator.md): 작은 구성 요소를 조합하여 도메인 특화 언어(DSL) 구축
+* [**Lazy Evaluation**](functional/08-advanced/lazy-evaluation.md): 값이 실제로 필요해질 때까지 계산 지연
+* [**Memoization**](functional/08-advanced/memoization.md): 순수 함수의 결과를 캐시하여 반복 계산 제거
+* [**Persistent Data Structures**](functional/08-advanced/persistent-data-structures.md): 이전 버전을 보존하면서 효율적으로 새로운 데이터 구조 생성
+* [**Recursion Schemes**](functional/08-advanced/recursion-schemes.md): 재귀 구조와 실제 처리 로직을 분리
+* [**Continuation-Passing Style (CPS)**](functional/08-advanced/continuation-passing-style.md): 이후 계산을 명시적인 함수로 전달하여 제어 흐름 표현
+* [**Lens**](functional/08-advanced/lens.md): 불변 중첩 데이터의 특정 부분을 합성 가능한 방식으로 접근하고 갱신
+* [**Prism**](functional/08-advanced/prism.md): 합 타입의 특정 경우에 초점을 맞춘 안전한 접근과 변환
+* [**Optics**](functional/08-advanced/optics.md): Lens, Prism 등의 접근 추상화를 조합
+* [**Effect Systems**](functional/08-advanced/effect-systems.md): 프로그램이 수행할 수 있는 효과를 타입과 추상화로 표현
+* [**Functional Reactive Programming (FRP)**](functional/08-advanced/functional-reactive-programming.md): 시간에 따라 변화하는 값을 함수형 모델로 표현

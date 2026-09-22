@@ -1,5 +1,7 @@
 # 46장. Railway-Oriented Programming
 
+![성공 노선과 실패 노선을 끊김 없이 잇는 철도 분기](../../assets/images/fp/railway-oriented-programming.png)
+
 입력을 읽고 상품을 확인하고 견적을 저장하는 흐름에는 각기 다른 실패가 있다.
 성공값을 다음 단계로 넘기고 실패를 보존하는 분기를 모든 단계에 직접 쓰면 반복이 많아진다.
 Railway Oriented Programming은 이런 성공·실패 경로를 연결하는 방식을 설명하는 패턴이다.

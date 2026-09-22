@@ -1,5 +1,7 @@
 # 22장. Make Illegal States Unrepresentable
 
+![빈틈과 겹침 없이 맞물려 자란 벌집의 육각형 방](../../assets/images/fp/make-illegal-states-unrepresentable.png)
+
 이제 곱 타입, 합 타입, 패턴 매칭, 스마트 생성자를 하나의 설계로 묶는다.
 목표는 모든 곳에서 같은 검사를 반복하기보다 잘못된 상태가 정상적인 도메인 값으로 들어오기 어렵게
 만드는 것이다.

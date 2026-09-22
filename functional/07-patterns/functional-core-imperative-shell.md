@@ -1,5 +1,7 @@
 # 44장. Functional Core, Imperative Shell
 
+![단단한 껍질이 깨끗한 알맹이를 감싼 호두](../../assets/images/fp/functional-core-imperative-shell.png)
+
 앞 부에서는 효과를 값 계산과 분리하는 여러 도구를 배웠다.
 이제 그 도구들을 프로그램의 구조에 적용한다.
 Functional Core, Imperative Shell은 핵심 판단을 순수한 계산에 두고 외부 읽기와 실행을 바깥

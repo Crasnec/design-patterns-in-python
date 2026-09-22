@@ -1,5 +1,7 @@
 # 48장. Functions as Strategies
 
+![서로 다른 방식으로 퍼지는 민들레씨와 단풍나무씨와 도꼬마리](../../assets/images/fp/functions-as-strategies.png)
+
 주문 금액에 적용할 할인 정책은 고객 등급이나 이벤트 설정에 따라 달라질 수 있다.
 정책마다 클래스 하나와 실행 메서드 하나만 만드는 구조는 간단한 계산에 비해 복잡할 수 있다.
 Functions as Strategies는 정책을 함수값으로 표현하여 선택하고 전달하고 조합하는 패턴이다.

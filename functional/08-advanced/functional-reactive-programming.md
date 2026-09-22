@@ -1,5 +1,7 @@
 # 62장. Functional Reactive Programming (FRP)
 
+![계속 변하는 바람에 물결치며 반응하는 갈대밭과 풍차](../../assets/images/fp/functional-reactive-programming.png)
+
 이 책은 값을 계산하는 표현식에서 시작해 함수, 데이터, 오류, 효과를 조합하는 방법을 살펴보았다.
 마지막 장에서는 시간에 따라 변하는 값과 사건도 같은 관점에서 다룬다.
 수량과 단가가 바뀔 때마다 표시 금액을 어떻게 일관되게 계산할 것인가?

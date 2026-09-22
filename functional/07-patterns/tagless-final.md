@@ -1,5 +1,7 @@
 # 50장. Tagless Final
 
+![같은 종을 손잡이나 물레방아로 울리는 두 해석 방식](../../assets/images/fp/tagless-final.png)
+
 앞 장에서는 계산식을 ADT로 만들고 패턴 매칭으로 해석했다.
 Tagless Final은 프로그램을 명시적인 문법 트리 대신 연산 인터페이스에 대해 작성하는 다른 표현
 방식이다.

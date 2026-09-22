@@ -1,5 +1,7 @@
 # 57장. Continuation-Passing Style (CPS)
 
+![다음 물통에 남은 흐름을 차례로 넘기는 연속 물통](../../assets/images/fp/continuation-passing-style.png)
+
 앞 장에서는 재귀 구조와 노드의 의미를 분리했다.
 그러나 구조를 잘 분리한 평가기도 깊은 트리에서는 호출 스택을 소진할 수 있다.
 이 장은 아직 수행하지 않은 계산을 함수로 표현하여 제어 흐름을 명시하는 방법을 다룬다.

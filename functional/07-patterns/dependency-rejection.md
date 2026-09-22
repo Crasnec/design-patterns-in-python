@@ -1,5 +1,7 @@
 # 47장. Dependency Rejection
 
+![외부 동력 없이 중력만으로 과수원에 물을 대는 수로](../../assets/images/fp/dependency-rejection.png)
+
 의존성 주입은 외부 기능을 명시적으로 전달하게 해 주었다.
 하지만 핵심 계산이 그 외부 기능을 꼭 직접 호출해야 하는지는 다른 질문이다.
 Dependency Rejection은 가능한 의존성을 핵심에서 밀어내고 필요한 데이터를 값으로 전달하는 방향을

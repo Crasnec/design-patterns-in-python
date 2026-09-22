@@ -1,5 +1,7 @@
 # 31장. Higher-Kinded Types
 
+![같은 화분 형태에 서로 다른 식물을 담은 묘목장](../../assets/images/fp/higher-kinded-types.png)
+
 제네릭 함수는 `Int`나 `String` 같은 값의 타입을 매개변수로 받았다.
 하지만 `List[A]`, `Option[A]`, `Either[E, A]`의 변환에도 비슷한 구조가 반복된다.
 원소 타입뿐 아니라 그 원소를 둘러싼 타입 생성자까지 매개변수로 받으면 이런 공통 구조를 표현할 수

@@ -1,16 +1,20 @@
-# 표현식 중심 프로그래밍 (Expression-Oriented Programming, EOP)
+# 1장. Expression-Oriented Programming
 
 ![수식을 입력받는 계산 기계](../../assets/images/fp/expression-oriented-programming.png)
 
-표현식 중심 프로그래밍(Expression-Oriented Programming, EOP)은 프로그램의 주요 구성 요소를 **값을 계산하는 표현식(Expression)** 중심으로 작성하는 스타일입니다.
+표현식 중심 프로그래밍(Expression-Oriented Programming, EOP)은 프로그램의 주요 구성 요소를
+**값을 계산하는 표현식(Expression)** 중심으로 작성하는 스타일입니다.
 
-명령형 프로그래밍에서는 제어 흐름과 상태 변경을 중심으로 코드를 구성하는 경우가 많습니다. 반면 표현식 중심 프로그래밍에서는 가능한 한 많은 연산을 **“어떤 동작을 수행할 것인가?”보다 “어떤 값을 계산할 것인가?”**의 관점에서 구성합니다.
+명령형 프로그래밍에서는 제어 흐름과 상태 변경을 중심으로 코드를 구성하는 경우가 많습니다. 반면
+표현식 중심 프로그래밍에서는 가능한 한 많은 연산을 **“어떤 동작을 수행할 것인가?”보다 “어떤 값을
+계산할 것인가?”**의 관점에서 구성합니다.
 
-이러한 접근은 불변성(Immutability), 순수 함수(Pure Function), 함수 합성(Function Composition)과 자연스럽게 연결되며, 함수형 프로그래밍의 중요한 기초가 됩니다.
+이러한 접근은 불변성(Immutability), 순수 함수(Pure Function), 함수 합성(Function Composition)과
+자연스럽게 연결되며, 함수형 프로그래밍의 중요한 기초가 됩니다.
 
 ---
 
-## 1. 문장(Statement)과 표현식(Expression)
+## 1. 개념과 기본 구분
 
 EOP를 이해하려면 먼저 문장(Statement)과 표현식(Expression)을 구분해야 합니다.
 
@@ -23,17 +27,20 @@ EOP를 이해하려면 먼저 문장(Statement)과 표현식(Expression)을 구�
 | **주요 역할** | 상태 변경, 제어 흐름, 효과 수행 | 계산 및 새로운 값 생성 |
 | **예시** | `if (...) { ... }`, `x = x + 1` | `a + b`, `a > b ? a : b` |
 
-중요한 점은 `void`, `Unit`, `None`을 모두 단순히 “반환값이 없다”고 동일하게 취급해서는 안 된다는 것입니다.
+중요한 점은 `void`, `Unit`, `None`을 모두 단순히 “반환값이 없다”고 동일하게 취급해서는 안 된다는
+것입니다.
 
-예를 들어 Scala의 `Unit`은 실제로 하나의 값을 가지는 타입입니다. 다만 그 값이 의미 있는 계산 결과를 표현하기보다 “주요 결과값이 없다”는 의미로 사용됩니다.
+예를 들어 Scala의 `Unit`은 실제로 하나의 값을 가지는 타입입니다. 다만 그 값이 의미 있는 계산
+결과를 표현하기보다 “주요 결과값이 없다”는 의미로 사용됩니다.
 
 ---
 
-## 2. 명령형 스타일과 표현식 중심 스타일
+## 2. 명령형 스타일과 함수형 스타일
 
 ### 명령형 스타일 (Statement-Oriented Style)
 
-명령형 스타일에서는 가변 변수를 선언하고, 제어 흐름에 따라 그 값을 변경하는 방식이 자주 사용됩니다.
+명령형 스타일에서는 가변 변수를 선언하고, 제어 흐름에 따라 그 값을 변경하는 방식이 자주
+사용됩니다.
 
 ```java
 String status;
@@ -79,7 +86,7 @@ flowchart LR
 
 ---
 
-## 3. 왜 표현식 중심으로 작성하는가?
+## 3. 왜 이 개념을 사용하는가?
 
 표현식 중심 스타일은 함수형 프로그래밍의 여러 특성을 자연스럽게 유도합니다.
 
@@ -110,7 +117,8 @@ else
 
 가변 상태가 많아질수록 프로그램의 결과가 이전 실행 순서에 의존하기 쉬워집니다.
 
-표현식 중심 스타일은 상태를 수정하기보다 새로운 값을 계산하도록 유도하므로 이러한 복잡성을 줄이는 데 도움이 됩니다.
+표현식 중심 스타일은 상태를 수정하기보다 새로운 값을 계산하도록 유도하므로 이러한 복잡성을
+줄이는 데 도움이 됩니다.
 
 ### 3) 코드를 지역적으로 이해하기 쉬워진다
 
@@ -138,7 +146,7 @@ readLine()
 
 ---
 
-## 4. Scala에서의 표현식
+## 4. Scala에서의 표현
 
 Scala는 표현식 중심 스타일을 강하게 지원하는 언어입니다.
 
@@ -168,7 +176,8 @@ val discount =
     case _         => 0.0
 ```
 
-`match`는 단순히 분기만 수행하는 것이 아니라 선택된 `case`의 결과를 전체 표현식의 값으로 사용합니다.
+`match`는 단순히 분기만 수행하는 것이 아니라 선택된 `case`의 결과를 전체 표현식의 값으로
+사용합니다.
 
 ### 3) 블록 표현식
 
@@ -200,7 +209,7 @@ def add(a: Int, b: Int): Int =
 
 ---
 
-## 5. 상태 변경보다 값 변환 (Transformation over Mutation)
+## 5. 상태 변경보다 값 변환
 
 명령형 프로그래밍은 흔히 다음 질문을 중심으로 작성됩니다.
 
@@ -247,7 +256,7 @@ val positives =
 
 ---
 
-## 6. 표현식과 함수 합성 (Function Composition)
+## 6. 함수 합성과 데이터 흐름
 
 표현식은 값으로 평가되므로 다른 표현식이나 함수의 입력으로 쉽게 연결할 수 있습니다.
 
@@ -287,7 +296,7 @@ flowchart LR
 
 ---
 
-## 7. 표현식 중심 프로그래밍의 장점
+## 7. 장점과 트레이드오프
 
 ### 코드의 간결함
 
@@ -322,11 +331,12 @@ val result =
 
 ### 합성하기 쉽다
 
-각 계산의 결과를 다음 계산으로 바로 넘길 수 있어 작은 연산을 조립하여 큰 프로그램을 구성하기 쉬워집니다.
+각 계산의 결과를 다음 계산으로 바로 넘길 수 있어 작은 연산을 조립하여 큰 프로그램을 구성하기
+쉬워집니다.
 
 ---
 
-## 8. 모든 상태를 제거해야 하는가?
+## 8. 상태와 부수효과의 경계
 
 그렇지 않습니다.
 
@@ -343,7 +353,8 @@ val result =
 
 함수형 프로그래밍의 목표는 이러한 작업 자체를 없애는 것이 아닙니다.
 
-중요한 것은 **부수효과를 어디에서 발생시키고, 어디까지 순수한 값 변환으로 유지할 것인지 명확하게 구분하는 것**입니다.
+중요한 것은 **부수효과를 어디에서 발생시키고, 어디까지 순수한 값 변환으로 유지할 것인지 명확하게
+구분하는 것**입니다.
 
 예를 들어 프로그램을 다음과 같이 구성할 수 있습니다.
 
@@ -362,7 +373,8 @@ flowchart TD
 
 ## 9. Python에서 적용하기
 
-Python은 Scala만큼 표현식 중심으로 설계된 언어는 아니지만, 일부 영역에서는 표현식 중심 스타일을 충분히 사용할 수 있습니다.
+Python은 Scala만큼 표현식 중심으로 설계된 언어는 아니지만, 일부 영역에서는 표현식 중심 스타일을
+충분히 사용할 수 있습니다.
 
 ### 조건 표현식
 
@@ -400,14 +412,16 @@ for x in range(10):
 add = lambda a, b: a + b
 ```
 
-다만 Python의 `lambda`는 기능적으로 제한적이므로 일반적인 함수 정의가 더 읽기 좋은 경우가 많습니다.
+다만 Python의 `lambda`는 기능적으로 제한적이므로 일반적인 함수 정의가 더 읽기 좋은 경우가
+많습니다.
 
 ```python
 def add(a: int, b: int) -> int:
     return a + b
 ```
 
-함수형 프로그래밍에서 중요한 것은 `lambda` 사용 자체가 아니라 **입력에서 출력으로 값을 변환하는 구조**입니다.
+함수형 프로그래밍에서 중요한 것은 `lambda` 사용 자체가 아니라 **입력에서 출력으로 값을 변환하는
+구조**입니다.
 
 ---
 
@@ -436,7 +450,7 @@ else:
 
 다음과 같은 문법은 존재하지 않습니다.
 
-```python
+```python-invalid
 status = if score >= 80:
     "Pass"
 else:
@@ -526,7 +540,8 @@ def calculate(x: int) -> int:
     return 10
 ```
 
-따라서 Python에서는 표현식 중심 스타일을 무리하게 강제하기보다, 언어에 자연스러운 범위에서 적용하는 것이 중요합니다.
+따라서 Python에서는 표현식 중심 스타일을 무리하게 강제하기보다, 언어에 자연스러운 범위에서
+적용하는 것이 중요합니다.
 
 ---
 
@@ -538,3 +553,88 @@ def calculate(x: int) -> int:
 4. 표현식 중심 스타일은 불변성과 합성을 촉진하지만, 그 자체가 순수 함수나 부수효과의 부재를 보장하지는 않습니다.
 5. Python에서도 조건 표현식, 컴프리헨션, 함수 등을 통해 이러한 사고방식을 적용할 수 있지만 일반 `if`, `match`, 반복문, 코드 블록은 표현식으로 사용할 수 없습니다.
 6. 실무에서는 모든 상태와 부수효과를 제거하기보다 **순수한 값 변환과 효과가 발생하는 경계를 분리하는 것**이 중요합니다.
+
+### 실행 실습: 분기를 값으로 읽기
+
+다음 프로그램은 앞의 문법 조각과 달리 필요한 입력을 모두 포함한다.
+Scala의 블록 표현식, 조건 표현식, 패턴 매칭을 같은 계산 안에서 사용한다.
+Python 버전은 일반 함수를 사용해 같은 입력과 출력 계약을 구현한다.
+
+<!-- executable:scala -->
+```scala
+object Chapter01:
+  def grade(score: Int): String =
+    if score >= 80 then "Pass" else "Fail"
+
+  def discount(tier: String): Int =
+    tier match
+      case "VIP" => 2000
+      case "REGULAR" => 500
+      case _ => 0
+
+  def amount(price: Int, tier: String): Int =
+    val reduction = price * discount(tier) / 10000
+    price - reduction
+
+  def check(): Unit =
+    assert(grade(79) == "Fail")
+    assert(grade(80) == "Pass")
+    assert(amount(10000, "VIP") == 8000)
+    assert(amount(10000, "REGULAR") == 9500)
+    assert(amount(10000, "UNKNOWN") == 10000)
+```
+
+<!-- executable:python -->
+```python
+def grade(score: int) -> str:
+    return "Pass" if score >= 80 else "Fail"
+
+
+def discount(tier: str) -> int:
+    match tier:
+        case "VIP":
+            return 2000
+        case "REGULAR":
+            return 500
+        case _:
+            return 0
+
+
+def amount(price: int, tier: str) -> int:
+    reduction = price * discount(tier) // 10_000
+    return price - reduction
+
+
+if __name__ == "__main__":
+    assert grade(79) == "Fail"
+    assert grade(80) == "Pass"
+    assert amount(10_000, "VIP") == 8000
+    assert amount(10_000, "REGULAR") == 9500
+    assert amount(10_000, "UNKNOWN") == 10_000
+```
+
+### 연습과 해설
+
+**문제 1.** `print("hello")`는 Python에서 표현식인가? 순수한가?
+
+**해설.** 함수 호출이므로 표현식이며 결과는 `None`이다.
+하지만 화면 출력이라는 관측 가능한 효과를 수행하므로 순수한 계산은 아니다.
+표현식 여부와 순수성 여부는 다른 축이다.
+
+**문제 2.** 복잡한 분기를 한 줄의 조건 표현식으로 바꾸면 언제나 더 좋은가?
+
+**해설.** 중첩이 깊어지면 읽기 어렵고 오류 위치를 찾기 힘들다.
+Python에서는 이름 있는 함수와 명확한 반환문이 더 좋은 경계가 될 수 있다.
+표현식 중심 사고는 줄 수를 최소화하라는 규칙이 아니다.
+
+**문제 3.** 할인 계산이 표현식이어도 DB 조회가 포함되면 무엇을 추가로 고려해야 하는가?
+
+**해설.** 조회 실패, 실행 시점, 반복 호출의 결과 차이를 고려해야 한다.
+가격 스냅샷을 먼저 얻고 계산에 값으로 전달하면 효과와 계산을 분리할 수 있다.
+다음 장의 순수 함수가 이 구분을 자세히 다룬다.
+
+### 참고 자료
+
+[Scala 공식 문서: Control Structures](https://docs.scala-lang.org/scala3/book/control-structures.html)
+[Python 언어 참조: Expressions](https://docs.python.org/3.14/reference/expressions.html)
+[Python 언어 참조: Compound statements](https://docs.python.org/3.14/reference/compound_stmts.html)
